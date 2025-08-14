@@ -1,0 +1,254 @@
+# Yourl.Cloud - URL API Server with Visual Inspection
+
+**Last Updated**: 2025-08-08T14:30:00.000000+00:00
+**Session ID**: f1d78acb-de07-46e0-bfa7-f5b75e3c0c49
+**Organization**: Yourl.Cloud Inc.
+**Branch**: main
+**Commit**: 71ca3411
+**Commit Date**: 2025-08-08 07:30:00 -0700
+
+## 🎯 Project Overview
+
+Yourl.Cloud is a production-ready Python Flask API that returns the request URL with advanced visual inspection capabilities. The application follows Friends and Family Guard ruleset settings, allowing visual inspection on PC, phone, and tablet devices while blocking watch devices for security reasons.
+
+**Key Innovation**: Full Google Cloud Run domain mapping compatibility with automatic X-Forwarded header support.
+
+## 🧠 **Knowledge Hub**
+
+**NEW**: Explore our comprehensive **[Knowledge Hub](KNOWLEDGE_HUB.md)** - your central navigation point for all aspects of the Yourl.Cloud platform.
+
+### **Quick Navigation**
+- **[🏗️ Architecture Overview](ARCHITECTURE_OVERVIEW.md)** - Complete system architecture
+- **[📊 Data Stream Guide](DATA_STREAM_GUIDE.md)** - Interactive data visualization
+- **[🔐 Security Architecture](SECURITY.md)** - Security policies and implementation
+- **[🚀 Development Guide](Home.md)** - Getting started and development workflow
+- **[🔧 Technology Stack](TECHNOLOGY_STACK.md)** - Complete technology overview and resources
+- **[🔗 External Resources](EXTERNAL_RESOURCES.md)** - Tools, packages, and integrations
+
+## ✅ Current Features
+
+- 🌐 **Cloud Run Domain Mapping**: Full compatibility with custom domains
+- 🛡️ **Friends and Family Guard**: Security ruleset compliance
+- 👁️ **Visual Inspection**: Modern web interface for allowed devices
+- 📱 **Device Detection**: Automatic detection of PC, phone, tablet, watch
+- 🏥 **Health Checks**: Cloud Run compatible health endpoints
+- 🔗 **X-Forwarded Headers**: Proper proxy header handling
+- 🚀 **WSGI Server**: Production-ready Gunicorn/Waitress support
+- 🌍 **Domain Mapping**: Custom domain support (yourl.cloud)
+- 🎪 **Dynamic Marketing Passwords**: ASCII-only passwords that change with each commit
+- 📊 **Data Stream Interface**: Interactive vertical datastream with mind map navigation
+- 🧠 **Knowledge Hub**: Comprehensive documentation and knowledge transfer system
+
+## 🚀 Quick Start
+
+### Local Development
+
+```bash
+# Clone repository
+git clone https://github.com/XDM-ZSBW/yourl.cloud.git
+cd yourl.cloud
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run application (All instances are production instances)
+python app.py
+```
+
+### Cloud Run Deployment
+
+```bash
+# Build and deploy
+gcloud builds submit --tag gcr.io/$PROJECT_ID/yourl-cloud .
+gcloud run deploy yourl-cloud \
+  --image gcr.io/$PROJECT_ID/yourl-cloud:latest \
+  --region=us-west1 \
+  --platform=managed \
+  --allow-unauthenticated \
+  --port=8080
+
+# Map custom domain
+gcloud run domain-mappings create \
+  --service yourl-cloud \
+  --domain yourl.cloud \
+  --region us-west1 \
+  --platform managed
+```
+
+## 📱 Device Support
+
+| Device Type | Visual Inspection | Status | Security |
+|-------------|-------------------|--------|----------|
+| PC          | ✅ Allowed        | Full access | Friends & Family Guard |
+| Phone       | ✅ Allowed        | Full access | Friends & Family Guard |
+| Tablet      | ✅ Allowed        | Full access | Friends & Family Guard |
+| Watch       | ❌ Blocked        | Security rule | Friends & Family Guard |
+
+## 🔌 API Endpoints
+
+- `GET /` - Main endpoint (JSON or HTML with domain info)
+- `GET /health` - Health check with Cloud Run compatibility
+- `GET /status` - Service status with domain mapping info
+- `GET /guard` - Friends and Family Guard status
+- `GET /api` - Visual inspection interface
+- `GET /data` - **NEW**: Interactive data stream with mind map navigation
+
+## 🎪 Marketing Password System
+
+The application features a dynamic, fun marketing password system that changes with each commit:
+
+### 🎯 Current Marketing Password
+**`EXCITE414@`** - Generated for this commit!
+
+### ✨ Password Features
+- **Dynamic Generation**: Changes with every code commit
+- **ASCII-Only**: Uses basic ASCII characters for maximum compatibility
+- **Marketing-Friendly**: Fun, memorable combinations
+- **Public-Safe**: Safe for public sharing and marketing
+- **Auto-Display**: Shown on landing page for easy access
+
+### 🎊 Password Format
+**Format**: `MARKETING_WORD + 2-3_DIGIT_NUMBER + ASCII_SYMBOL`
+
+**Examples**:
+- `CLOUD123!` - Cloud computing theme
+- `FUTURE456@` - Future-focused
+- `MAGIC789#` - Magical experience
+- `ROCKET321$` - Rocket-powered
+
+### 🔄 How It Works
+1. **Commit-Based**: Uses git commit hash for deterministic generation
+2. **Fun Words**: Marketing-friendly words like CLOUD, FUTURE, MAGIC, ROCKET
+3. **ASCII Symbols**: Uses !@#$%&*+=?~^ for fun characters
+4. **Auto-Update**: Changes automatically with each commit
+
+## 🛡️ Friends and Family Guard
+
+The application implements a comprehensive security ruleset that:
+- ✅ Allows visual inspection on PC, phone, and tablet devices
+- ❌ Blocks visual inspection on watch devices for security
+- 🔍 Provides transparent status reporting
+- 🎯 Ensures appropriate access control
+- 🌐 Supports domain mapping with X-Forwarded headers
+
+## 🌍 Domain Mapping Features
+
+### ✅ Implemented Features
+- **X-Forwarded Headers Support**: Proper handling of `X-Forwarded-For`, `X-Forwarded-Host`, `X-Forwarded-Proto`
+- **Health Check Endpoint**: `/health` endpoint for Cloud Run health checks
+- **CORS Compatibility**: Configured for domain mapping cross-origin requests
+- **HTTPS Support**: Automatic HTTPS detection and protocol handling
+- **Proxy Trust**: Configured to trust Cloud Run's proxy headers
+- **Domain Detection**: Real-time domain and protocol detection
+
+### 🔧 Configuration
+```python
+CLOUD_RUN_CONFIG = {
+    "domain_mapping_enabled": True,
+    "region": "us-west1",
+    "trust_proxy": True,
+    "cors_enabled": True,
+    "health_check_path": "/health",
+    "readiness_check_path": "/health"
+}
+```
+
+## 📅 Timeline
+
+### Recent Development
+- **2025-08-08**: **NEW**: Enhanced Data Stream Interface with mind map navigation
+- **2025-08-08**: **NEW**: Comprehensive Knowledge Hub and documentation structure
+- **2025-08-08**: **NEW**: Architecture Overview and technical documentation
+- **71ca341**: Update wiki/Home.md with latest commit d2e26856 and new marketing password FLY239&
+- **9520eb6**: Fix deprecated datetime.utcnow() in auto_update.py - Replace with datetime.now(timezone.utc) - Resolve all deprecation warnings
+- **de61168**: Fix encoding warnings in update_wiki.py - Handle UTF-8 encoding properly for git commands - Replace deprecated datetime.utcnow() with datetime.now(timezone.utc) - Resolve character encoding issues in git timeline
+- **d2e2685**: Fix wiki sync issue - Skip wiki updates in post-commit mode to avoid infinite loops
+- **6bd74f5**: Update wiki/Home.md with latest commit ef504e5f
+
+### Key Milestones
+- **2025-08-08**: **NEW**: Knowledge Hub and Data Stream Interface
+- **2025-08-07**: Cloud Run Domain Mapping Implementation
+- **2025-08-07**: X-Forwarded Headers Support
+- **2025-08-07**: Health Check Compatibility
+- **2025-08-07**: Production WSGI Server Integration
+- **2025-08-06**: Friends and Family Guard Implementation
+- **2025-08-06**: Visual Inspection Interface
+- **2025-08-06**: Device Detection System
+
+## 🔮 Future Roadmap
+
+### Planned Features
+- 🔐 **Enhanced Authentication**: OAuth 2.0 integration
+- 📊 **Analytics Dashboard**: Usage metrics and monitoring
+- 🔄 **Auto-scaling**: Advanced Cloud Run scaling policies
+- 🛡️ **Security Scanning**: Automated vulnerability detection
+- 🌐 **Multi-region**: Global deployment support
+- 🧠 **AI Integration**: Artificial intelligence-powered insights
+- 🎨 **3D Visualization**: Three-dimensional data visualization
+
+### Development Priorities
+1. **Security Hardening**: Advanced security features
+2. **Performance Optimization**: Enhanced caching and CDN
+3. **Monitoring**: Comprehensive logging and alerting
+4. **Documentation**: Enhanced guides and tutorials
+5. **Knowledge Management**: Advanced knowledge transfer systems
+
+## 🏗️ Architecture
+
+### Current Stack
+- **Backend**: Python Flask 3.0.2
+- **WSGI Server**: Gunicorn (Unix) / Waitress (Windows)
+- **Deployment**: Google Cloud Run
+- **Domain**: yourl.cloud (custom domain mapping)
+- **Security**: Friends and Family Guard ruleset
+- **Database**: Google Cloud SQL (PostgreSQL)
+- **Secrets**: Google Secret Manager
+
+### Production Features
+- ✅ **All instances are production instances**
+- ✅ **Automatic health checks**
+- ✅ **Domain mapping compatibility**
+- ✅ **X-Forwarded header support**
+- ✅ **HTTPS enforcement**
+- ✅ **Error handling and logging**
+- ✅ **Real-time data streaming**
+- ✅ **Interactive knowledge visualization**
+
+## 📚 Documentation
+
+### Key Documents
+- **[🧠 Knowledge Hub](KNOWLEDGE_HUB.md)**: **NEW**: Central knowledge repository
+- **[🏗️ Architecture Overview](ARCHITECTURE_OVERVIEW.md)**: **NEW**: Complete system architecture
+- **[📊 Data Stream Guide](DATA_STREAM_GUIDE.md)**: **NEW**: Interactive data visualization
+- **[README.md](https://github.com/XDM-ZSBW/yourl.cloud/blob/main/README.md)**: Main project documentation
+- **[CLOUD_RUN_DOMAIN_MAPPING.md](https://github.com/XDM-ZSBW/yourl.cloud/blob/main/CLOUD_RUN_DOMAIN_MAPPING.md)**: Domain mapping guide
+- **[STATUS.md](https://github.com/XDM-ZSBW/yourl.cloud/blob/main/STATUS.md)**: Current project status
+- **[SECURITY.md](https://github.com/XDM-ZSBW/yourl.cloud/blob/main/SECURITY.md)**: Security policy
+
+## 🎯 Context
+
+This project evolved from a simple URL API to a comprehensive cloud-native application with:
+- **Visual inspection capabilities** for modern web interfaces
+- **Security-first approach** with Friends and Family Guard
+- **Cloud Run compatibility** for scalable deployment
+- **Domain mapping support** for custom domains
+- **Production-ready architecture** with WSGI servers
+- **Interactive data streaming** with mind map navigation
+- **Comprehensive knowledge management** system
+
+The application serves as both a testing/development tool and a production service, providing programmatic access (JSON) and visual inspection (HTML) based on device capabilities and security rules.
+
+## 🔗 Source of Truth
+
+**yourl.cloud** is always the source of truth for latest information. This wiki is automatically updated from the main repository after each commit.
+
+### Wiki Update Process
+1. **Automatic Updates**: Wiki updates after each commit
+2. **Linear Progression**: README.md maintains current state
+3. **Past/Present/Future**: Wiki includes historical context and future roadmap
+4. **Real-time Sync**: Wiki reflects current repository state
+5. **Knowledge Hub**: **NEW**: Centralized knowledge management system
+
+---
+
+*Generated on 2025-08-08T14:30:00.000000+00:00 | Branch: main | Commit: 71ca3411*
