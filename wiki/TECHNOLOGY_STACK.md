@@ -38,6 +38,30 @@
 - **[Python 3.11+](https://www.python.org/)** - Programming language
 - **[pip](https://pip.pypa.io/)** - Package manager
 
+### **Operating Systems & Platforms**
+- **[Microsoft Windows](https://www.microsoft.com/windows)** - Primary desktop platform
+  - **Windows 10/11**: Full development and deployment support
+  - **Windows Server**: Enterprise and cloud deployment
+  - **Windows Subsystem for Linux (WSL)**: Linux compatibility layer
+- **[Linux Distributions](https://distrowatch.com/)** - Unix-based operating systems
+  - **Ubuntu**: Primary development and deployment platform
+  - **Debian**: Stable server and development environment
+  - **CentOS/RHEL**: Enterprise Linux distributions
+  - **Alpine Linux**: Lightweight container-optimized OS
+- **[macOS](https://www.apple.com/macos/)** - Apple desktop operating system
+  - **macOS Monterey+**: Full development support
+  - **Homebrew**: Package management for macOS
+- **[Android](https://www.android.com/)** - Mobile operating system
+  - **Android 8.0+**: Mobile application support
+  - **Android Studio**: Development environment
+- **[iOS](https://www.apple.com/ios/)** - Apple mobile operating system
+  - **iOS 12.0+**: Mobile application support
+  - **Xcode**: Development environment
+- **[Cloud Platforms](https://cloud.google.com/)** - Cloud-based operating environments
+  - **Google Cloud Run**: Serverless container platform
+  - **Docker Containers**: Containerized operating environments
+  - **Kubernetes**: Container orchestration platform
+
 ## 🔧 **Development & Deployment Tools**
 
 ### **Containerization**
@@ -49,6 +73,28 @@
 - **[Google Cloud Build](https://cloud.google.com/build)** - Continuous integration
 - **[cloudbuild.yaml](https://cloud.google.com/build/docs/build-config-file-schema)** - Build configuration
 - **[Automated Deployment](https://cloud.google.com/run/docs/deploy)** - Cloud Run deployment
+
+### **Platform-Specific Deployment**
+- **[Windows Deployment](https://docs.microsoft.com/en-us/windows/deployment/)** - Windows-specific deployment
+  - **Waitress WSGI Server**: Native Windows WSGI server
+  - **PowerShell Scripts**: Windows automation and deployment
+  - **Windows Services**: Background service deployment
+  - **Registry Configuration**: Windows-specific settings
+- **[Linux Deployment](https://ubuntu.com/server/docs)** - Linux deployment strategies
+  - **Gunicorn WSGI Server**: Production Linux WSGI server
+  - **Systemd Services**: Linux service management
+  - **Nginx Integration**: Reverse proxy and load balancing
+  - **Package Management**: apt, yum, dnf package systems
+- **[macOS Deployment](https://developer.apple.com/macos/)** - macOS development and deployment
+  - **Homebrew Services**: macOS service management
+  - **LaunchDaemons**: macOS background service support
+  - **Xcode Integration**: Native macOS development tools
+  - **macOS Security**: Gatekeeper and code signing
+- **[Container Deployment](https://docs.docker.com/get-started/)** - Container-based deployment
+  - **Docker Desktop**: Windows and macOS container support
+  - **Docker Engine**: Linux container runtime
+  - **Multi-platform Images**: Cross-platform container support
+  - **Container Orchestration**: Kubernetes and Docker Swarm
 
 ### **Domain Management**
 - **[Custom Domains](https://cloud.google.com/run/docs/mapping-custom-domains)** - Domain mapping
@@ -109,6 +155,70 @@
 - **[Caching System](https://github.com/XDM-ZSBW/cloud-yourl/blob/main/app.py)** - Code generation caching
 - **[Connection Pooling](https://github.com/XDM-ZSBW/cloud-yourl/blob/main/scripts/database_connection_manager.py)** - Database optimization
 - **[Async Processing](https://github.com/XDM-ZSBW/cloud-yourl/blob/main/app.py)** - Background tasks
+
+## 💻 **Cross-Platform Compatibility**
+
+### **Desktop Operating Systems**
+- **[Microsoft Windows](https://www.microsoft.com/windows)** - Primary development platform
+  - **Windows 10/11**: Full native support with Waitress WSGI server
+  - **Windows Server 2019/2022**: Enterprise deployment support
+  - **PowerShell**: Native Windows scripting and automation
+  - **Windows Terminal**: Modern terminal emulator support
+- **[Linux Distributions](https://distrowatch.com/)** - Production deployment platform
+  - **Ubuntu 20.04/22.04 LTS**: Primary development and production OS
+  - **Debian 11/12**: Stable server environment
+  - **CentOS 8/RHEL 8**: Enterprise Linux support
+  - **Alpine Linux 3.18+**: Container-optimized lightweight OS
+- **[macOS](https://www.apple.com/macos/)** - Apple development platform
+  - **macOS Monterey (12.0+)**: Full development support
+  - **macOS Ventura (13.0+)**: Latest features and security
+  - **Homebrew**: Native package management
+  - **Xcode Command Line Tools**: Development utilities
+
+### **Mobile Operating Systems**
+- **[Android](https://www.android.com/)** - Google mobile platform
+  - **Android 8.0 (API 26)+**: Minimum supported version
+  - **Android 13/14**: Latest features and security updates
+  - **Android Studio**: Official development environment
+  - **Google Play Services**: Cloud integration support
+- **[iOS](https://www.apple.com/ios/)** - Apple mobile platform
+  - **iOS 12.0+**: Minimum supported version
+  - **iOS 16/17**: Latest features and security updates
+  - **Xcode**: Official development environment
+  - **Apple Developer Tools**: SDK and framework support
+
+### **Cloud & Container Platforms**
+- **[Google Cloud Platform](https://cloud.google.com/)** - Primary cloud provider
+  - **Google Cloud Run**: Serverless container platform
+  - **Google Compute Engine**: Virtual machine instances
+  - **Google Kubernetes Engine**: Container orchestration
+  - **Google Cloud Functions**: Serverless functions
+- **[Docker](https://www.docker.com/)** - Container platform
+  - **Docker Desktop**: Windows and macOS container support
+  - **Docker Engine**: Linux container runtime
+  - **Docker Compose**: Multi-container applications
+  - **Docker Hub**: Container image registry
+- **[Kubernetes](https://kubernetes.io/)** - Container orchestration
+  - **Minikube**: Local Kubernetes development
+  - **Kind**: Docker-based Kubernetes clusters
+  - **K3s**: Lightweight Kubernetes distribution
+  - **OpenShift**: Enterprise Kubernetes platform
+
+### **Development Environment Tools**
+- **[Visual Studio Code](https://code.visualstudio.com/)** - Cross-platform code editor
+  - **Windows**: Native Windows application
+  - **Linux**: AppImage and package manager support
+  - **macOS**: Native macOS application
+  - **Extensions**: Platform-specific development tools
+- **[PyCharm](https://www.jetbrains.com/pycharm/)** - Python IDE
+  - **Community Edition**: Free cross-platform version
+  - **Professional Edition**: Advanced features and tools
+  - **Remote Development**: Cloud and container support
+- **[Terminal & Shell](https://github.com/microsoft/terminal)** - Command line interface
+  - **Windows**: PowerShell, Command Prompt, Windows Terminal
+  - **Linux**: Bash, Zsh, Fish shell support
+  - **macOS**: Terminal.app, iTerm2, Zsh shell
+  - **Cross-platform**: Git Bash, WSL integration
 
 ### **Scalability Features**
 - **[Cloud Run Auto-scaling](https://cloud.google.com/run/docs/configuring/autoscaling)** - Automatic scaling
@@ -175,6 +285,38 @@
 - **[Mobile Applications](https://yourl.cloud)** - Native mobile apps
 - **[Enterprise Features](https://yourl.cloud)** - Business solutions
 
+## 💾 **System Requirements & Compatibility**
+
+### **Minimum System Requirements**
+- **CPU**: 1 GHz dual-core processor
+- **RAM**: 2 GB minimum, 4 GB recommended
+- **Storage**: 10 GB available disk space
+- **Network**: Internet connection for cloud services
+
+### **Operating System Requirements**
+- **Windows**: Windows 10 (version 1903) or later
+- **Linux**: Ubuntu 20.04 LTS, Debian 11, or equivalent
+- **macOS**: macOS 12.0 (Monterey) or later
+- **Android**: Android 8.0 (API level 26) or later
+- **iOS**: iOS 12.0 or later
+
+### **Development Environment Requirements**
+- **Python**: Python 3.11 or later
+- **Git**: Git 2.30 or later
+- **Docker**: Docker Desktop 4.0+ (Windows/macOS) or Docker Engine 20.10+ (Linux)
+- **IDE**: Visual Studio Code 1.70+ or PyCharm 2022.1+
+
+### **Cloud Platform Requirements**
+- **Google Cloud**: Active Google Cloud Platform account
+- **Billing**: Enabled billing account
+- **APIs**: Cloud Run, Cloud Build, Secret Manager APIs enabled
+- **Permissions**: Appropriate IAM roles and permissions
+
+### **Browser Compatibility**
+- **Desktop Browsers**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
+- **Mobile Browsers**: Chrome Mobile 90+, Safari Mobile 14+, Samsung Internet 15+
+- **Progressive Web App**: PWA support for mobile devices
+
 ### **Technology Upgrades**
 - **[Python 3.12+](https://www.python.org/)** - Latest Python features
 - **[Advanced Security](https://yourl.cloud/security)** - Enhanced security measures
@@ -190,6 +332,38 @@
 - **[🔐 Security](SECURITY.md)** - Security policies
 - **[🚀 Deployment](DEPLOYMENT_SUMMARY.md)** - Production setup
 - **[📊 Status](STATUS.md)** - System status
+
+## 🛠️ **Platform-Specific Troubleshooting**
+
+### **Windows Issues**
+- **WSGI Server**: Waitress server configuration and troubleshooting
+- **PowerShell Execution**: Script execution policy and permissions
+- **Windows Services**: Service installation and management
+- **Registry Issues**: Configuration and permission problems
+
+### **Linux Issues**
+- **Gunicorn Configuration**: WSGI server setup and optimization
+- **Systemd Services**: Service management and troubleshooting
+- **Package Dependencies**: Dependency resolution and installation
+- **Permission Issues**: File and directory permissions
+
+### **macOS Issues**
+- **Homebrew**: Package management and installation
+- **Xcode Tools**: Command line tools and development utilities
+- **Security Features**: Gatekeeper and code signing
+- **Permission Issues**: System preferences and security settings
+
+### **Container Issues**
+- **Docker Desktop**: Windows and macOS container problems
+- **Docker Engine**: Linux container runtime issues
+- **Image Building**: Multi-platform image creation
+- **Network Configuration**: Container networking and connectivity
+
+### **Cloud Platform Issues**
+- **Google Cloud**: Authentication and permission problems
+- **Cloud Run**: Deployment and scaling issues
+- **Secret Manager**: Credential management problems
+- **Domain Mapping**: Custom domain configuration issues
 
 ---
 
