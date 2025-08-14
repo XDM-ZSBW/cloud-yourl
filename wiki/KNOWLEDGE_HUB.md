@@ -17,6 +17,7 @@ Welcome to the Yourl.Cloud Knowledge Hub - your comprehensive guide to understan
 - **[Deployment Guide](DEPLOYMENT_SUMMARY.md)** - Production deployment process
 - **[CI/CD Pipeline](cloudbuild.yaml)** - Continuous integration and deployment
 - **[Environment Setup](scripts/setup_database.py)** - Environment configuration
+- **[Technology Stack](TECHNOLOGY_STACK.md)** - Complete technology overview and resources
 
 ### **🔐 Security & Compliance**
 - **[Security Checklist](SECURITY_CHECKLIST.md)** - Security implementation checklist
@@ -41,6 +42,7 @@ Welcome to the Yourl.Cloud Knowledge Hub - your comprehensive guide to understan
 - **[Wiki System](WIKI_UPDATE_SYSTEM.md)** - Documentation management
 - **[Change Management](WIKI_UPDATE_SUMMARY.md)** - Change tracking and history
 - **[Troubleshooting](STATUS.md)** - Common issues and solutions
+- **[External Resources](EXTERNAL_RESOURCES.md)** - Tools, packages, and integrations
 
 ## 🎯 **Quick Navigation**
 

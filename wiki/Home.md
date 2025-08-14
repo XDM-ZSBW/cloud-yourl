@@ -22,6 +22,8 @@ Yourl.Cloud is a production-ready Python Flask API that returns the request URL 
 - **[📊 Data Stream Guide](DATA_STREAM_GUIDE.md)** - Interactive data visualization
 - **[🔐 Security Architecture](SECURITY.md)** - Security policies and implementation
 - **[🚀 Development Guide](Home.md)** - Getting started and development workflow
+- **[🔧 Technology Stack](TECHNOLOGY_STACK.md)** - Complete technology overview and resources
+- **[🔗 External Resources](EXTERNAL_RESOURCES.md)** - Tools, packages, and integrations
 
 ## ✅ Current Features
 
