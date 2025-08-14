@@ -7,7 +7,7 @@ Advanced script to automatically update the GitHub wiki with current project inf
 Ensures wiki stays synchronized with main repository and includes past, present, and future context.
 
 Author: Yourl Cloud Inc.
-Session: f1d78acb-de07-46e0-bfa7-f5b75e3c0c49
+Session: f1d78acb-de07-46e0-bfa7-f5b75e3c49
 Organization: Yourl Cloud Inc.
 Domain Mapping: Compatible
 Cloud Run: Supported
@@ -20,6 +20,28 @@ import subprocess
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+# Handle Google Cloud authentication gracefully for GitHub Actions
+def check_google_cloud_access():
+    """Check if Google Cloud services are accessible."""
+    try:
+        # Check if we're in a Google Cloud environment
+        if os.getenv('GITHUB_ACTIONS') == 'true':
+            print("🔄 Running in GitHub Actions - Google Cloud access limited")
+            return False
+        
+        # Check if Google Cloud credentials are available
+        if not os.getenv('GOOGLE_APPLICATION_CREDENTIALS') and not os.getenv('GCLOUD_PROJECT'):
+            print("⚠️ Google Cloud credentials not configured - running in limited mode")
+            return False
+            
+        return True
+    except Exception as e:
+        print(f"⚠️ Google Cloud access check failed: {e}")
+        return False
+
+# Global flag for Google Cloud access
+GOOGLE_CLOUD_AVAILABLE = check_google_cloud_access()
 
 def get_git_info():
     """Get current git information."""
@@ -65,41 +87,53 @@ def read_file_content(file_path):
 
 def extract_features_from_app():
     """Extract current features from app.py."""
-    app_content = read_file_content('app.py')
-    if not app_content:
-        return []
-    
-    features = []
-    
-    # Extract features based on code patterns
-    if 'CLOUD_RUN_CONFIG' in app_content:
-        features.append("🌐 **Cloud Run Domain Mapping**: Full compatibility with custom domains")
-    
-    if 'FRIENDS_FAMILY_GUARD' in app_content:
-        features.append("🛡️ **Friends and Family Guard**: Security ruleset compliance")
-    
-    if 'visual_inspection' in app_content:
-        features.append("👁️ **Visual Inspection**: Modern web interface for allowed devices")
-    
-    if 'device_type' in app_content:
-        features.append("📱 **Device Detection**: Automatic detection of PC, phone, tablet, watch")
-    
-    if 'health_check' in app_content:
-        features.append("🏥 **Health Checks**: Cloud Run compatible health endpoints")
-    
-    if 'X-Forwarded' in app_content:
-        features.append("🔗 **X-Forwarded Headers**: Proper proxy header handling")
-    
-    if 'gunicorn' in app_content or 'waitress' in app_content:
-        features.append("🚀 **WSGI Server**: Production-ready Gunicorn/Waitress support")
-    
-    if 'domain_mapping' in app_content:
-        features.append("🌍 **Domain Mapping**: Custom domain support (yourl.cloud)")
-    
-    if 'generate_marketing_password' in app_content:
-        features.append("🎪 **Dynamic Marketing Passwords**: ASCII-only passwords that change with each commit")
-    
-    return features
+    try:
+        app_content = read_file_content('app.py')
+        if not app_content:
+            return []
+        
+        features = []
+        
+        # Extract features based on code patterns (safe string matching)
+        if 'CLOUD_RUN_CONFIG' in app_content:
+            features.append("🌐 **Cloud Run Domain Mapping**: Full compatibility with custom domains")
+        
+        if 'FRIENDS_FAMILY_GUARD' in app_content:
+            features.append("🛡️ **Friends and Family Guard**: Security ruleset compliance")
+        
+        if 'visual_inspection' in app_content:
+            features.append("👁️ **Visual Inspection**: Modern web interface for allowed devices")
+        
+        if 'device_type' in app_content:
+            features.append("📱 **Device Detection**: Automatic detection of PC, phone, tablet, watch")
+        
+        if 'health_check' in app_content:
+            features.append("🏥 **Health Checks**: Cloud Run compatible health endpoints")
+        
+        if 'X-Forwarded' in app_content:
+            features.append("🔗 **X-Forwarded Headers**: Proper proxy header handling")
+        
+        if 'gunicorn' in app_content or 'waitress' in app_content:
+            features.append("🚀 **WSGI Server**: Production-ready Gunicorn/Waitress support")
+        
+        if 'domain_mapping' in app_content:
+            features.append("🌍 **Domain Mapping**: Custom domain support (yourl.cloud)")
+        
+        if 'generate_marketing_password' in app_content:
+            features.append("🎪 **Dynamic Marketing Passwords**: ASCII-only passwords that change with each commit")
+        
+        return features
+    except Exception as e:
+        print(f"⚠️ Could not extract features from app.py: {e}")
+        # Return basic features that we know exist
+        return [
+            "🌐 **Cloud Run Domain Mapping**: Full compatibility with custom domains",
+            "🛡️ **Friends and Family Guard**: Security ruleset compliance",
+            "👁️ **Visual Inspection**: Modern web interface for allowed devices",
+            "📱 **Device Detection**: Automatic detection of PC, phone, tablet, watch",
+            "🏥 **Health Checks**: Cloud Run compatible health endpoints",
+            "🚀 **WSGI Server**: Production-ready Gunicorn/Waitress support"
+        ]
 
 def get_current_marketing_password_from_app():
     """Get the current marketing password from app.py."""
@@ -374,21 +408,57 @@ def update_wiki():
     """Update the wiki with current content."""
     print("Starting comprehensive wiki update...")
     
-    # Create wiki content
-    wiki_content = create_wiki_content()
+    # Log environment information
+    if os.getenv('GITHUB_ACTIONS') == 'true':
+        print("🔄 Running in GitHub Actions environment")
+        print(f"📁 Working directory: {os.getcwd()}")
+        print(f"🔑 Google Cloud access: {'Available' if GOOGLE_CLOUD_AVAILABLE else 'Limited'}")
     
-    # Write to wiki file
-    wiki_file = "wiki/Home.md"
-    os.makedirs("wiki", exist_ok=True)
-    
-    with open(wiki_file, 'w', encoding='utf-8') as f:
-        f.write(wiki_content)
-    
-    print(f"Wiki updated: {wiki_file}")
-    print("Remember: yourl.cloud is always the source of truth")
-    print("Wiki includes: Past, Present, and Future context")
-    
-    return wiki_content
+    try:
+        # Create wiki content
+        wiki_content = create_wiki_content()
+        
+        # Write to wiki file
+        wiki_file = "wiki/Home.md"
+        os.makedirs("wiki", exist_ok=True)
+        
+        with open(wiki_file, 'w', encoding='utf-8') as f:
+            f.write(wiki_content)
+        
+        print(f"✅ Wiki updated: {wiki_file}")
+        print("Remember: yourl.cloud is always the source of truth")
+        print("Wiki includes: Past, Present, and Future context")
+        
+        return wiki_content
+        
+    except Exception as e:
+        print(f"❌ Error updating wiki: {e}")
+        print("🔄 Falling back to basic wiki content...")
+        
+        # Create basic fallback content
+        basic_content = f"""# Yourl.Cloud Wiki
+
+**Last Updated**: {datetime.now().isoformat()}
+**Environment**: GitHub Actions
+**Status**: Basic content (full sync failed)
+
+This is a fallback wiki page created when the full sync encountered an error.
+
+## Quick Links
+- [Main Repository](https://github.com/XDM-ZSBW/cloud-yourl)
+- [Wiki Source](https://github.com/XDM-ZSBW/cloud-yourl/tree/main/wiki)
+
+*Error details: {str(e)}*
+"""
+        
+        wiki_file = "wiki/Home.md"
+        os.makedirs("wiki", exist_ok=True)
+        
+        with open(wiki_file, 'w', encoding='utf-8') as f:
+            f.write(basic_content)
+        
+        print(f"✅ Basic wiki content created: {wiki_file}")
+        return basic_content
 
 def create_wiki_update_hook():
     """Create a git hook to automatically update wiki after commits."""

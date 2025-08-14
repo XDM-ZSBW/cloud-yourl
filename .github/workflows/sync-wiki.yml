@@ -24,34 +24,45 @@ jobs:
       - name: Clone wiki repo
         run: |
           set -e
-          echo "Cloning wiki repository..."
+          echo "🔄 Cloning wiki repository..."
           git clone "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git" wiki-repo
-          echo "Wiki repository cloned successfully"
+          echo "✅ Wiki repository cloned successfully"
 
       - name: Sync files from /wiki to wiki repo
         run: |
           set -e
-          echo "Syncing files from /wiki to wiki repository..."
+          echo "🔄 Syncing files from /wiki to wiki repository..."
+          echo "📁 Source directory contents:"
+          ls -la wiki/
+          echo ""
+          echo "📁 Target directory contents (before sync):"
+          ls -la wiki-repo/
+          echo ""
+          
+          # Sync files with deletion support
           rsync -av --delete wiki/ wiki-repo/
-          echo "Files synced successfully"
+          echo "✅ Files synced successfully"
           
           cd wiki-repo
-          echo "Checking for changes..."
+          echo "🔍 Checking for changes..."
           if [ -n "$(git status --porcelain)" ]; then
-            echo "Changes detected, committing and pushing..."
+            echo "📝 Changes detected, committing and pushing..."
             git add -A
             git commit -m "chore(wiki): sync from /wiki @ ${{ github.sha }}"
             git push
-            echo "Wiki updated successfully"
+            echo "✅ Wiki updated successfully"
           else
-            echo "No changes to commit."
+            echo "ℹ️ No changes to commit."
           fi
 
       - name: Verify sync
         run: |
-          echo "Verifying wiki sync..."
+          echo "🔍 Verifying wiki sync..."
           cd wiki-repo
-          echo "Current wiki contents:"
+          echo "📁 Current wiki contents:"
           ls -la
-          echo "Git log (last 3 commits):"
+          echo ""
+          echo "📋 Git log (last 3 commits):"
           git log --oneline -3
+          echo ""
+          echo "✅ Wiki sync verification complete"

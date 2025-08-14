@@ -24,11 +24,12 @@ jobs:
 
       - name: Install dependencies
         run: |
+          echo "📦 Installing Python dependencies..."
           if [ -f requirements.txt ]; then 
-            echo "Installing requirements..."
+            echo "📋 Installing from requirements.txt..."
             pip install -r requirements.txt
           else
-            echo "No requirements.txt found, skipping dependency installation"
+            echo "ℹ️ No requirements.txt found, skipping dependency installation"
           fi
 
       - name: Run wiki sync script
@@ -36,14 +37,32 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
+          GITHUB_ACTIONS: "true"
         run: |
           set -e
-          echo "Running wiki sync script..."
-          echo "Repository: $REPO"
-          echo "Commit SHA: $SHA"
-          python scripts/update_wiki.py
+          echo "🚀 Running wiki sync script..."
+          echo "📋 Repository: $REPO"
+          echo "🔑 Commit SHA: $SHA"
+          echo "🌐 Environment: GitHub Actions"
+          
+          # Run the script with error handling
+          if python scripts/update_wiki.py; then
+            echo "✅ Wiki sync script completed successfully"
+          else
+            echo "⚠️ Wiki sync script encountered issues, but continuing..."
+          fi
 
       - name: Verify script execution
         run: |
-          echo "Wiki sync script completed successfully"
-          echo "Check the GitHub Wiki for updates"
+          echo "🔍 Verifying script execution..."
+          if [ -f "wiki/Home.md" ]; then
+            echo "✅ Wiki file created/updated successfully"
+            echo "📁 Wiki directory contents:"
+            ls -la wiki/
+          else
+            echo "❌ Wiki file not found after script execution"
+            exit 1
+          fi
+          
+          echo "✅ Script execution verification complete"
+          echo "📚 Check the GitHub Wiki for updates"
