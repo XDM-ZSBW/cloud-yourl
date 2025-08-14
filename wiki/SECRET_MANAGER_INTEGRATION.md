@@ -70,7 +70,7 @@ gcloud sql users create yourl-cloud-user \
 ```bash
 # Create service account for automation
 gcloud iam service-accounts create automation-sa-yourl \
-  --display-name="Yourl Cloud Automation Service Account"
+  --display-name="Yourl.Cloud Inc. Automation Service Account"
 
 # Grant Secret Manager access
 gcloud projects add-iam-policy-binding root-wharf-383822 \

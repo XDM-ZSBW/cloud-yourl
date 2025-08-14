@@ -74,7 +74,7 @@ def test_auth_response():
             "status_page": f"{get_original_protocol()}://{get_original_host()}/status"
         },
         "timestamp": datetime.utcnow().isoformat(),
-        "organization": "Yourl Cloud Inc."
+        "organization": "Yourl.Cloud Inc."
     }
     
     print("\n✅ JSON Response Structure:")

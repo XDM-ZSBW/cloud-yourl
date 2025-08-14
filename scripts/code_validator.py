@@ -14,7 +14,7 @@ class CodeValidator:
     def __init__(self, project_id: str):
         self.project_id = project_id
         self.codes_file = "codes/marketing_codes.json"
-        self.alert_email = "bcherrman@gmail.com"
+        self.alert_email = "admin@yourl.cloud"
 
     def validate_code(self, input_code: str, is_dev: bool = False) -> Tuple[bool, Dict]:
         """

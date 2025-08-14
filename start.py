@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """
-Startup script for Yourl Cloud Inc. API Server
-============================================
+Startup script for Yourl.Cloud Inc. API Server
+==============================================
 
-This script handles production startup mode for all deployments.
-All instances deploy as production instances - the tester decides
-whether they're using it for personal or work purposes.
+This script provides a convenient way to start the Yourl.Cloud Inc. API server
+with proper configuration for both local development and production deployment.
+Supports automatic port detection, browser launching, and production WSGI server.
 
-Author: Yourl Cloud Inc.
-Environment: Production (All instances)
+Author: Yourl.Cloud Inc.
+Session: f1d78acb-de07-46e0-bfa7-f5b75e3c0c49
+Environment: Production
 WSGI Server: Gunicorn (Unix) / Waitress (Windows)
+Domain Mapping: Compatible
+Cloud Run Region: us-west1
 """
 
 import os
@@ -32,14 +35,58 @@ def start_production():
             # Try to import waitress
             import waitress
             print("✅ Waitress found - starting production server...")
-            waitress.serve(app, host=HOST, port=PORT)
+            
+            # Start Waitress server in a separate thread to allow custom output
+            import threading
+            import time
+            def run_waitress():
+                waitress.serve(app, host=HOST, port=PORT)
+            
+            server_thread = threading.Thread(target=run_waitress, daemon=True)
+            server_thread.start()
+            
+            # Show user-friendly localhost URL
+            display_host = 'localhost' if HOST == '0.0.0.0' else HOST
+            print(f"🌐 Server running at: http://{display_host}:{PORT}")
+            print("🚀 Yourl.Cloud is now accessible locally!")
+            print("=" * 50)
+            
+            # Keep main thread alive
+            try:
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                print("\n🛑 Shutting down server...")
+                return
         except ImportError:
             print("❌ Waitress not found. Installing...")
             try:
                 subprocess.run([sys.executable, "-m", "pip", "install", "waitress"], check=True)
                 import waitress
                 print("✅ Waitress installed - starting production server...")
-                waitress.serve(app, host=HOST, port=PORT)
+                
+                # Start Waitress server in a separate thread to allow custom output
+                import threading
+                import time
+                def run_waitress():
+                    waitress.serve(app, host=HOST, port=PORT)
+                
+                server_thread = threading.Thread(target=run_waitress, daemon=True)
+                server_thread.start()
+                
+                # Show user-friendly localhost URL
+                display_host = 'localhost' if HOST == '0.0.0.0' else HOST
+                print(f"🌐 Server running at: http://{display_host}:{PORT}")
+                print("🚀 Yourl.Cloud is now accessible locally!")
+                print("=" * 50)
+                
+                # Keep main thread alive
+                try:
+                    while True:
+                        time.sleep(1)
+                except KeyboardInterrupt:
+                    print("\n🛑 Shutting down server...")
+                    return
             except Exception as e:
                 print(f"❌ Failed to install/use Waitress: {e}")
                 print("🔄 Falling back to Flask development server...")
@@ -75,7 +122,7 @@ def start_production():
 
 def main():
     """Main entry point - all instances are production instances."""
-    print("🚀 Yourl Cloud Inc. API Server Startup")
+    print("🚀 Yourl.Cloud Inc. API Server Startup")
     print("🏭 All instances deploy as production instances")
     print("👤 Tester decides: Personal use or Work use")
     print("=" * 50)

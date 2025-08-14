@@ -2,7 +2,7 @@
 
 **Last Updated**: 2025-08-08T14:30:00.000000+00:00
 **Session ID**: f1d78acb-de07-46e0-bfa7-f5b75e3c0c49
-**Organization**: Yourl Cloud Inc.
+**Organization**: Yourl.Cloud Inc.
 **Branch**: main
 **Commit**: 71ca3411
 **Commit Date**: 2025-08-08 07:30:00 -0700

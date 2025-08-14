@@ -264,5 +264,5 @@ python -v auto_update.py
 **Status**: ✅ **COMPLETE** - Comprehensive wiki update system implemented and tested.
 
 **Last Updated**: 2025-08-07T11:13:08.610384
-**Organization**: Yourl Cloud Inc.
+**Organization**: Yourl.Cloud Inc.
 **Source of Truth**: yourl.cloud

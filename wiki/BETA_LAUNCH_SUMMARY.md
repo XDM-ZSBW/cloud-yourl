@@ -164,7 +164,7 @@ From a simple URL API to a comprehensive cloud-native application with:
 ## 📞 **Support Information**
 
 ### **Service Details**
-- **Organization**: Yourl Cloud Inc.
+- **Organization**: Yourl.Cloud Inc.
 - **Region**: us-west1
 - **Service**: yourl-cloud
 - **Domain**: yourl.cloud
@@ -196,6 +196,6 @@ From a simple URL API to a comprehensive cloud-native application with:
 ---
 
 **Launch Date**: 2025-08-07T11:24:03.598613
-**Organization**: Yourl Cloud Inc.
+**Organization**: Yourl.Cloud Inc.
 **Version**: v1.0.0
 **Source of Truth**: yourl.cloud

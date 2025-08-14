@@ -405,7 +405,7 @@ Returns a modern HTML interface with:
   ],
   "timestamp": "2025-08-06T12:00:00.000000",
   "session_id": "f1d78acb-de07-46e0-bfa7-f5b75e3c0c49",
-  "organization": "Yourl Cloud Inc."
+  "organization": "Yourl.Cloud Inc."
 }
 ```
 
@@ -427,7 +427,7 @@ Returns a modern HTML interface with:
     "User-Agent": "Mozilla/5.0..."
   },
   "session_id": "f1d78acb-de07-46e0-bfa7-f5b75e3c0c49",
-  "organization": "Yourl Cloud Inc.",
+  "organization": "Yourl.Cloud Inc.",
   "friends_family_guard": true
 }
 ```
@@ -482,7 +482,7 @@ This project is open source and available under the MIT License.
 
 ## About
 
-**Organization**: Yourl Cloud Inc.  
+**Organization**: Yourl.Cloud Inc.  
 **Session ID**: f1d78acb-de07-46e0-bfa7-f5b75e3c0c49  
 **Repository**: https://github.com/XDM-ZSBW/yourl.cloud  
 **Friends and Family Guard**: Enabled  

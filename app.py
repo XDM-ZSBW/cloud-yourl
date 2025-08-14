@@ -8,7 +8,7 @@ and provides visual inspection capabilities for PC and phone devices.
 Enhanced for Google Cloud Run deployment with dual-mode endpoint support.
 Production-ready with WSGI server support.
 
-Author: Yourl Cloud Inc.
+Author: Yourl.Cloud Inc.
 Session: f1d78acb-de07-46e0-bfa7-f5b75e3c0c49
 Friends and Family Guard: Enabled
 Google Cloud Run: Supported
@@ -16,7 +16,7 @@ WSGI Server: Production Ready
 Domain Mapping: Compatible
 """
 
-from flask import Flask, request, jsonify, render_template_string, render_template, make_response, session, Response
+from flask import Flask, request, jsonify, render_template_string, render_template, make_response, session, Response, redirect
 import socket
 import os
 import re
@@ -79,19 +79,31 @@ CLOUD_RUN_CONFIG = {
     "readiness_check_path": "/health"  # Readiness check endpoint
 }
 
+# Add module-level cache for generated codes
+_generated_code_cache = None
+_generated_hash_code_cache = {}
+
 def generate_marketing_password():
     """
     Generate a fun, marketing-friendly password that changes with each commit.
     Uses git commit hash to ensure consistency within a commit but changes between commits.
     Only uses basic ASCII characters for maximum compatibility.
     """
+    global _generated_code_cache
+    
+    # Return cached code if available
+    if _generated_code_cache is not None:
+        return _generated_code_cache
+    
     try:
         # Get the current git commit hash
         commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'], 
                                             text=True, stderr=subprocess.DEVNULL).strip()[:8]
     except:
-        # Fallback if git is not available
-        commit_hash = hashlib.md5(str(datetime.utcnow()).encode()).hexdigest()[:8]
+        # Fallback if git is not available - use a stable identifier
+        # Use environment variable or a fixed string to ensure consistency
+        fallback_id = os.environ.get('BUILD_ID', os.environ.get('DEPLOYMENT_ID', 'stable-fallback'))
+        commit_hash = hashlib.md5(fallback_id.encode()).hexdigest()[:8]
     
     # Fun marketing words and phrases (ASCII only)
     marketing_words = [
@@ -122,6 +134,58 @@ def generate_marketing_password():
     
     # Combine them in a fun way (ASCII only)
     password = f"{word}{number}{symbol}"
+    
+    # Cache the generated code
+    _generated_code_cache = password
+    
+    return password
+
+def generate_marketing_password_from_hash(commit_hash: str):
+    """Generate marketing password from specific commit hash"""
+    global _generated_hash_code_cache
+    
+    # Return cached code if available
+    if commit_hash in _generated_hash_code_cache:
+        return _generated_hash_code_cache[commit_hash]
+    
+    # Fun marketing words and phrases (ASCII only)
+    marketing_words = [
+        "CLOUD", "FUTURE", "INNOVATE", "DREAM", "BUILD", "CREATE", "LAUNCH", "FLY",
+        "SPARK", "SHINE", "GLOW", "RISE", "LEAP", "JUMP", "DASH", "ZOOM",
+        "POWER", "MAGIC", "WONDER", "AMAZE", "THRILL", "EXCITE", "INSPIRE", "IGNITE",
+        "ROCKET", "STAR", "MOON", "SUN", "OCEAN", "MOUNTAIN", "FOREST", "RIVER",
+        "TECH", "AI", "CODE", "DATA", "SMART", "FAST", "SECURE", "TRUST",
+        "FRIEND", "FAMILY", "TEAM", "SQUAD", "CREW", "GANG", "TRIBE", "CLAN"
+    ]
+    
+    # Fun ASCII symbols and characters
+    ascii_symbols = ["!", "@", "#", "$", "%", "&", "*", "+", "=", "?", "~", "^"]
+    
+    # Generate a deterministic but fun password using the commit hash
+    # Handle cases where commit_hash might contain non-hex characters
+    try:
+        if commit_hash != "unknown" and all(c in '0123456789abcdefABCDEF' for c in commit_hash):
+            hash_num = int(commit_hash, 16)
+        else:
+            hash_num = hash(commit_hash)
+    except ValueError:
+        hash_num = hash(commit_hash)
+    random.seed(hash_num)
+    
+    # Pick a random marketing word
+    word = random.choice(marketing_words)
+    
+    # Pick a random ASCII symbol
+    symbol = random.choice(ascii_symbols)
+    
+    # Generate a short number (2-3 digits)
+    number = random.randint(10, 999)
+    
+    # Combine them in a fun way (ASCII only)
+    password = f"{word}{number}{symbol}"
+    
+    # Cache the generated code
+    _generated_hash_code_cache[commit_hash] = password
     
     return password
 
@@ -258,46 +322,6 @@ def get_next_marketing_password():
         _next_code_printed = True
     return fallback_code
 
-def generate_marketing_password_from_hash(commit_hash: str):
-    """Generate marketing password from specific commit hash"""
-    # Fun marketing words and phrases (ASCII only)
-    marketing_words = [
-        "CLOUD", "FUTURE", "INNOVATE", "DREAM", "BUILD", "CREATE", "LAUNCH", "FLY",
-        "SPARK", "SHINE", "GLOW", "RISE", "LEAP", "JUMP", "DASH", "ZOOM",
-        "POWER", "MAGIC", "WONDER", "AMAZE", "THRILL", "EXCITE", "INSPIRE", "IGNITE",
-        "ROCKET", "STAR", "MOON", "SUN", "OCEAN", "MOUNTAIN", "FOREST", "RIVER",
-        "TECH", "AI", "CODE", "DATA", "SMART", "FAST", "SECURE", "TRUST",
-        "FRIEND", "FAMILY", "TEAM", "SQUAD", "CREW", "GANG", "TRIBE", "CLAN"
-    ]
-    
-    # Fun ASCII symbols and characters
-    ascii_symbols = ["!", "@", "#", "$", "%", "&", "*", "+", "=", "?", "~", "^"]
-    
-    # Generate a deterministic but fun password using the commit hash
-    # Handle cases where commit_hash might contain non-hex characters
-    try:
-        if commit_hash != "unknown" and all(c in '0123456789abcdefABCDEF' for c in commit_hash):
-            hash_num = int(commit_hash, 16)
-        else:
-            hash_num = hash(commit_hash)
-    except ValueError:
-        hash_num = hash(commit_hash)
-    random.seed(hash_num)
-    
-    # Pick a random marketing word
-    word = random.choice(marketing_words)
-    
-    # Pick a random ASCII symbol
-    symbol = random.choice(ascii_symbols)
-    
-    # Generate a short number (2-3 digits)
-    number = random.randint(10, 999)
-    
-    # Combine them in a fun way (ASCII only)
-    password = f"{word}{number}{symbol}"
-    
-    return password
-
 # Friends and Family Guard Ruleset
 FRIENDS_FAMILY_GUARD = {
     "enabled": True,
@@ -308,7 +332,7 @@ FRIENDS_FAMILY_GUARD = {
         "tablet_allowed": True
     },
     "session_id": "f1d78acb-de07-46e0-bfa7-f5b75e3c0c49",
-    "organization": "Yourl Cloud Inc."
+    "organization": "Yourl.Cloud Inc."
 }
 
 # Demo configuration for rapid prototyping (replace with proper auth/db for production)
@@ -509,7 +533,7 @@ def main_endpoint():
                 h1 {{ color: #333; text-align: center; }}
                 .form-group {{ margin: 20px 0; }}
                 label {{ display: block; margin-bottom: 5px; font-weight: bold; }}
-                input[type="password"] {{ width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }}
+                input[type="text"], input[type="password"] {{ width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }}
                 button {{ background: #007bff; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }}
                 button:hover {{ background: #0056b3; }}
                 .info {{ background: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0; }}
@@ -528,7 +552,7 @@ def main_endpoint():
                 <form method="POST">
                     <div class="form-group">
                         <label for="password">🎯 Marketing Password:</label>
-                        <input type="password" id="password" name="password" placeholder="Enter the fun marketing password" required>
+                        <input type="text" id="password" name="password" placeholder="Enter the fun marketing password" value="" required>
                     </div>
                     <button type="submit">🚀 Launch Experience</button>
                 </form>
@@ -678,144 +702,49 @@ def main_endpoint():
                     "previous_url": landing_page_version.get('landing_page_url')
                 }
             
-            # Create comprehensive HTML page for public searchable representation
-            html_content = f"""
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Yourl.Cloud Inc. - Cloud Infrastructure & API Services</title>
-                <meta name="description" content="Yourl.Cloud Inc. provides cloud infrastructure, API services, and digital solutions. Based in the United States, serving global clients with secure, scalable technology solutions.">
-                <meta name="keywords" content="cloud infrastructure, API services, digital solutions, technology, Yourl.Cloud, United States">
-                <meta name="author" content="Yourl.Cloud Inc.">
-                <meta name="robots" content="index, follow">
-                <meta property="og:title" content="Yourl.Cloud Inc. - Cloud Infrastructure & API Services">
-                <meta property="og:description" content="Secure, scalable cloud infrastructure and API services for modern businesses.">
-                <meta property="og:type" content="website">
-                <meta property="og:url" content="https://yourl.cloud">
-                <meta property="og:site_name" content="Yourl.Cloud Inc.">
-                <link rel="canonical" href="https://yourl.cloud">
-                
-                <style>
-                    * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-                    body {{ 
-                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                        line-height: 1.6;
-                        color: #333;
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        min-height: 100vh;
-                    }}
-                    .container {{ 
-                        max-width: 1200px; 
-                        margin: 0 auto; 
-                        padding: 20px;
-                        background: rgba(255, 255, 255, 0.95);
-                        border-radius: 15px;
-                        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-                        margin-top: 20px;
-                        margin-bottom: 20px;
-                    }}
-                    .header {{ 
-                        text-align: center; 
-                        padding: 40px 0;
-                        border-bottom: 3px solid #667eea;
-                        margin-bottom: 30px;
-                    }}
-                    .logo {{ 
-                        font-size: 3rem; 
-                        font-weight: bold; 
-                        color: #667eea;
-                        margin-bottom: 10px;
-                    }}
-                    .tagline {{ 
-                        font-size: 1.2rem; 
-                        color: #666;
-                        margin-bottom: 20px;
-                    }}
-                    .success-banner {{ 
-                        background: linear-gradient(45deg, #28a745, #20c997);
-                        color: white;
-                        padding: 20px;
-                        border-radius: 10px;
-                        margin-bottom: 30px;
-                        text-align: center;
-                    }}
-                    .visitor-info {{ 
-                        background: #f8f9fa;
-                        padding: 20px;
-                        border-radius: 10px;
-                        margin-bottom: 30px;
-                        border-left: 5px solid #667eea;
-                    }}
-                    .experience-level {{
-                        display: inline-block;
-                        padding: 5px 15px;
-                        border-radius: 20px;
-                        font-size: 0.9rem;
-                        font-weight: bold;
-                        margin-bottom: 10px;
-                    }}
-                    .new-user {{ background: #28a745; color: white; }}
-                    .returning-user {{ background: #ffc107; color: #333; }}
-                    .returning-visitor {{ background: #17a2b8; color: white; }}
-                    
-                    .company-info {{ 
-                        display: grid;
-                        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                        gap: 30px;
-                        margin-bottom: 30px;
-                    }}
-                    .info-card {{ 
-                        background: white;
-                        padding: 25px;
-                        border-radius: 10px;
-                        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-                        border-top: 4px solid #667eea;
-                    }}
-                    .info-card h3 {{ 
-                        color: #667eea;
-                        margin-bottom: 15px;
-                        font-size: 1.3rem;
-                    }}
-                    .services {{ 
-                        background: #f8f9fa;
-                        padding: 30px;
-                        border-radius: 10px;
-                        margin-bottom: 30px;
-                    }}
-                    .services h2 {{ 
-                        color: #667eea;
-                        margin-bottom: 20px;
-                        text-align: center;
-                    }}
-                    .service-grid {{ 
-                        display: grid;
-                        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                        gap: 20px;
-                    }}
-                    .service-item {{ 
-                        background: white;
-                        padding: 20px;
-                        border-radius: 8px;
-                        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-                        text-align: center;
-                    }}
-                    .service-item h4 {{ 
-                        color: #667eea;
-                        margin-bottom: 10px;
-                    }}
-                    .navigation {{ 
-                        text-align: center;
-                        margin-top: 30px;
-                        padding-top: 30px;
-                        border-top: 2px solid #eee;
-                    }}
-                    .nav-btn {{ 
-                        display: inline-block;
-                        background: #667eea;
-                        color: white;
-                        padding: 12px 25px;
+            # Instead of returning HTML directly, redirect to prevent form resubmission
+            # Store authentication data in session for the redirected page
+            session['auth_data'] = {
+                'welcome_message': welcome_message,
+                'experience_level': experience_level,
+                'visitor_data': {
+                    'visitor_id': visitor_id,
+                    'total_visits': total_visits,
+                    'is_new_visitor': is_new_visitor,
+                    'has_used_code': has_used_code,
+                    'tracking_key': visitor_data.get('tracking_key')
+                },
+                'landing_page': {
+                    'url': f"{get_original_protocol()}://{get_original_host()}/",
+                    'build_version': build_version,
+                    'marketing_code': current_password
+                },
+                'current_marketing_password': current_password,
+                'next_marketing_password': next_password,
+                'ownership': {
+                    'perplexity': 'current_marketing_password',
+                    'cursor': 'next_marketing_password'
+                },
+                'navigation': {
+                    'back_to_landing': f"{get_original_protocol()}://{get_original_host()}/",
+                    'api_endpoint': f"{get_original_protocol()}://{get_original_host()}/api",
+                    'status_page': f"{get_original_protocol()}://{get_original_host()}/status"
+                },
+                'timestamp': datetime.utcnow().isoformat(),
+                'organization': FRIENDS_FAMILY_GUARD["organization"]
+            }
+            
+            # Add landing page version history if available
+            if landing_page_version:
+                session['auth_data']["landing_page"]["version_history"] = {
+                    'first_accessed': landing_page_version.get('first_accessed_at'),
+                    'last_accessed': landing_page_version.get('last_accessed_at'),
+                    'access_count': landing_page_version.get('access_count'),
+                    'previous_url': landing_page_version.get('landing_page_url')
+                }
+            
+            # Redirect to prevent form resubmission (PRG pattern)
+            return redirect('/authenticated', code=302)
                         text-decoration: none;
                         border-radius: 25px;
                         margin: 10px;
@@ -1437,57 +1366,57 @@ def data_stream():
         {
             "id": "frame_001",
             "timestamp": current_time - 3600,  # 1 hour ago
-            "title": "The Digital Frontier",
-            "content": "In the vast expanse of the digital realm, Yourl.Cloud Inc. emerged as a beacon of innovation. The story begins with a simple idea: to bridge the gap between human potential and technological possibility.",
-            "category": "origin_story",
-            "visual_elements": ["mountain_peak", "digital_landscape", "beacon_light"],
+            "title": "The Trust-Based AI Revolution",
+            "content": "Yourl.Cloud Inc. stands at the forefront of a new era - the Trust-Based AI Revolution. We're not just building technology; we're creating a foundation of trust that enables AI to serve families across locations with integrity and reliability.",
+            "category": "vision_future",
+            "visual_elements": ["ai_trust", "family_bridge", "location_spanning"],
             "scroll_position": 0,
-            "wiki_links": ["ARCHITECTURE_OVERVIEW.md", "Home.md"],
-            "mind_map_nodes": ["business", "technology", "innovation"]
+            "wiki_links": ["ARCHITECTURE_OVERVIEW.md", "BUSINESS_NAME_UPDATE.md"],
+            "mind_map_nodes": ["trust", "ai", "family", "innovation"]
         },
         {
             "id": "frame_002", 
             "timestamp": current_time - 1800,  # 30 minutes ago
-            "title": "The Code That Speaks",
-            "content": "Every line of code tells a story. In the depths of the API, algorithms dance with data, creating symphonies of information that power the modern world. This is where magic meets mathematics.",
-            "category": "technical_evolution",
-            "visual_elements": ["code_stream", "algorithm_flow", "data_symphony"],
+            "title": "The Clipboard Bridge Phenomenon",
+            "content": "At cb.yourl.cloud, we've created something extraordinary - a clipboard bridge that transcends physical boundaries. AI assistants can now share context seamlessly across family locations, creating a unified experience that feels like magic.",
+            "category": "breakthrough_technology",
+            "visual_elements": ["clipboard_bridge", "context_sharing", "seamless_experience"],
             "scroll_position": 100,
-            "wiki_links": ["SECRET_MANAGER_INTEGRATION.md", "COST_EFFECTIVE_MARKETING_CODES.md"],
-            "mind_map_nodes": ["code", "algorithms", "data"]
+            "wiki_links": ["CLIPBOARD_BRIDGE_DEPLOYMENT.md", "ZAIDO_CLIPBOARD_RECOVERY_GUIDE.md"],
+            "mind_map_nodes": ["clipboard", "bridge", "context", "unified"]
         },
         {
             "id": "frame_003",
             "timestamp": current_time - 900,  # 15 minutes ago
-            "title": "The Visitor's Journey",
-            "content": f"Visitor {visitor_data.get('visitor_id', 'Unknown')} embarked on a digital pilgrimage. Their path through the virtual landscape reveals patterns of human-computer interaction that shape the future of technology.",
-            "category": "user_experience",
-            "visual_elements": ["digital_path", "interaction_patterns", "future_vision"],
+            "title": "The Zaido Integration",
+            "content": f"Visitor {visitor_data.get('visitor_id', 'Unknown')} is experiencing the power of Zaido integration. The Windows Focus Enhancer and clipboard tools work in harmony with Yourl.Cloud, creating a productivity ecosystem that adapts to individual needs.",
+            "category": "ecosystem_integration",
+            "visual_elements": ["zaido_tools", "focus_enhancer", "productivity_ecosystem"],
             "scroll_position": 200,
-            "wiki_links": ["WIKI_UPDATE_SYSTEM.md", "STATUS.md"],
-            "mind_map_nodes": ["user", "experience", "interaction"]
+            "wiki_links": ["WINDOWS_CLIPBOARD_HISTORY_INTEGRATION.md", "ZAIDO_CLIPBOARD_CONFLICT_RESOLVER.md"],
+            "mind_map_nodes": ["zaido", "integration", "productivity", "focus"]
         },
         {
             "id": "frame_004",
             "timestamp": current_time - 300,  # 5 minutes ago
-            "title": "The Cloud's Whisper",
-            "content": "In the silent halls of Google Cloud, servers hum with purpose. Each request, each response, each authentication creates ripples in the digital fabric that connects us all.",
-            "category": "infrastructure",
-            "visual_elements": ["server_halls", "digital_ripples", "connection_web"],
+            "title": "The Emergency Response System",
+            "content": "In times of crisis, every second counts. Yourl.Cloud's emergency protocol activates instantly, connecting family members across locations, queuing AI assistants, and ensuring no one faces challenges alone.",
+            "category": "emergency_support",
+            "visual_elements": ["emergency_protocol", "family_connection", "ai_queue"],
             "scroll_position": 300,
-            "wiki_links": ["CLOUD_RUN_DOMAIN_MAPPING.md", "DEPLOYMENT_SUMMARY.md"],
-            "mind_map_nodes": ["cloud", "infrastructure", "servers"]
+            "wiki_links": ["SECURITY.md", "EMERGENCY_PROTOCOL.md"],
+            "mind_map_nodes": ["emergency", "response", "family", "support"]
         },
         {
             "id": "frame_005",
             "timestamp": current_time,
-            "title": "The Present Moment",
-            "content": "Here and now, in this exact moment, technology and humanity converge. The story continues to unfold, written in real-time by every interaction, every decision, every digital breath.",
-            "category": "current_state",
-            "visual_elements": ["convergence_point", "real_time_story", "digital_breath"],
+            "title": "The Real-Time Knowledge Hub",
+            "content": "Knowledge flows like a living river through our system. Every interaction, every decision, every moment contributes to a growing repository of wisdom that guides families toward better outcomes.",
+            "category": "knowledge_evolution",
+            "visual_elements": ["knowledge_river", "living_wisdom", "family_guidance"],
             "scroll_position": 400,
-            "wiki_links": ["KNOWLEDGE_HUB.md", "ARCHITECTURE_OVERVIEW.md"],
-            "mind_map_nodes": ["present", "convergence", "real-time"]
+            "wiki_links": ["KNOWLEDGE_HUB.md", "WIKI_UPDATE_SYSTEM.md"],
+            "mind_map_nodes": ["knowledge", "wisdom", "guidance", "evolution"]
         }
     ]
     
@@ -1529,6 +1458,19 @@ def data_stream():
         "scroll_position": 700,
         "wiki_links": ["KNOWLEDGE_HUB.md", "WIKI_UPDATE_SYSTEM.md"],
         "mind_map_nodes": ["knowledge", "wisdom", "insights"]
+    })
+    
+    # Add local development and build testing frame
+    story_frames.append({
+        "id": "frame_build_testing",
+        "timestamp": current_time + 240,
+        "title": "The Build Testing Phase",
+        "content": "Right now, we're in the critical build testing phase. This local instance at localhost:60731 is our proving ground - where we validate every feature, test every integration, and ensure the Yourl.Cloud experience is flawless before deployment.",
+        "category": "development_phase",
+        "visual_elements": ["build_testing", "local_validation", "quality_assurance"],
+        "scroll_position": 800,
+        "wiki_links": ["LOCAL_DEVELOPMENT_SETUP.md", "BUILD_COMPLETE.md"],
+        "mind_map_nodes": ["build", "testing", "validation", "quality"]
     })
     
     # Create the enhanced HTML response with vertical datastream and mind map
@@ -1750,6 +1692,42 @@ def data_stream():
                 flex-wrap: wrap;
                 justify-content: center;
             }}
+            .build-checklist {{
+                position: fixed;
+                bottom: 100px;
+                right: 20px;
+                width: 350px;
+                background: rgba(0, 0, 0, 0.9);
+                border: 1px solid #00ff00;
+                border-radius: 10px;
+                padding: 15px;
+                z-index: 1000;
+            }}
+            .build-checklist h4 {{
+                text-align: center;
+                margin-bottom: 15px;
+                color: #00ff00;
+            }}
+            .checklist-item {{
+                display: flex;
+                align-items: center;
+                margin: 8px 0;
+                padding: 5px;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }}
+            .checklist-item:hover {{
+                background: rgba(0, 255, 0, 0.1);
+            }}
+            .checklist-item input[type="checkbox"] {{
+                margin-right: 10px;
+                accent-color: #00ff00;
+            }}
+            .checklist-item.completed {{
+                color: #00aa00;
+                text-decoration: line-through;
+            }}
         </style>
     </head>
     <body>
@@ -1759,12 +1737,46 @@ def data_stream():
             <p><strong>Visits:</strong> {visitor_data.get('total_visits', 1)}</p>
             <p><strong>Status:</strong> {'Returning' if not visitor_data.get('is_new_visitor', True) else 'New'}</p>
             <p><strong>Code Usage:</strong> {'Yes' if visitor_data.get('has_used_code', False) else 'No'}</p>
+            <hr style="border-color: #00ff00; margin: 10px 0;">
+            <h4>🏗️ Build Status</h4>
+            <p><strong>Environment:</strong> Local Development</p>
+            <p><strong>Instance:</strong> localhost:60731</p>
+            <p><strong>Mode:</strong> Build Testing</p>
+            <p><strong>Status:</strong> 🟢 Active</p>
         </div>
         
         <div class="mind-map">
             <div class="mind-map-title">🧠 Mind Map</div>
             <div class="mind-map-container">
                 {mind_map_nodes_html}
+            </div>
+        </div>
+        
+        <div class="build-checklist">
+            <h4>✅ Build Testing Checklist</h4>
+            <div class="checklist-item">
+                <input type="checkbox" id="check1" onchange="updateChecklist(this)">
+                <label for="check1">Local server running</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="check2" onchange="updateChecklist(this)">
+                <label for="check2">Data endpoint accessible</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="check3" onchange="updateChecklist(this)">
+                <label for="check3">Story frames displaying</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="check4" onchange="updateChecklist(this)">
+                <label for="check4">Mind map interactive</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="check5" onchange="updateChecklist(this)">
+                <label for="check5">Navigation working</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="check6" onchange="updateChecklist(this)">
+                <label for="check6">Responsive design</label>
             </div>
         </div>
         
@@ -1775,7 +1787,7 @@ def data_stream():
         </div>
         
         <div class="datastream-container">
-            <div class="data-stream-title">📊 VERTICAL LINEAR DATASTREAM</div>
+            <div class="data-stream-title">🚀 YOURL.CLOUD TRUST-BASED AI DATASTREAM</div>
             
             {''.join([f'''
             <div class="frame" data-scroll="{frame['scroll_position']}" data-category="{frame['category']}" data-nodes="{','.join(frame.get('mind_map_nodes', []))}">
@@ -1800,6 +1812,7 @@ def data_stream():
             <a href="/" class="nav-btn">🏠 Home</a>
             <a href="/api" class="nav-btn">🔌 API</a>
             <a href="/status" class="nav-btn">📊 Status</a>
+            <a href="/data" class="nav-btn">📡 Data Stream</a>
             <a href="/wiki/KNOWLEDGE_HUB.md" class="nav-btn" target="_blank">🧠 Knowledge Hub</a>
         </div>
         
@@ -1864,6 +1877,342 @@ def data_stream():
                         window.scrollTo(0, document.body.scrollHeight);
                         break;
                 }}
+            }});
+            
+            // Build testing checklist functionality
+            function updateChecklist(checkbox) {{
+                const label = checkbox.nextElementSibling;
+                if (checkbox.checked) {{
+                    label.parentElement.classList.add('completed');
+                    // Auto-check next item after a short delay
+                    setTimeout(() => {{
+                        const nextCheckbox = checkbox.parentElement.nextElementSibling?.querySelector('input[type="checkbox"]');
+                        if (nextCheckbox && !nextCheckbox.checked) {{
+                            nextCheckbox.checked = true;
+                            updateChecklist(nextCheckbox);
+                        }}
+                    }}, 500);
+                }} else {{
+                    label.parentElement.classList.remove('completed');
+                }}
+            }}
+            
+            // Auto-check first item when page loads
+            window.addEventListener('load', function() {{
+                const firstCheckbox = document.getElementById('check1');
+                if (firstCheckbox) {{
+                    firstCheckbox.checked = true;
+                    updateChecklist(firstCheckbox);
+                }}
+            }});
+        </script>
+    </body>
+    </html>
+    """
+    
+    return make_response(html_content)
+
+@app.route('/authenticated')
+def authenticated_page():
+    """
+    Display the authenticated user page after successful login.
+    This prevents form resubmission issues by using GET instead of POST.
+    """
+    # Check if user is authenticated
+    if not session.get('authenticated', False):
+        return redirect('/', code=302)
+    
+    # Get authentication data from session
+    auth_data = session.get('auth_data', {})
+    if not auth_data:
+        return redirect('/', code=302)
+    
+    # Create the authenticated page HTML
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Yourl.Cloud Inc. - Authenticated Access</title>
+        <meta name="description" content="Welcome to Yourl.Cloud Inc. - Your trusted cloud infrastructure and API services partner.">
+        <meta name="robots" content="noindex, nofollow">
+        
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+            }}
+            .container {{ 
+                max-width: 1200px; 
+                margin: 0 auto; 
+                padding: 20px;
+                background: rgba(255, 255, 255, 0.95);
+                border-radius: 15px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                margin-top: 20px;
+                margin-bottom: 20px;
+            }}
+            .header {{ 
+                text-align: center; 
+                padding: 40px 0;
+                border-bottom: 3px solid #667eea;
+                margin-bottom: 30px;
+            }}
+            .logo {{ 
+                font-size: 3rem; 
+                font-weight: bold; 
+                color: #667eea;
+                margin-bottom: 10px;
+            }}
+            .tagline {{ 
+                font-size: 1.2rem; 
+                color: #666;
+                margin-bottom: 20px;
+            }}
+            .success-banner {{ 
+                background: linear-gradient(45deg, #28a745, #20c997);
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                margin-bottom: 30px;
+                text-align: center;
+            }}
+            .visitor-info {{ 
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 10px;
+                margin-bottom: 30px;
+                border-left: 5px solid #667eea;
+            }}
+            .experience-level {{
+                display: inline-block;
+                padding: 5px 15px;
+                border-radius: 20px;
+                font-size: 0.9rem;
+                font-weight: bold;
+                margin-bottom: 10px;
+            }}
+            .new-user {{ background: #28a745; color: white; }}
+            .returning-user {{ background: #ffc107; color: #333; }}
+            .returning-visitor {{ background: #17a2b8; color: white; }}
+            
+            .company-info {{ 
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 30px;
+                margin-bottom: 30px;
+            }}
+            .info-card {{ 
+                background: white;
+                padding: 25px;
+                border-radius: 10px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                border-top: 4px solid #667eea;
+            }}
+            .info-card h3 {{ 
+                color: #667eea;
+                margin-bottom: 15px;
+                font-size: 1.3rem;
+            }}
+            .services {{ 
+                background: #f8f9fa;
+                padding: 30px;
+                border-radius: 10px;
+                margin-bottom: 30px;
+            }}
+            .services h2 {{ 
+                color: #667eea;
+                margin-bottom: 20px;
+                text-align: center;
+            }}
+            .service-grid {{ 
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 20px;
+            }}
+            .service-item {{ 
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+                text-align: center;
+            }}
+            .service-item h4 {{ 
+                color: #667eea;
+                margin-bottom: 10px;
+            }}
+            .navigation {{ 
+                text-align: center;
+                margin-top: 30px;
+                padding-top: 30px;
+                border-top: 2px solid #eee;
+            }}
+            .nav-btn {{ 
+                display: inline-block;
+                background: #667eea;
+                color: white;
+                padding: 12px 25px;
+                text-decoration: none;
+                border-radius: 25px;
+                margin: 10px;
+                transition: all 0.3s ease;
+                font-weight: bold;
+            }}
+            .nav-btn:hover {{ 
+                background: #5a6fd8;
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            }}
+            .footer {{ 
+                text-align: center;
+                padding: 30px 0;
+                color: #666;
+                border-top: 2px solid #eee;
+                margin-top: 30px;
+            }}
+            .privilege-badge {{
+                display: inline-block;
+                background: #ff6b6b;
+                color: white;
+                padding: 5px 12px;
+                border-radius: 15px;
+                font-size: 0.8rem;
+                margin: 5px;
+            }}
+            .affiliation-section {{
+                background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                margin: 20px 0;
+            }}
+            @media (max-width: 768px) {{
+                .container {{ margin: 10px; padding: 15px; }}
+                .logo {{ font-size: 2rem; }}
+                .company-info {{ grid-template-columns: 1fr; }}
+                .service-grid {{ grid-template-columns: 1fr; }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <!-- Header with Company Identity -->
+            <div class="header">
+                <div class="logo">Yourl.Cloud Inc.</div>
+                <div class="tagline">Secure Cloud Infrastructure & API Services</div>
+                <p>United States • Global Operations • Enterprise Solutions</p>
+            </div>
+
+            <!-- Success Banner for Authenticated Users -->
+            <div class="success-banner">
+                <h2>🎉 Welcome to Yourl.Cloud Inc.</h2>
+                <p><strong>Authentication Successful</strong> - You now have access to our enhanced services.</p>
+                <p>Experience Level: <span class="experience-level {auth_data.get('experience_level', 'new_user')}">{auth_data.get('experience_level', 'new_user').replace('_', ' ').title()}</span></p>
+            </div>
+
+            <!-- Visitor Information Section -->
+            <div class="visitor-info">
+                <h3>👤 Your Visitor Profile</h3>
+                <p><strong>Visitor ID:</strong> {auth_data.get('visitor_data', {}).get('visitor_id', 'Unknown')}</p>
+                <p><strong>Total Visits:</strong> {auth_data.get('visitor_data', {}).get('total_visits', 1)}</p>
+                <p><strong>Status:</strong> {'New Visitor' if auth_data.get('visitor_data', {}).get('is_new_visitor', True) else 'Returning Visitor'}</p>
+                <p><strong>Code Usage:</strong> {'Has used access codes' if auth_data.get('visitor_data', {}).get('has_used_code', False) else 'First time using codes'}</p>
+                {f'<p><strong>Tracking Key:</strong> {auth_data.get("visitor_data", {}).get("tracking_key")}</p>' if auth_data.get('visitor_data', {}).get('tracking_key') else ''}
+            </div>
+
+            <!-- Company Information for SEO -->
+            <div class="company-info">
+                <div class="info-card">
+                    <h3>🏢 About Yourl.Cloud Inc.</h3>
+                    <p>Yourl.Cloud Inc. is a leading technology company specializing in cloud infrastructure, API services, and digital solutions. Based in the United States, we serve clients globally with secure, scalable, and innovative technology solutions.</p>
+                    <p><strong>Founded:</strong> 2024</p>
+                    <p><strong>Headquarters:</strong> United States</p>
+                    <p><strong>Industry:</strong> Cloud Computing, API Services, Digital Infrastructure</p>
+                </div>
+                
+                <div class="info-card">
+                    <h3>🌐 Global Operations</h3>
+                    <p>Operating from the United States, Yourl.Cloud Inc. provides services to clients worldwide. Our infrastructure spans multiple regions, ensuring reliable, low-latency access to our services.</p>
+                    <p><strong>Primary Region:</strong> US-West1 (Google Cloud)</p>
+                    <p><strong>Service Availability:</strong> 24/7 Global Access</p>
+                    <p><strong>Compliance:</strong> US-based data centers</p>
+                </div>
+                
+                <div class="info-card">
+                    <h3>🔒 Security & Compliance</h3>
+                    <p>Yourl.Cloud Inc. maintains the highest standards of security and compliance. Our infrastructure is built on Google Cloud Platform, ensuring enterprise-grade security, reliability, and performance.</p>
+                    <p><strong>Infrastructure:</strong> Google Cloud Platform</p>
+                    <p><strong>Security:</strong> Enterprise-grade encryption</p>
+                    <p><strong>Compliance:</strong> Industry-standard protocols</p>
+                </div>
+            </div>
+
+            <!-- Services Section -->
+            <div class="services">
+                <h2>🚀 Our Services</h2>
+                <div class="service-grid">
+                    <div class="service-item">
+                        <h4>☁️ Cloud Infrastructure</h4>
+                        <p>Scalable, secure cloud solutions built on Google Cloud Platform with enterprise-grade reliability and performance.</p>
+                    </div>
+                    <div class="service-item">
+                        <h4>🔌 API Services</h4>
+                        <p>RESTful APIs and microservices architecture designed for modern applications and seamless integration.</p>
+                    </div>
+                    <div class="service-item">
+                        <h4>🛡️ Security Solutions</h4>
+                        <p>Advanced security protocols, encryption, and compliance measures to protect your data and applications.</p>
+                    </div>
+                    <div class="service-item">
+                        <h4>📱 Digital Solutions</h4>
+                        <p>Custom digital solutions tailored to your business needs, from web applications to mobile solutions.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Section -->
+            <div class="navigation">
+                <a href="/" class="nav-btn">🏠 Back to Landing Page</a>
+                <a href="/api" class="nav-btn">🔌 API Documentation</a>
+                <a href="/status" class="nav-btn">📊 Service Status</a>
+                <a href="/data" class="nav-btn">📡 Data Stream</a>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <p>&copy; 2024 Yourl.Cloud Inc. All rights reserved. | United States | Global Operations</p>
+                <p>Built with ❤️ for secure, scalable cloud solutions</p>
+            </div>
+        </div>
+        
+        <script>
+            // Add some interactive elements
+            document.querySelectorAll('.nav-btn').forEach(btn => {{
+                btn.addEventListener('click', function() {{
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {{
+                        this.style.transform = 'scale(1)';
+                    }}, 150);
+                }});
+            }});
+            
+            // Add smooth scrolling for better UX
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {{
+                anchor.addEventListener('click', function (e) {{
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {{
+                        target.scrollIntoView({{
+                            behavior: 'smooth',
+                            block: 'start'
+                        }});
+                    }}
+                }});
             }});
         </script>
     </body>
@@ -1936,7 +2285,28 @@ def start_production_server():
             # Suppress Waitress logging messages
             import logging
             logging.getLogger('waitress').setLevel(logging.ERROR)
-            waitress.serve(app, host=HOST, port=PORT, threads=4, connection_limit=1000)
+            
+            # Start Waitress server in a separate thread to allow custom output
+            import threading
+            def run_waitress():
+                waitress.serve(app, host=HOST, port=PORT, threads=4, connection_limit=1000)
+            
+            server_thread = threading.Thread(target=run_waitress, daemon=True)
+            server_thread.start()
+            
+            # Show user-friendly localhost URL
+            display_host = 'localhost' if HOST == '0.0.0.0' else HOST
+            print(f"🌐 Server running at: http://{display_host}:{PORT}")
+            print("🚀 Yourl.Cloud is now accessible locally!")
+            print("=" * 60)
+            
+            # Keep main thread alive
+            try:
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                print("\n🛑 Shutting down server...")
+                return
         except ImportError:
             print("❌ Waitress not found. Installing...")
             try:
@@ -1946,7 +2316,28 @@ def start_production_server():
                 # Suppress Waitress logging messages
                 import logging
                 logging.getLogger('waitress').setLevel(logging.ERROR)
-                waitress.serve(app, host=HOST, port=PORT, threads=4, connection_limit=1000)
+                
+                # Start Waitress server in a separate thread to allow custom output
+                import threading
+                def run_waitress():
+                    waitress.serve(app, host=HOST, port=PORT, threads=4, connection_limit=1000)
+                
+                server_thread = threading.Thread(target=run_waitress, daemon=True)
+                server_thread.start()
+                
+                # Show user-friendly localhost URL
+                display_host = 'localhost' if HOST == '0.0.0.0' else HOST
+                print(f"🌐 Server running at: http://{display_host}:{PORT}")
+                print("🚀 Yourl.Cloud is now accessible locally!")
+                print("=" * 60)
+                
+                # Keep main thread alive
+                try:
+                    while True:
+                        time.sleep(1)
+                except KeyboardInterrupt:
+                    print("\n🛑 Shutting down server...")
+                    return
             except Exception as e:
                 print(f"❌ Failed to install/use Waitress: {e}")
                 print("🔄 Falling back to Flask development server...")
@@ -2084,7 +2475,7 @@ def code_recovery() -> Response:
                     h1 {{ color: #333; text-align: center; }}
                     .form-group {{ margin: 20px 0; }}
                     label {{ display: block; margin-bottom: 5px; font-weight: bold; }}
-                    input[type="text"] {{ width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }}
+                    input[type="text"], input[type="password"] {{ width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }}
                     button {{ background: #007bff; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }}
                     button:hover {{ background: #0056b3; }}
                     .info {{ background: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0; }}

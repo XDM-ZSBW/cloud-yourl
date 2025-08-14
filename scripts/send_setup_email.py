@@ -93,7 +93,7 @@ If you don't receive notifications:
 3. Ensure all IAM permissions are correct
 4. Verify secrets are accessible
 
-Need help? Contact me at bcherrman@gmail.com
+Need help? Contact me at admin@yourl.cloud
 
 """
     
@@ -101,7 +101,7 @@ Need help? Contact me at bcherrman@gmail.com
         sg = SendGridAPIClient(api_key)
         message = Mail(
             from_email='cloud-build@yourl.cloud',
-            to_emails='bcherrman@gmail.com',
+            to_emails='admin@yourl.cloud',
             subject='yourl.cloud - Cloud Build Automation Setup Instructions',
             html_content=email_content
         )

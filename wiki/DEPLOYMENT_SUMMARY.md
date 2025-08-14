@@ -176,7 +176,7 @@ gcloud run deploy yourl-cloud \
 ## 📞 **Support Information**
 
 ### **Service Details**
-- **Organization**: Yourl Cloud Inc.
+- **Organization**: Yourl.Cloud Inc.
 - **Project**: zip-myl-dev
 - **Region**: us-west1
 - **Service**: yourl-cloud
@@ -200,5 +200,5 @@ Yourl.Cloud is now **live and operational** at:
 ---
 
 **Last Updated**: 2025-08-07T11:20:06.486637
-**Organization**: Yourl Cloud Inc.
+**Organization**: Yourl.Cloud Inc.
 **Source of Truth**: yourl.cloud

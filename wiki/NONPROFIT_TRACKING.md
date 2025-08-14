@@ -1,7 +1,7 @@
 # Yourl.Cloud Nonprofit Tracking System
 
 ## Overview
-Yourl.Cloud is operated by Yourl Cloud Inc., a registered nonprofit organization dedicated to making prompt engineering and AI services accessible to anyone who can send ASCII messages, regardless of their device capabilities.
+Yourl.Cloud is operated by Yourl.Cloud Inc., a registered nonprofit organization dedicated to making prompt engineering and AI services accessible to anyone who can send ASCII messages, regardless of their device capabilities.
 
 ## Marketing Code System
 
@@ -63,7 +63,7 @@ Donor-funded features are tracked and recognized:
 ## Domain Transfer Process
 
 ### Current Status
-The yourl.cloud domain is being transferred to Yourl Cloud Inc. nonprofit ownership.
+The yourl.cloud domain is being transferred to Yourl.Cloud Inc. nonprofit ownership.
 
 ### Transfer Steps
 1. **Pre-Transfer**
@@ -119,6 +119,6 @@ The yourl.cloud domain is being transferred to Yourl Cloud Inc. nonprofit owners
 ## Contact
 
 For questions about our nonprofit operations or marketing code system:
-- Email: bcherrman@gmail.com
+- Email: admin@yourl.cloud
 - GitHub: https://github.com/XDM-ZSBW/yourl.cloud
 - Documentation: https://github.com/XDM-ZSBW/yourl.cloud/wiki

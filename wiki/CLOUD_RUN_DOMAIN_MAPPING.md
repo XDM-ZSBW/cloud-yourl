@@ -301,7 +301,7 @@ gcloud run services update yourl-cloud \
 
 ### Contact Information
 
-- **Organization**: Yourl Cloud Inc.
+- **Organization**: Yourl.Cloud Inc.
 - **Support**: Check GitHub issues for support
 - **Documentation**: This guide and README.md
 

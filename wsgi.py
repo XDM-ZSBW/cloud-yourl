@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 """
-WSGI entry point for Cloud Run domain mapping compatibility
-==========================================================
+WSGI entry point for Yourl.Cloud Inc. API Server
+================================================
 
-This file serves as the WSGI application entry point for Cloud Run deployments
-with domain mapping support. It imports the Flask app from app.py and makes it
-available to WSGI servers like Gunicorn and Waitress.
+Production WSGI server configuration for Google Cloud Run deployment.
+Enhanced for domain mapping compatibility and automatic health checks.
 
-Author: Yourl Cloud Inc.
-Environment: Production
-WSGI Server: Gunicorn (Unix) / Waitress (Windows)
+Author: Yourl.Cloud Inc.
+Session: f1d78acb-de07-46e0-bfa7-f5b75e3c0c49
+Google Cloud Run: Supported
+WSGI Server: Production Ready
 Domain Mapping: Compatible
-Cloud Run Region: us-west1
 """
 
 import os

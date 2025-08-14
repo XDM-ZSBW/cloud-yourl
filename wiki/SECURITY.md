@@ -59,7 +59,7 @@ This security policy covers:
 **Not Covered**:
 - ❌ Third-party services (Google Cloud, GitHub, etc.)
 - ❌ User-generated content or data
-- ❌ External integrations not maintained by Yourl Cloud Inc.
+- ❌ External integrations not maintained by Yourl.Cloud Inc.
 
 ## Attribution and Credit
 
