@@ -1,0 +1,49 @@
+name: Sync Wiki via script
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "wiki/**"
+      - "scripts/update_wiki.py"
+      - ".github/workflows/sync-wiki-script.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          if [ -f requirements.txt ]; then 
+            echo "Installing requirements..."
+            pip install -r requirements.txt
+          else
+            echo "No requirements.txt found, skipping dependency installation"
+          fi
+
+      - name: Run wiki sync script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -e
+          echo "Running wiki sync script..."
+          echo "Repository: $REPO"
+          echo "Commit SHA: $SHA"
+          python scripts/update_wiki.py
+
+      - name: Verify script execution
+        run: |
+          echo "Wiki sync script completed successfully"
+          echo "Check the GitHub Wiki for updates"

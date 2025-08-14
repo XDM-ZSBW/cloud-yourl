@@ -1,0 +1,57 @@
+name: Sync Wiki from /wiki
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "wiki/**"
+      - ".github/workflows/sync-wiki.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Clone wiki repo
+        run: |
+          set -e
+          echo "Cloning wiki repository..."
+          git clone "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git" wiki-repo
+          echo "Wiki repository cloned successfully"
+
+      - name: Sync files from /wiki to wiki repo
+        run: |
+          set -e
+          echo "Syncing files from /wiki to wiki repository..."
+          rsync -av --delete wiki/ wiki-repo/
+          echo "Files synced successfully"
+          
+          cd wiki-repo
+          echo "Checking for changes..."
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Changes detected, committing and pushing..."
+            git add -A
+            git commit -m "chore(wiki): sync from /wiki @ ${{ github.sha }}"
+            git push
+            echo "Wiki updated successfully"
+          else
+            echo "No changes to commit."
+          fi
+
+      - name: Verify sync
+        run: |
+          echo "Verifying wiki sync..."
+          cd wiki-repo
+          echo "Current wiki contents:"
+          ls -la
+          echo "Git log (last 3 commits):"
+          git log --oneline -3

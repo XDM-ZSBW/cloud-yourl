@@ -32,6 +32,32 @@ A self-executing Python Flask application that responds with the request URL and
 
 4. **Access the API**: http://localhost:8080
 
+## 📚 **Wiki Automation**
+
+This repository includes an automated GitHub Wiki synchronization system that keeps the project's wiki up-to-date with documentation changes.
+
+### **How It Works**
+- **Source of Truth**: The `wiki/` directory in this repository contains all wiki content
+- **Automatic Sync**: GitHub Actions automatically syncs changes to the GitHub Wiki on every push to main
+- **Two Methods**: 
+  - Primary: Fast rsync-based workflow (`.github/workflows/sync-wiki.yml`)
+  - Alternative: Python script-based workflow (`.github/workflows/sync-wiki-script.yml`)
+
+### **Using the Wiki System**
+1. **Edit Files**: Modify any `.md` file in the `wiki/` directory
+2. **Commit & Push**: Push changes to the main branch
+3. **Auto-Sync**: GitHub Actions automatically updates the GitHub Wiki
+4. **Verify**: Check the Actions tab and Wiki for updates
+
+### **Wiki Structure**
+- **`wiki/Home.md`** - Main landing page (required)
+- **`wiki/README.md`** - Comprehensive usage instructions
+- **`wiki/TECHNOLOGY_STACK.md`** - Complete technology overview
+- **`wiki/EXTERNAL_RESOURCES.md`** - Tools and integrations
+- **Additional pages** - Architecture, security, deployment guides
+
+For detailed information about the wiki system, see [wiki/README.md](wiki/README.md).
+
 ### Local Files Management
 
 #### Files to Keep Local
