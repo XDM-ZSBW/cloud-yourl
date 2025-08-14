@@ -1,10 +1,10 @@
-name: Sync Wiki via script
+name: Sync Wiki via simple script
 on:
   push:
     branches: [ "main" ]
     paths:
       - "wiki/**"
-      - "scripts/update_wiki.py"
+      - "scripts/update_wiki_simple.py"
       - ".github/workflows/sync-wiki-script.yml"
 
 permissions:
@@ -32,7 +32,7 @@ jobs:
             echo "ℹ️ No requirements.txt found, skipping dependency installation"
           fi
 
-      - name: Run wiki sync script
+      - name: Run simple wiki sync script
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
@@ -40,16 +40,18 @@ jobs:
           GITHUB_ACTIONS: "true"
         run: |
           set -e
-          echo "🚀 Running wiki sync script..."
+          echo "🚀 Running simple wiki sync script..."
           echo "📋 Repository: $REPO"
           echo "🔑 Commit SHA: $SHA"
           echo "🌐 Environment: GitHub Actions"
           
-          # Run the script with error handling
-          if python scripts/update_wiki.py; then
-            echo "✅ Wiki sync script completed successfully"
+          # Run the simple script with timeout
+          timeout 60 python scripts/update_wiki_simple.py
+          
+          if [ $? -eq 0 ]; then
+            echo "✅ Simple wiki sync script completed successfully"
           else
-            echo "⚠️ Wiki sync script encountered issues, but continuing..."
+            echo "⚠️ Script may have timed out or encountered issues"
           fi
 
       - name: Verify script execution
@@ -59,6 +61,9 @@ jobs:
             echo "✅ Wiki file created/updated successfully"
             echo "📁 Wiki directory contents:"
             ls -la wiki/
+            echo ""
+            echo "📄 Wiki file preview (first 10 lines):"
+            head -10 wiki/Home.md
           else
             echo "❌ Wiki file not found after script execution"
             exit 1

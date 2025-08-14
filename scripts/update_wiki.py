@@ -136,16 +136,31 @@ def extract_features_from_app():
         ]
 
 def get_current_marketing_password_from_app():
-    """Get the current marketing password from app.py."""
+    """Get the current marketing password from app.py without importing."""
     try:
-        # Import the function from app.py
-        import sys
-        import os
-        sys.path.append(os.getcwd())
-        from app import get_current_marketing_password
-        return get_current_marketing_password()
+        # Read app.py content and extract password without importing
+        app_content = read_file_content('app.py')
+        if not app_content:
+            return "AI474?"  # Fallback password
+        
+        # Look for the password generation pattern without importing
+        # Find the marketing password pattern in the file content
+        password_match = re.search(r'def get_current_marketing_password\(\):.*?return "([^"]+)"', app_content, re.DOTALL)
+        if password_match:
+            return password_match.group(1)
+        
+        # If no pattern found, generate a simple one based on git hash
+        git_info = get_git_info()
+        if git_info['commit_hash'] != 'unknown':
+            # Create a simple password based on commit hash
+            hash_part = git_info['commit_hash'][:4].upper()
+            return f"CLOUD{hash_part}!"
+        
+        return "AI474?"  # Fallback password
+        
     except Exception as e:
-        return "AI474?"  # Fallback password if import fails
+        print(f"⚠️ Could not extract marketing password: {e}")
+        return "AI474?"  # Fallback password if anything fails
 
 def get_project_timeline():
     """Get project timeline from git history and current state."""
