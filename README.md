@@ -32,24 +32,36 @@ A self-executing Python Flask application that responds with the request URL and
 
 4. **Access the API**: http://localhost:8080
 
-## 📚 **Wiki Automation**
+## 📚 **Documentation & Wiki**
 
+This repository includes comprehensive documentation organized in two main areas:
+
+### **📖 Development Documentation (`docs/`)**
+- **`docs/LOCAL_DEVELOPMENT_SETUP.md`** - Complete local development guide
+- **`docs/BUILD_COMPLETE.md`** - Build status and deployment information
+- **`docs/CLIPBOARD_BRIDGE_DEPLOYMENT.md`** - Clipboard bridge service details
+- **`docs/WINDOWS_CLIPBOARD_HISTORY_INTEGRATION.md`** - Windows integration guide
+- **`docs/ZAIDO_CLIPBOARD_RECOVERY_GUIDE.md`** - Clipboard conflict recovery
+- **`docs/SCREEN_CAPTURE_TROUBLESHOOTING.md`** - Performance troubleshooting
+- **`docs/WIKI_AUTOMATION_IMPLEMENTATION.md`** - Wiki automation system details
+
+### **🌐 Wiki System (`wiki/`)**
 This repository includes an automated GitHub Wiki synchronization system that keeps the project's wiki up-to-date with documentation changes.
 
-### **How It Works**
+#### **How It Works**
 - **Source of Truth**: The `wiki/` directory in this repository contains all wiki content
 - **Automatic Sync**: GitHub Actions automatically syncs changes to the GitHub Wiki on every push to main
 - **Two Methods**: 
   - Primary: Fast rsync-based workflow (`.github/workflows/sync-wiki.yml`)
   - Alternative: Python script-based workflow (`.github/workflows/sync-wiki-script.yml`)
 
-### **Using the Wiki System**
+#### **Using the Wiki System**
 1. **Edit Files**: Modify any `.md` file in the `wiki/` directory
 2. **Commit & Push**: Push changes to the main branch
 3. **Auto-Sync**: GitHub Actions automatically updates the GitHub Wiki
 4. **Verify**: Check the Actions tab and Wiki for updates
 
-### **Wiki Structure**
+#### **Wiki Structure**
 - **`wiki/Home.md`** - Main landing page (required)
 - **`wiki/README.md`** - Comprehensive usage instructions
 - **`wiki/TECHNOLOGY_STACK.md`** - Complete technology overview
