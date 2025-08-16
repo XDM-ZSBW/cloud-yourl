@@ -31,6 +31,7 @@ import hashlib
 import random
 from datetime import datetime
 from urllib.parse import urlparse
+import json
 
 # Configure logging for production cloud environments
 logging.basicConfig(
@@ -1581,7 +1582,7 @@ def data_stream():
             <a href="/api" class="nav-btn">🔌 API</a>
             <a href="/status" class="nav-btn">📊 Status</a>
             <a href="/data" class="nav-btn">📡 Data Stream</a>
-            <a href="https://github.com/XDM-ZSBW/yourl.cloud/wiki/KNOWLEDGE_HUB.md" class="nav-btn" target="_blank">🧠 Knowledge Hub</a>
+            <a href="/knowledge-hub" class="nav-btn">🧠 Knowledge Hub</a>
         </div>
         
         <script>
@@ -2459,6 +2460,777 @@ def code_recovery() -> Response:
     
     # Default return for any other method
     return make_response("Method not allowed", 405)
+
+@app.route('/knowledge-hub', methods=['GET'])
+def knowledge_hub():
+    """
+    Knowledge Hub endpoint with mind-map navigation (top-right), 
+    wiki outline (left side), and AI-generated content display (bottom-right).
+    Interactive knowledge navigation system for Yourl.Cloud documentation.
+    """
+    # Get visitor data for personalization
+    visitor_data = get_visitor_data()
+    
+    # Define wiki files organized by categories
+    wiki_categories = {
+        "🏗️ Architecture & Design": [
+            "ARCHITECTURE_OVERVIEW.md",
+            "SECURITY.md", 
+            "COST_EFFECTIVE_MARKETING_CODES.md",
+            "CLOUD_RUN_DOMAIN_MAPPING.md"
+        ],
+        "🚀 Development & Deployment": [
+            "Home.md",
+            "DEPLOYMENT_SUMMARY.md",
+            "TECHNOLOGY_STACK.md",
+            "WSGI_SERVER_IMPLEMENTATION.md"
+        ],
+        "🔐 Security & Compliance": [
+            "SECURITY_CHECKLIST.md",
+            "SECRET_MANAGER_INTEGRATION.md",
+            "SECURITY.md"
+        ],
+        "📊 Data & Analytics": [
+            "DATA_STREAM_GUIDE.md",
+            "NONPROFIT_TRACKING.md"
+        ],
+        "🌐 Infrastructure & Operations": [
+            "CLOUD_RUN_DOMAIN_MAPPING.md",
+            "DOMAIN_MAPPING_SUMMARY.md",
+            "STATUS.md"
+        ],
+        "📚 Documentation & Knowledge": [
+            "KNOWLEDGE_HUB.md",
+            "WIKI_UPDATE_SYSTEM.md",
+            "WIKI_UPDATE_SUMMARY.md",
+            "README.md",
+            "EXTERNAL_RESOURCES.md"
+        ],
+        "🎯 Business & Operations": [
+            "BUSINESS_NAME_UPDATE.md",
+            "BETA_LAUNCH_SUMMARY.md",
+            "PULL_REQUEST_SUPPORT.md"
+        ],
+        "🔧 Development Tools": [
+            "TEST_SYNC.md",
+            "WORKFLOW_TEST.md"
+        ]
+    }
+    
+    # Define mind map nodes with relationships
+    mind_map_nodes = {
+        "Architecture": {
+            "color": "#ff6b6b",
+            "connections": ["Security", "Infrastructure", "Development"],
+            "description": "System design and structure"
+        },
+        "Security": {
+            "color": "#4ecdc4", 
+            "connections": ["Architecture", "Operations", "Compliance"],
+            "description": "Security policies and implementation"
+        },
+        "Development": {
+            "color": "#45b7d1",
+            "connections": ["Architecture", "Deployment", "Tools"],
+            "description": "Development workflow and practices"
+        },
+        "Deployment": {
+            "color": "#f9ca24",
+            "connections": ["Development", "Infrastructure", "Operations"],
+            "description": "Production deployment processes"
+        },
+        "Infrastructure": {
+            "color": "#6c5ce7",
+            "connections": ["Architecture", "Deployment", "Monitoring"],
+            "description": "Cloud infrastructure and services"
+        },
+        "Data": {
+            "color": "#a55eea",
+            "connections": ["Analytics", "Security", "Operations"],
+            "description": "Data management and analytics"
+        },
+        "Analytics": {
+            "color": "#26de81",
+            "connections": ["Data", "Monitoring", "Operations"],
+            "description": "Performance metrics and insights"
+        },
+        "Operations": {
+            "color": "#fd79a8",
+            "connections": ["Deployment", "Monitoring", "Security"],
+            "description": "Day-to-day operations and maintenance"
+        },
+        "Monitoring": {
+            "color": "#fdcb6e",
+            "connections": ["Operations", "Infrastructure", "Analytics"],
+            "description": "System monitoring and alerting"
+        },
+        "Documentation": {
+            "color": "#e17055",
+            "connections": ["Knowledge", "Development", "Operations"],
+            "description": "Comprehensive documentation system"
+        },
+        "Knowledge": {
+            "color": "#74b9ff",
+            "connections": ["Documentation", "Learning", "Support"],
+            "description": "Knowledge base and learning resources"
+        },
+        "Tools": {
+            "color": "#00b894",
+            "connections": ["Development", "Operations", "Testing"],
+            "description": "Development and operational tools"
+        },
+        "Testing": {
+            "color": "#e84393",
+            "connections": ["Tools", "Development", "Quality"],
+            "description": "Testing frameworks and processes"
+        },
+        "Quality": {
+            "color": "#636e72",
+            "connections": ["Testing", "Operations", "Security"],
+            "description": "Quality assurance and standards"
+        },
+        "Compliance": {
+            "color": "#fab1a0",
+            "connections": ["Security", "Quality", "Operations"],
+            "description": "Regulatory compliance and standards"
+        }
+    }
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Knowledge Hub - Yourl.Cloud Inc.</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                overflow: hidden;
+                height: 100vh;
+            }}
+            
+            .knowledge-hub-container {{
+                display: grid;
+                grid-template-columns: 350px 1fr 400px;
+                grid-template-rows: 60px 1fr;
+                height: 100vh;
+                gap: 1px;
+                background: rgba(0,0,0,0.1);
+            }}
+            
+            .header {{
+                grid-column: 1 / -1;
+                background: rgba(0,0,0,0.3);
+                backdrop-filter: blur(10px);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 20px;
+                border-bottom: 1px solid rgba(255,255,255,0.2);
+            }}
+            
+            .header h1 {{
+                font-size: 1.5rem;
+                font-weight: 300;
+            }}
+            
+            .header .visitor-info {{
+                font-size: 0.9rem;
+                opacity: 0.8;
+            }}
+            
+            .wiki-outline {{
+                background: rgba(0,0,0,0.2);
+                backdrop-filter: blur(10px);
+                padding: 20px;
+                overflow-y: auto;
+                border-right: 1px solid rgba(255,255,255,0.2);
+            }}
+            
+            .content-display {{
+                background: rgba(0,0,0,0.1);
+                backdrop-filter: blur(10px);
+                padding: 30px;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }}
+            
+            .mind-map-container {{
+                background: rgba(0,0,0,0.2);
+                backdrop-filter: blur(10px);
+                padding: 20px;
+                border-left: 1px solid rgba(255,255,255,0.2);
+                position: relative;
+                overflow: hidden;
+            }}
+            
+            .category {{
+                margin-bottom: 25px;
+            }}
+            
+            .category h3 {{
+                font-size: 1.1rem;
+                margin-bottom: 10px;
+                color: #ffd700;
+                border-bottom: 1px solid rgba(255,215,0,0.3);
+                padding-bottom: 5px;
+            }}
+            
+            .wiki-item {{
+                display: block;
+                padding: 8px 12px;
+                margin: 4px 0;
+                background: rgba(255,255,255,0.1);
+                border: 1px solid rgba(255,255,255,0.2);
+                border-radius: 6px;
+                text-decoration: none;
+                color: white;
+                font-size: 0.9rem;
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }}
+            
+            .wiki-item:hover {{
+                background: rgba(255,255,255,0.2);
+                border-color: rgba(255,215,0,0.5);
+                transform: translateX(5px);
+                color: #ffd700;
+            }}
+            
+            .wiki-item.active {{
+                background: rgba(255,215,0,0.2);
+                border-color: #ffd700;
+                color: #ffd700;
+            }}
+            
+            .mind-map {{
+                position: relative;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+            }}
+            
+            .mind-map-title {{
+                text-align: center;
+                margin-bottom: 20px;
+                font-size: 1.2rem;
+                color: #ffd700;
+            }}
+            
+            .mind-node {{
+                position: absolute;
+                width: 80px;
+                height: 80px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.8rem;
+                font-weight: bold;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                border: 2px solid rgba(255,255,255,0.3);
+                backdrop-filter: blur(5px);
+                text-align: center;
+                line-height: 1.2;
+            }}
+            
+            .mind-node:hover {{
+                transform: scale(1.1);
+                box-shadow: 0 0 20px rgba(255,255,255,0.3);
+                z-index: 10;
+            }}
+            
+            .mind-node.active {{
+                transform: scale(1.2);
+                box-shadow: 0 0 25px rgba(255,215,0,0.5);
+                border-color: #ffd700;
+                z-index: 10;
+            }}
+            
+            .connection-line {{
+                position: absolute;
+                height: 2px;
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+                transform-origin: left center;
+                z-index: 1;
+            }}
+            
+            .welcome-content {{
+                max-width: 500px;
+            }}
+            
+            .welcome-content h2 {{
+                font-size: 2rem;
+                margin-bottom: 20px;
+                color: #ffd700;
+            }}
+            
+            .welcome-content p {{
+                font-size: 1.1rem;
+                line-height: 1.6;
+                margin-bottom: 15px;
+                opacity: 0.9;
+            }}
+            
+            .ai-content {{
+                display: none;
+                text-align: left;
+                max-width: none;
+                width: 100%;
+            }}
+            
+            .ai-content h3 {{
+                color: #ffd700;
+                margin-bottom: 15px;
+                font-size: 1.4rem;
+            }}
+            
+            .ai-content .content-section {{
+                background: rgba(255,255,255,0.1);
+                border-radius: 10px;
+                padding: 20px;
+                margin-bottom: 20px;
+                border-left: 4px solid #ffd700;
+            }}
+            
+            .ai-content .content-section h4 {{
+                color: #ffd700;
+                margin-bottom: 10px;
+            }}
+            
+            .ai-content .content-section p {{
+                line-height: 1.6;
+                margin-bottom: 10px;
+            }}
+            
+            .ai-content .content-section ul {{
+                padding-left: 20px;
+                margin-bottom: 10px;
+            }}
+            
+            .ai-content .content-section li {{
+                margin-bottom: 5px;
+            }}
+            
+            .navigation {{
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                display: flex;
+                gap: 10px;
+                z-index: 1000;
+            }}
+            
+            .nav-btn {{
+                padding: 10px 15px;
+                background: rgba(255,255,255,0.2);
+                border: 1px solid rgba(255,255,255,0.3);
+                border-radius: 5px;
+                color: white;
+                text-decoration: none;
+                font-size: 0.9rem;
+                transition: all 0.3s ease;
+                backdrop-filter: blur(10px);
+            }}
+            
+            .nav-btn:hover {{
+                background: rgba(255,255,255,0.3);
+                border-color: rgba(255,215,0,0.5);
+                color: #ffd700;
+            }}
+            
+            .tooltip {{
+                position: absolute;
+                background: rgba(0,0,0,0.9);
+                color: white;
+                padding: 8px 12px;
+                border-radius: 5px;
+                font-size: 0.8rem;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                z-index: 1000;
+                max-width: 200px;
+                text-align: center;
+            }}
+            
+            @media (max-width: 1200px) {{
+                .knowledge-hub-container {{
+                    grid-template-columns: 300px 1fr 350px;
+                }}
+            }}
+            
+            @media (max-width: 900px) {{
+                .knowledge-hub-container {{
+                    grid-template-columns: 250px 1fr 300px;
+                }}
+                .mind-node {{
+                    width: 60px;
+                    height: 60px;
+                    font-size: 0.7rem;
+                }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="knowledge-hub-container">
+            <div class="header">
+                <h1>🧠 Knowledge Hub - Yourl.Cloud Inc.</h1>
+                <div class="visitor-info">
+                    Visitor {visitor_data.get('visitor_id', 'Unknown')} | Visit #{visitor_data.get('total_visits', 1)}
+                </div>
+            </div>
+            
+            <div class="wiki-outline">
+                <h2 style="margin-bottom: 20px; color: #ffd700; text-align: center;">📚 Wiki Documentation</h2>
+                {''.join([f'''
+                <div class="category">
+                    <h3>{category}</h3>
+                    {''.join([f'<div class="wiki-item" onclick="selectWikiItem(this, \\'{item}\\')">{item.replace(".md", "").replace("_", " ").title()}</div>' for item in items])}
+                </div>
+                ''' for category, items in wiki_categories.items()])}
+            </div>
+            
+            <div class="content-display">
+                <div class="welcome-content">
+                    <h2>🎯 Welcome to the Knowledge Hub</h2>
+                    <p>This is your comprehensive navigation center for all Yourl.Cloud documentation and knowledge.</p>
+                    <p><strong>How to use:</strong></p>
+                    <p>• Click on items in the <strong>Wiki Outline</strong> (left) to explore specific documentation</p>
+                    <p>• Use the <strong>Mind Map</strong> (right) to navigate by topics and concepts</p>
+                    <p>• This area will display AI-generated insights and information based on your selections</p>
+                    <p style="font-size: 0.9rem; opacity: 0.7; margin-top: 20px;">Select any item to begin exploring the knowledge base!</p>
+                </div>
+                
+                <div class="ai-content" id="aiContent">
+                    <!-- AI-generated content will be displayed here -->
+                </div>
+            </div>
+            
+            <div class="mind-map-container">
+                <div class="mind-map-title">🗺️ Concept Mind Map</div>
+                <div class="mind-map" id="mindMap">
+                    <!-- Mind map nodes will be dynamically positioned -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="tooltip" id="tooltip"></div>
+        
+        <div class="navigation">
+            <a href="/" class="nav-btn">🏠 Home</a>
+            <a href="/data" class="nav-btn">📡 Data Stream</a>
+            <a href="/status" class="nav-btn">📊 Status</a>
+        </div>
+        
+        <script>
+            // Mind map node data
+            const mindMapNodes = {json.dumps(mind_map_nodes)};
+            
+            // Wiki categories data
+            const wikiCategories = {json.dumps(wiki_categories)};
+            
+            // Current selections
+            let selectedWikiItem = null;
+            let selectedMindNode = null;
+            
+            // Initialize mind map
+            function initializeMindMap() {{
+                const mindMap = document.getElementById('mindMap');
+                const containerRect = mindMap.getBoundingClientRect();
+                const centerX = containerRect.width / 2;
+                const centerY = containerRect.height / 2;
+                const radius = Math.min(centerX, centerY) - 60;
+                
+                const nodeNames = Object.keys(mindMapNodes);
+                const angleStep = (2 * Math.PI) / nodeNames.length;
+                
+                nodeNames.forEach((nodeName, index) => {{
+                    const angle = index * angleStep;
+                    const x = centerX + radius * Math.cos(angle) - 40;
+                    const y = centerY + radius * Math.sin(angle) - 40;
+                    
+                    const node = document.createElement('div');
+                    node.className = 'mind-node';
+                    node.style.left = x + 'px';
+                    node.style.top = y + 'px';
+                    node.style.backgroundColor = mindMapNodes[nodeName].color;
+                    node.textContent = nodeName;
+                    node.dataset.node = nodeName;
+                    
+                    node.addEventListener('click', () => selectMindNode(node, nodeName));
+                    node.addEventListener('mouseenter', showTooltip);
+                    node.addEventListener('mouseleave', hideTooltip);
+                    
+                    mindMap.appendChild(node);
+                }});
+                
+                // Draw connections (simplified for demo)
+                drawConnections();
+            }}
+            
+            function drawConnections() {{
+                // This would implement connection lines between related nodes
+                // For now, we'll keep it simple without visual connections
+            }}
+            
+            function selectWikiItem(element, itemName) {{
+                // Remove previous selection
+                document.querySelectorAll('.wiki-item').forEach(item => {{
+                    item.classList.remove('active');
+                }});
+                
+                // Add selection to clicked item
+                element.classList.add('active');
+                selectedWikiItem = itemName;
+                
+                // Generate AI content for selected wiki item
+                generateAIContent('wiki', itemName);
+            }}
+            
+            function selectMindNode(element, nodeName) {{
+                // Remove previous selection
+                document.querySelectorAll('.mind-node').forEach(node => {{
+                    node.classList.remove('active');
+                }});
+                
+                // Add selection to clicked node
+                element.classList.add('active');
+                selectedMindNode = nodeName;
+                
+                // Generate AI content for selected mind node
+                generateAIContent('mind', nodeName);
+            }}
+            
+            function generateAIContent(type, selection) {{
+                const welcomeContent = document.querySelector('.welcome-content');
+                const aiContent = document.getElementById('aiContent');
+                
+                // Hide welcome, show AI content
+                welcomeContent.style.display = 'none';
+                aiContent.style.display = 'block';
+                
+                let content = '';
+                
+                if (type === 'wiki') {{
+                    content = generateWikiAIContent(selection);
+                }} else if (type === 'mind') {{
+                    content = generateMindAIContent(selection);
+                }}
+                
+                aiContent.innerHTML = content;
+            }}
+            
+            function generateWikiAIContent(wikiItem) {{
+                const baseName = wikiItem.replace('.md', '').replace(/_/g, ' ');
+                
+                const contentMap = {{
+                    'ARCHITECTURE_OVERVIEW.md': {{
+                        title: 'System Architecture Overview',
+                        sections: [
+                            {{
+                                title: 'Core Components',
+                                content: 'The Yourl.Cloud architecture is built on a microservices foundation with Flask as the primary web framework, running on Google Cloud Run for scalable containerized deployment.'
+                            }},
+                            {{
+                                title: 'Key Features',
+                                content: 'Features include trust-based AI integration, visitor tracking, marketing code system, and comprehensive security layers with Secret Manager integration.'
+                            }},
+                            {{
+                                title: 'Technology Stack',
+                                content: 'Python/Flask backend, Cloud Run hosting, SQLite/Cloud SQL database options, and integrated CI/CD pipeline with Cloud Build.'
+                            }}
+                        ]
+                    }},
+                    'SECURITY.md': {{
+                        title: 'Security Architecture & Policies',
+                        sections: [
+                            {{
+                                title: 'Security Framework',
+                                content: 'Multi-layered security approach including authentication, authorization, input validation, and secure communication protocols.'
+                            }},
+                            {{
+                                title: 'Access Control',
+                                content: 'Visitor-based authentication system with marketing codes, session management, and role-based access control for different user types.'
+                            }},
+                            {{
+                                title: 'Data Protection',
+                                content: 'Encrypted data transmission, secure secret management, and comprehensive audit logging for compliance and monitoring.'
+                            }}
+                        ]
+                    }},
+                    'DEPLOYMENT_SUMMARY.md': {{
+                        title: 'Deployment Guide & Best Practices',
+                        sections: [
+                            {{
+                                title: 'Cloud Run Deployment',
+                                content: 'Containerized deployment on Google Cloud Run with automatic scaling, health checks, and custom domain mapping support.'
+                            }},
+                            {{
+                                title: 'CI/CD Pipeline',
+                                content: 'Automated deployment pipeline using Cloud Build with testing, security scanning, and gradual rollout capabilities.'
+                            }},
+                            {{
+                                title: 'Environment Management',
+                                content: 'Separate development, staging, and production environments with environment-specific configuration and secrets management.'
+                            }}
+                        ]
+                    }}
+                }};
+                
+                const defaultContent = {{
+                    title: `${{baseName}} Documentation`,
+                    sections: [
+                        {{
+                            title: 'Overview',
+                            content: `This section covers ${{baseName.toLowerCase()}} within the Yourl.Cloud ecosystem. It provides comprehensive information about implementation, best practices, and integration guidelines.`
+                        }},
+                        {{
+                            title: 'Key Components',
+                            content: `The ${{baseName.toLowerCase()}} module includes essential features for maintaining system reliability, security, and performance within the Yourl.Cloud platform.`
+                        }},
+                        {{
+                            title: 'Implementation Guide',
+                            content: `Follow the guidelines in this documentation to properly implement and maintain ${{baseName.toLowerCase()}} functionality in your Yourl.Cloud deployment.`
+                        }}
+                    ]
+                }};
+                
+                const content = contentMap[wikiItem] || defaultContent;
+                
+                return `
+                    <h3>${{content.title}}</h3>
+                    ${{content.sections.map(section => `
+                        <div class="content-section">
+                            <h4>${{section.title}}</h4>
+                            <p>${{section.content}}</p>
+                        </div>
+                    `).join('')}}
+                    <div class="content-section" style="background: rgba(255,215,0,0.1); border-left-color: #ffd700;">
+                        <h4>🔗 Related Resources</h4>
+                        <p>For complete documentation, visit the <a href="https://github.com/XDM-ZSBW/yourl.cloud/wiki/${{wikiItem}}" target="_blank" style="color: #ffd700;">GitHub Wiki page</a>.</p>
+                    </div>
+                `;
+            }}
+            
+            function generateMindAIContent(mindNode) {{
+                const nodeData = mindMapNodes[mindNode];
+                
+                const contentMap = {{
+                    'Architecture': {{
+                        title: 'System Architecture Insights',
+                        description: 'Deep dive into the structural design and component relationships within Yourl.Cloud.',
+                        keyPoints: [
+                            'Microservices-based architecture with clear separation of concerns',
+                            'Flask web framework providing RESTful API endpoints',
+                            'Cloud-native design optimized for Google Cloud Run',
+                            'Modular component structure for maintainability and scalability'
+                        ],
+                        connections: 'Directly connected to Security (for secure design patterns), Infrastructure (for deployment architecture), and Development (for coding standards).'
+                    }},
+                    'Security': {{
+                        title: 'Security Framework Analysis',
+                        description: 'Comprehensive security implementation across all system layers.',
+                        keyPoints: [
+                            'Multi-factor authentication with visitor tracking',
+                            'Secret management using Google Cloud Secret Manager',
+                            'Input validation and sanitization at all entry points',
+                            'Encrypted communication and secure session management'
+                        ],
+                        connections: 'Integrates with Architecture (secure design), Operations (security monitoring), and Compliance (regulatory requirements).'
+                    }},
+                    'Development': {{
+                        title: 'Development Workflow & Practices',
+                        description: 'Modern development practices and tooling for efficient software delivery.',
+                        keyPoints: [
+                            'Python/Flask backend with comprehensive API design',
+                            'Docker containerization for consistent environments',
+                            'Automated testing and continuous integration',
+                            'Code quality standards and documentation practices'
+                        ],
+                        connections: 'Linked to Architecture (design patterns), Deployment (release processes), and Tools (development utilities).'
+                    }}
+                }};
+                
+                const defaultContent = {{
+                    title: `${{mindNode}} Concept Overview`,
+                    description: nodeData.description,
+                    keyPoints: [
+                        `Core principles and practices related to ${{mindNode.toLowerCase()}} in the Yourl.Cloud ecosystem`,
+                        `Integration patterns and best practices for ${{mindNode.toLowerCase()}} implementation`,
+                        `Monitoring and maintenance guidelines for ${{mindNode.toLowerCase()}} components`,
+                        `Future roadmap and evolution plans for ${{mindNode.toLowerCase()}} capabilities`
+                    ],
+                    connections: `This concept connects to: ${{nodeData.connections.join(', ')}}. These relationships ensure comprehensive coverage of the ${{mindNode.toLowerCase()}} domain.`
+                }};
+                
+                const content = contentMap[mindNode] || defaultContent;
+                
+                return `
+                    <h3>${{content.title}}</h3>
+                    <div class="content-section">
+                        <h4>🎯 Overview</h4>
+                        <p>${{content.description}}</p>
+                    </div>
+                    <div class="content-section">
+                        <h4>🔑 Key Points</h4>
+                        <ul>
+                            ${{content.keyPoints.map(point => `<li>${{point}}</li>`).join('')}}
+                        </ul>
+                    </div>
+                    <div class="content-section">
+                        <h4>🔗 Concept Connections</h4>
+                        <p>${{content.connections}}</p>
+                    </div>
+                    <div class="content-section" style="background: rgba(255,215,0,0.1); border-left-color: #ffd700;">
+                        <h4>💡 AI Insight</h4>
+                        <p>This AI-generated content provides contextual information about ${{mindNode.toLowerCase()}} within the Yourl.Cloud knowledge base. For detailed implementation guides, explore the related wiki documentation.</p>
+                    </div>
+                `;
+            }}
+            
+            function showTooltip(event) {{
+                const tooltip = document.getElementById('tooltip');
+                const nodeName = event.target.dataset.node;
+                const nodeData = mindMapNodes[nodeName];
+                
+                tooltip.textContent = nodeData.description;
+                tooltip.style.left = event.pageX + 10 + 'px';
+                tooltip.style.top = event.pageY - 10 + 'px';
+                tooltip.style.opacity = '1';
+            }}
+            
+            function hideTooltip() {{
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.opacity = '0';
+            }}
+            
+            // Initialize the mind map when page loads
+            document.addEventListener('DOMContentLoaded', function() {{
+                setTimeout(initializeMindMap, 100); // Small delay to ensure container is rendered
+            }});
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {{
+                const mindMap = document.getElementById('mindMap');
+                mindMap.innerHTML = '';
+                setTimeout(initializeMindMap, 100);
+            }});
+        </script>
+    </body>
+    </html>
+    """
+    
+    return make_response(html_content)
 
 if __name__ == '__main__':
     # Determine the display address for users
