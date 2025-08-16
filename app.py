@@ -1571,7 +1571,7 @@ def data_stream():
                     {''.join([f'<span class="visual-element">{element.replace("_", " ").title()}</span>' for element in frame['visual_elements']])}
                 </div>
                 <div class="wiki-links">
-                    {''.join([f'<a href="/wiki/{link}" class="wiki-link" target="_blank">📚 {link.replace(".md", "").replace("_", " ").title()}</a>' for link in frame.get('wiki_links', [])])}
+                    {''.join([f'<a href="{"/knowledge-hub" if link == "KNOWLEDGE_HUB.md" else f"/wiki/{link}"}" class="wiki-link" target="_blank">📚 {link.replace(".md", "").replace("_", " ").title()}</a>' for link in frame.get('wiki_links', [])])}
                 </div>
             </div>
             ''' for frame in story_frames])}
