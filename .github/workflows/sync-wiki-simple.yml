@@ -96,11 +96,49 @@ jobs:
             echo "✅ Existing wiki repository cloned"
           else
             echo "🚀 Creating new wiki repository..."
-            mkdir wiki-repo
+            mkdir -p wiki-repo
             cd wiki-repo
             git init
             git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git"
+            
+            # Create initial README.md
+            echo "# Welcome to Yourl.Cloud Wiki" > README.md
+            echo "" >> README.md
+            echo "This wiki is automatically synchronized from the main repository." >> README.md
+            
+            # Add, commit and push
+            git add README.md
+            git commit -m "Initial wiki setup"
+            git push -u origin main
+            
+            echo "✅ Wiki repository created successfully"
             cd ..
+          fi
+
+      - name: Check wiki repo structure
+        run: |
+          echo "🔍 Checking wiki repository structure..."
+          if [ -d "wiki-repo" ]; then
+            cd wiki-repo
+            echo "📁 Wiki repo contents:"
+            ls -la
+            echo ""
+            echo "🌿 Git branches:"
+            git branch -a
+            echo ""
+            echo "🔗 Git remotes:"
+            git remote -v
+            echo ""
+            echo "📋 Git log (last 5 commits):"
+            git log --oneline -5
+            echo ""
+            echo "🔑 Token check:"
+            echo "  - GITHUB_TOKEN available: ${{ secrets.GITHUB_TOKEN != '' }}"
+            echo "  - Repository: ${{ github.repository }}"
+            echo "  - Actor: ${{ github.actor }}"
+            cd ..
+          else
+            echo "❌ Wiki repo directory not found"
           fi
 
       - name: Sync wiki content
@@ -131,16 +169,54 @@ jobs:
             
             # Try to push to main branch
             echo "🚀 Pushing changes to wiki repository..."
+            echo "🔍 Debug info:"
+            echo "  - Current branch: $(git branch --show-current)"
+            echo "  - Remote origin: $(git remote get-url origin)"
+            echo "  - Git status:"
+            git status --porcelain
+            echo "  - Recent commits:"
+            git log --oneline -3
+            
             if git push origin main 2>/dev/null; then
               echo "✅ Wiki updated successfully (pushed to main branch)"
             else
               # If push fails, try to force push (this will overwrite remote changes)
               echo "⚠️ Regular push failed, attempting force push..."
+              echo "🔍 Force push debug info:"
+              echo "  - Local commits:"
+              git log --oneline origin/main..HEAD
+              echo "  - Remote commits:"
+              git log --oneline HEAD..origin/main
+              
               if git push --force-with-lease origin main 2>/dev/null; then
                 echo "✅ Wiki updated successfully (force pushed to main branch)"
               else
-                echo "❌ Failed to push changes to wiki repository"
-                exit 1
+                echo "❌ Force push also failed. Trying alternative approach..."
+                
+                # Try to reset to remote and reapply our changes
+                echo "🔄 Attempting alternative sync method..."
+                git fetch origin
+                git reset --hard origin/main
+                cp -r ../wiki/* .
+                cp ../wiki-output/Home.md .
+                git add -A
+                git commit -m "chore(wiki): sync from main repo @ ${{ github.sha }} (alternative method)"
+                
+                if git push origin main 2>/dev/null; then
+                  echo "✅ Wiki updated successfully (alternative method)"
+                else
+                  echo "❌ All push methods failed. Final debug info:"
+                  echo "  - Git remote -v:"
+                  git remote -v
+                  echo "  - Git branch -a:"
+                  git branch -a
+                  echo "  - Git log --oneline -5:"
+                  git log --oneline -5
+                  echo "  - Current working directory: $(pwd)"
+                  echo "  - Directory contents:"
+                  ls -la
+                  exit 1
+                fi
               fi
             fi
           else

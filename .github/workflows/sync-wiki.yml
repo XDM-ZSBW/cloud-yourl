@@ -42,15 +42,27 @@ jobs:
         if: steps.check-wiki.outputs.exists == 'false'
         run: |
           echo "🚀 Creating wiki repository..."
+          
+          # Create a new directory for the wiki repo
+          mkdir -p wiki-repo
+          cd wiki-repo
+          
+          # Initialize git repository
+          git init
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git"
+          
           # Create a simple README.md to initialize the wiki
           echo "# Welcome to Yourl.Cloud Wiki" > README.md
           echo "" >> README.md
           echo "This wiki is automatically synchronized from the main repository." >> README.md
           
-          # Push to main branch (GitHub Wikis use main by default)
+          # Add, commit and push to main branch (GitHub Wikis use main by default)
           git add README.md
           git commit -m "Initial wiki setup"
-          git push origin HEAD:main
+          git push -u origin main
+          
+          echo "✅ Wiki repository created successfully"
+          cd ..
 
       - name: Clone wiki repo
         if: steps.check-wiki.outputs.exists == 'true'
