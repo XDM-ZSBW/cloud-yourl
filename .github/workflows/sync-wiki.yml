@@ -5,9 +5,12 @@ on:
     paths:
       - "wiki/**"
       - ".github/workflows/sync-wiki.yml"
+  workflow_dispatch:  # Allow manual triggering
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   sync:
@@ -15,13 +18,42 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for better git operations
 
       - name: Configure Git
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+      - name: Check if wiki repo exists
+        id: check-wiki
+        run: |
+          echo "🔍 Checking if wiki repository exists..."
+          if curl -s -o /dev/null -w "%{http_code}" "https://github.com/${{ github.repository }}.wiki" | grep -q "200"; then
+            echo "✅ Wiki repository exists"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Wiki repository does not exist - creating it"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create wiki repo if it doesn't exist
+        if: steps.check-wiki.outputs.exists == 'false'
+        run: |
+          echo "🚀 Creating wiki repository..."
+          # Create a simple README.md to initialize the wiki
+          echo "# Welcome to Yourl.Cloud Wiki" > README.md
+          echo "" >> README.md
+          echo "This wiki is automatically synchronized from the main repository." >> README.md
+          
+          # Push to wiki branch (this creates the wiki repository)
+          git add README.md
+          git commit -m "Initial wiki setup"
+          git push origin HEAD:wiki
+
       - name: Clone wiki repo
+        if: steps.check-wiki.outputs.exists == 'true'
         run: |
           set -e
           echo "🔄 Cloning wiki repository..."
@@ -35,34 +67,60 @@ jobs:
           echo "📁 Source directory contents:"
           ls -la wiki/
           echo ""
-          echo "📁 Target directory contents (before sync):"
-          ls -la wiki-repo/
-          echo ""
           
-          # Sync files with deletion support
-          rsync -av --delete wiki/ wiki-repo/
-          echo "✅ Files synced successfully"
-          
-          cd wiki-repo
-          echo "🔍 Checking for changes..."
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "📝 Changes detected, committing and pushing..."
-            git add -A
-            git commit -m "chore(wiki): sync from /wiki @ ${{ github.sha }}"
-            git push
-            echo "✅ Wiki updated successfully"
+          if [ -d "wiki-repo" ]; then
+            echo "📁 Target directory contents (before sync):"
+            ls -la wiki-repo/
+            echo ""
+            
+            # Sync files with deletion support
+            rsync -av --delete wiki/ wiki-repo/
+            echo "✅ Files synced successfully"
+            
+            cd wiki-repo
+            echo "🔍 Checking for changes..."
+            if [ -n "$(git status --porcelain)" ]; then
+              echo "📝 Changes detected, committing and pushing..."
+              git add -A
+              git commit -m "chore(wiki): sync from /wiki @ ${{ github.sha }}"
+              git push
+              echo "✅ Wiki updated successfully"
+            else
+              echo "ℹ️ No changes to commit."
+            fi
           else
-            echo "ℹ️ No changes to commit."
+            echo "📁 Creating wiki repository structure..."
+            mkdir -p wiki-repo
+            cp -r wiki/* wiki-repo/
+            cd wiki-repo
+            git init
+            git add -A
+            git commit -m "Initial wiki sync from /wiki @ ${{ github.sha }}"
+            git branch -M wiki
+            git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git"
+            git push -u origin wiki
+            echo "✅ Wiki repository created and synced successfully"
           fi
 
       - name: Verify sync
         run: |
           echo "🔍 Verifying wiki sync..."
-          cd wiki-repo
-          echo "📁 Current wiki contents:"
-          ls -la
-          echo ""
-          echo "📋 Git log (last 3 commits):"
-          git log --oneline -3
-          echo ""
+          if [ -d "wiki-repo" ]; then
+            cd wiki-repo
+            echo "📁 Current wiki contents:"
+            ls -la
+            echo ""
+            echo "📋 Git log (last 3 commits):"
+            git log --oneline -3
+            echo ""
+          fi
           echo "✅ Wiki sync verification complete"
+
+      - name: Handle errors gracefully
+        if: failure()
+        run: |
+          echo "❌ Wiki sync failed - checking for common issues..."
+          echo "📋 Repository: ${{ github.repository }}"
+          echo "🔑 Token available: ${{ secrets.GITHUB_TOKEN != '' }}"
+          echo "📁 Wiki directory exists: ${{ steps.check-wiki.outputs.exists }}"
+          echo "🔄 Check GitHub Actions logs for detailed error information"

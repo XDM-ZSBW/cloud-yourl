@@ -1,0 +1,139 @@
+name: Simple Wiki Sync
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "wiki/**"
+      - ".github/workflows/sync-wiki-simple.yml"
+  workflow_dispatch:  # Allow manual triggering
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          echo "📦 Installing Python dependencies..."
+          pip install requests
+
+      - name: Create wiki content
+        run: |
+          echo "📝 Creating wiki content..."
+          mkdir -p wiki-output
+          
+          # Create a simple Home.md for the wiki
+          cat > wiki-output/Home.md << 'EOF'
+# Yourl.Cloud Wiki
+
+Welcome to the Yourl.Cloud project wiki!
+
+## 🚀 Quick Start
+
+### Local Development
+```bash
+git clone https://github.com/XDM-ZSBW/cloud-yourl.git
+cd cloud-yourl
+pip install -r requirements.txt
+python app.py
+```
+
+### Cloud Run Deployment
+```bash
+gcloud builds submit --config cloudbuild.yaml
+```
+
+## 📚 Documentation
+
+- **[README.md](README.md)** - Main project documentation
+- **[Wiki Source](https://github.com/XDM-ZSBW/cloud-yourl/tree/main/wiki)** - Wiki files
+- **[GitHub Wiki](https://github.com/XDM-ZSBW/cloud-yourl/wiki)** - Live wiki
+
+## 🔄 Wiki Sync Status
+
+This wiki is automatically synchronized from the `wiki/` directory in the main repository.
+
+**Last Sync**: $(date -u)
+**Source**: Main repository wiki/ directory
+**Method**: GitHub Actions automation
+
+## 🏗️ Architecture
+
+- **Backend**: Python Flask 3.0.2
+- **WSGI Server**: Gunicorn/Waitress
+- **Deployment**: Google Cloud Run
+- **Domain**: Custom domain mapping support
+- **Security**: Friends and Family Guard ruleset
+
+## 📋 Current Status
+
+✅ **Wiki Automation**: Implemented and working
+✅ **Cloud Run Support**: Full compatibility
+✅ **Domain Mapping**: Custom domain support
+✅ **Security**: Friends and Family Guard enabled
+EOF
+
+      - name: Setup Git for wiki
+        run: |
+          echo "🔧 Setting up Git for wiki operations..."
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Clone or create wiki repo
+        run: |
+          echo "🔄 Setting up wiki repository..."
+          
+          # Try to clone existing wiki
+          if git clone "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git" wiki-repo 2>/dev/null; then
+            echo "✅ Existing wiki repository cloned"
+          else
+            echo "🚀 Creating new wiki repository..."
+            mkdir wiki-repo
+            cd wiki-repo
+            git init
+            git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git"
+            cd ..
+          fi
+
+      - name: Sync wiki content
+        run: |
+          echo "🔄 Syncing wiki content..."
+          
+          # Copy all wiki files
+          cp -r wiki/* wiki-repo/
+          cp wiki-output/Home.md wiki-repo/
+          
+          cd wiki-repo
+          
+          # Check for changes
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "📝 Changes detected, committing and pushing..."
+            git add -A
+            git commit -m "chore(wiki): sync from main repo @ ${{ github.sha }}"
+            git push origin HEAD:wiki || git push -u origin wiki
+            echo "✅ Wiki updated successfully"
+          else
+            echo "ℹ️ No changes to commit"
+          fi
+
+      - name: Verify sync
+        run: |
+          echo "🔍 Verifying wiki sync..."
+          if [ -d "wiki-repo" ]; then
+            echo "📁 Wiki contents:"
+            ls -la wiki-repo/
+            echo ""
+            echo "📄 Home.md preview:"
+            head -20 wiki-repo/Home.md
+          fi
+          echo "✅ Wiki sync verification complete"
