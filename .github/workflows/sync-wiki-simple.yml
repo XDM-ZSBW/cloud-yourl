@@ -33,55 +33,53 @@ jobs:
           mkdir -p wiki-output
           
           # Create a simple Home.md for the wiki
-          cat > wiki-output/Home.md << 'EOF'
-# Yourl.Cloud Wiki
-
-Welcome to the Yourl.Cloud project wiki!
-
-## 🚀 Quick Start
-
-### Local Development
-```bash
-git clone https://github.com/XDM-ZSBW/cloud-yourl.git
-cd cloud-yourl
-pip install -r requirements.txt
-python app.py
-```
-
-### Cloud Run Deployment
-```bash
-gcloud builds submit --config cloudbuild.yaml
-```
-
-## 📚 Documentation
-
-- **[README.md](README.md)** - Main project documentation
-- **[Wiki Source](https://github.com/XDM-ZSBW/cloud-yourl/tree/main/wiki)** - Wiki files
-- **[GitHub Wiki](https://github.com/XDM-ZSBW/cloud-yourl/wiki)** - Live wiki
-
-## 🔄 Wiki Sync Status
-
-This wiki is automatically synchronized from the `wiki/` directory in the main repository.
-
-**Last Sync**: $(date -u)
-**Source**: Main repository wiki/ directory
-**Method**: GitHub Actions automation
-
-## 🏗️ Architecture
-
-- **Backend**: Python Flask 3.0.2
-- **WSGI Server**: Gunicorn/Waitress
-- **Deployment**: Google Cloud Run
-- **Domain**: Custom domain mapping support
-- **Security**: Friends and Family Guard ruleset
-
-## 📋 Current Status
-
-✅ **Wiki Automation**: Implemented and working
-✅ **Cloud Run Support**: Full compatibility
-✅ **Domain Mapping**: Custom domain support
-✅ **Security**: Friends and Family Guard enabled
-EOF
+          echo "# Yourl.Cloud Wiki" > wiki-output/Home.md
+          echo "" >> wiki-output/Home.md
+          echo "Welcome to the Yourl.Cloud project wiki!" >> wiki-output/Home.md
+          echo "" >> wiki-output/Home.md
+          echo "## 🚀 Quick Start" >> wiki-output/Home.md
+          echo "" >> wiki-output/Home.md
+          echo "### Local Development" >> wiki-output/Home.md
+          echo '```bash' >> wiki-output/Home.md
+          echo 'git clone https://github.com/XDM-ZSBW/cloud-yourl.git' >> wiki-output/Home.md
+          echo 'cd cloud-yourl' >> wiki-output/Home.md
+          echo 'pip install -r requirements.txt' >> wiki-output/Home.md
+          echo 'python app.py' >> wiki-output/Home.md
+          echo '```' >> wiki-output/Home.md
+          echo "" >> wiki-output/Home.md
+          echo "### Cloud Run Deployment" >> wiki-output/Home.md
+          echo '```bash' >> wiki-output/Home.md
+          echo 'gcloud builds submit --config cloudbuild.yaml' >> wiki-output/Home.md
+          echo '```' >> wiki-output/Home.md
+          echo "" >> wiki-output/Home.md
+          echo "## 📚 Documentation" >> wiki-output/Home.md
+          echo "" >> wiki-output/Home.md
+          echo "- **[README.md](README.md)** - Main project documentation" >> wiki-output/Home.md
+          echo "- **[Wiki Source](https://github.com/XDM-ZSBW/cloud-yourl/tree/main/wiki)** - Wiki files" >> wiki-output/Home.md
+          echo "- **[GitHub Wiki](https://github.com/XDM-ZSBW/cloud-yourl/wiki)** - Live wiki" >> wiki-output/Home.md
+          echo "" >> wiki-output/Home.md
+          echo "## 🔄 Wiki Sync Status" >> wiki-output/Home.md
+          echo "" >> wiki-output/Home.md
+          echo "This wiki is automatically synchronized from the \`wiki/\` directory in the main repository." >> wiki-output/Home.md
+          echo "" >> wiki-output/Home.md
+          echo "**Last Sync**: $(date -u)" >> wiki-output/Home.md
+          echo "**Source**: Main repository wiki/ directory" >> wiki-output/Home.md
+          echo "**Method**: GitHub Actions automation" >> wiki-output/Home.md
+          echo "" >> wiki-output/Home.md
+          echo "## 🏗️ Architecture" >> wiki-output/Home.md
+          echo "" >> wiki-output/Home.md
+          echo "- **Backend**: Python Flask 3.0.2" >> wiki-output/Home.md
+          echo "- **WSGI Server**: Gunicorn/Waitress" >> wiki-output/Home.md
+          echo "- **Deployment**: Google Cloud Run" >> wiki-output/Home.md
+          echo "- **Domain**: Custom domain mapping support" >> wiki-output/Home.md
+          echo "- **Security**: Friends and Family Guard ruleset" >> wiki-output/Home.md
+          echo "" >> wiki-output/Home.md
+          echo "## 📋 Current Status" >> wiki-output/Home.md
+          echo "" >> wiki-output/Home.md
+          echo "✅ **Wiki Automation**: Implemented and working" >> wiki-output/Home.md
+          echo "✅ **Cloud Run Support**: Full compatibility" >> wiki-output/Home.md
+          echo "✅ **Domain Mapping**: Custom domain support" >> wiki-output/Home.md
+          echo "✅ **Security**: Friends and Family Guard enabled" >> wiki-output/Home.md
 
       - name: Setup Git for wiki
         run: |
