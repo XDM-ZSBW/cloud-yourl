@@ -112,10 +112,27 @@ jobs:
             # Add, commit and push
             git add README.md
             git commit -m "Initial wiki setup"
-            git push -u origin main
             
-            echo "✅ Wiki repository created successfully"
-            cd ..
+            # Try to push, but handle case where repo already exists
+            if git push -u origin main 2>/dev/null; then
+              echo "✅ Wiki repository created successfully"
+            else
+              echo "⚠️ Push failed, wiki repository may already exist. Trying to pull existing content..."
+              cd ..
+              rm -rf wiki-repo
+              
+              # Try cloning again (it should work now)
+              if git clone "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git" wiki-repo 2>/dev/null; then
+                echo "✅ Successfully cloned existing wiki repository"
+              else
+                echo "❌ Failed to clone wiki repository"
+                exit 1
+              fi
+            fi
+            
+            if [ "$(pwd)" = "/home/runner/work/cloud-yourl/cloud-yourl/wiki-repo" ]; then
+              cd ..
+            fi
           fi
 
       - name: Check wiki repo structure
