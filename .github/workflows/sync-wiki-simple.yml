@@ -115,19 +115,33 @@ jobs:
           
           # Check for changes
           if [ -n "$(git status --porcelain)" ]; then
-            echo "📝 Changes detected, committing and pushing..."
+            echo "📝 Changes detected, preparing to commit and push..."
+            
+            # Try to pull latest changes first to avoid conflicts
+            echo "🔄 Pulling latest changes from remote..."
+            if git pull origin main --no-edit 2>/dev/null; then
+              echo "✅ Successfully pulled latest changes"
+            else
+              echo "ℹ️ No remote changes to pull or pull failed (continuing...)"
+            fi
+            
+            # Add and commit changes
             git add -A
             git commit -m "chore(wiki): sync from main repo @ ${{ github.sha }}"
             
-            # Try to push to main branch first (GitHub Wikis use main by default)
+            # Try to push to main branch
+            echo "🚀 Pushing changes to wiki repository..."
             if git push origin main 2>/dev/null; then
               echo "✅ Wiki updated successfully (pushed to main branch)"
             else
-              # If main branch doesn't exist, try to create it
-              echo "🔄 Creating main branch and pushing..."
-              git branch -M main
-              git push -u origin main
-              echo "✅ Wiki updated successfully (created main branch)"
+              # If push fails, try to force push (this will overwrite remote changes)
+              echo "⚠️ Regular push failed, attempting force push..."
+              if git push --force-with-lease origin main 2>/dev/null; then
+                echo "✅ Wiki updated successfully (force pushed to main branch)"
+              else
+                echo "❌ Failed to push changes to wiki repository"
+                exit 1
+              fi
             fi
           else
             echo "ℹ️ No changes to commit"
@@ -145,5 +159,8 @@ jobs:
             echo ""
             echo "🌿 Current branch:"
             cd wiki-repo && git branch -a
+            echo ""
+            echo "📋 Recent commits:"
+            git log --oneline -3
           fi
           echo "✅ Wiki sync verification complete"
