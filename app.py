@@ -1581,7 +1581,7 @@ def data_stream():
             <a href="/api" class="nav-btn">🔌 API</a>
             <a href="/status" class="nav-btn">📊 Status</a>
             <a href="/data" class="nav-btn">📡 Data Stream</a>
-            <a href="/wiki/KNOWLEDGE_HUB.md" class="nav-btn" target="_blank">🧠 Knowledge Hub</a>
+            <a href="https://github.com/XDM-ZSBW/yourl.cloud/wiki/KNOWLEDGE_HUB.md" class="nav-btn" target="_blank">🧠 Knowledge Hub</a>
         </div>
         
         <script>
