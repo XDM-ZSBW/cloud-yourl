@@ -39,7 +39,7 @@ Welcome to the Yourl.Cloud Knowledge Hub - your comprehensive guide to understan
 
 ### **📚 Documentation & Knowledge**
 - **[API Documentation](app.py#get_request_url)** - API endpoints and usage
-- **[Wiki System](WIKI_UPDATE_SYSTEM.md)** - Documentation management
+- **[Wiki System](WIKI_UPDATE_SYSTEM.md)** - Documentation management (manual sync required)
 - **[Change Management](WIKI_UPDATE_SUMMARY.md)** - Change tracking and history
 - **[Troubleshooting](STATUS.md)** - Common issues and solutions
 - **[External Resources](EXTERNAL_RESOURCES.md)** - Tools, packages, and integrations
@@ -94,11 +94,12 @@ Version Control → Change Tracking → Update Notification → Archive
 - **Real-time Updates**: Live data streaming and visualization
 - **Interactive Elements**: Hover effects, animations, and transitions
 
-### **Wiki Integration**
+### **Wiki Integration** (Future Feature)
 - **Cross-references**: Linked documentation and resources
 - **Version Control**: Historical changes and updates
 - **Search Functionality**: Full-text search across documentation
 - **Collaboration**: Team editing and review processes
+- **Status**: Manual synchronization required until automation is implemented
 
 ## 🚀 **Getting Started**
 
@@ -186,7 +187,7 @@ Review the **[Security Checklist](SECURITY_CHECKLIST.md)** to ensure all securit
 
 ### **📚 Learn**
 - **[Knowledge Hub](KNOWLEDGE_HUB.md)** - This page
-- **[Wiki System](WIKI_UPDATE_SYSTEM.md)** - Documentation management
+- **[Wiki System](WIKI_UPDATE_SYSTEM.md)** - Documentation management (manual sync required)
 - **[Change Management](WIKI_UPDATE_SUMMARY.md)** - Change tracking
 
 ---

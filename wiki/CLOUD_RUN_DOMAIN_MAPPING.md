@@ -195,7 +195,7 @@ dig yourl.cloud
 
 ```bash
 # Test health endpoint locally
-curl -f http://localhost:8080/health
+curl -f http://localhost:PORT/health
 
 # Check Cloud Run logs
 gcloud logs read --service=yourl-cloud --limit=50
@@ -208,7 +208,7 @@ gcloud logs read --service=yourl-cloud --limit=50
 curl -H "X-Forwarded-Host: yourl.cloud" \
      -H "X-Forwarded-Proto: https" \
      -H "X-Forwarded-For: 1.2.3.4" \
-     http://localhost:8080/api
+     http://localhost:PORT/api
 ```
 
 ### Debug Mode

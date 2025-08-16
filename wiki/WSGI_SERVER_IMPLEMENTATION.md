@@ -167,8 +167,11 @@ The `/status` endpoint includes production mode information:
 
 3. **Verify WSGI server**:
    ```bash
-   curl http://localhost:8080/health
+   # Replace PORT with the actual port shown in console output
+   curl http://localhost:PORT/health
    ```
+
+**⚠️ Note**: The local server uses dynamic port assignment. Always check the console output for the exact port number when running locally.
 
 ### Cloud Deployment
 

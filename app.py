@@ -83,7 +83,7 @@ CLOUD_RUN_CONFIG = {
 _generated_code_cache = None
 _generated_hash_code_cache = {}
 
-def generate_marketing_password():
+def generate_marketing_code():
     """
     Generate a fun, marketing-friendly password that changes with each commit.
     Uses git commit hash to ensure consistency within a commit but changes between commits.
@@ -140,8 +140,8 @@ def generate_marketing_password():
     
     return password
 
-def generate_marketing_password_from_hash(commit_hash: str):
-    """Generate marketing password from specific commit hash"""
+def generate_marketing_code_from_hash(commit_hash: str):
+    """Generate marketing code from specific commit hash"""
     global _generated_hash_code_cache
     
     # Return cached code if available
@@ -193,9 +193,9 @@ def generate_marketing_password_from_hash(commit_hash: str):
 _current_code_printed = False
 _next_code_printed = False
 
-def get_current_marketing_password():
+def get_current_marketing_code():
     """
-    Get the current live marketing password from database.
+    Get the current live marketing code from database.
     This should only change after successful deployment.
     """
     global _current_code_printed
@@ -244,23 +244,23 @@ def get_current_marketing_password():
             _current_code_printed = True
     
     # Fallback to environment variable
-    build_password = os.environ.get('BUILD_MARKETING_PASSWORD')
+    build_password = os.environ.get('BUILD_MARKETING_CODE')
     if build_password:
         if not _current_code_printed:
-            print(f"✅ Using BUILD_MARKETING_PASSWORD: {build_password}")
+            print(f"✅ Using BUILD_MARKETING_CODE: {build_password}")
             _current_code_printed = True
         return build_password
     
     # Last resort: generate based on current commit (should not happen in production)
-    fallback_code = generate_marketing_password()
+    fallback_code = generate_marketing_code()
     if not _current_code_printed:
         print(f"⚠️ Using fallback generated code: {fallback_code}")
         _current_code_printed = True
     return fallback_code
 
-def get_next_marketing_password():
+def get_next_marketing_code():
     """
-    Get the next marketing password from database.
+    Get the next marketing code from database.
     This is what will become the current code after next deployment.
     """
     global _next_code_printed
@@ -316,7 +316,7 @@ def get_next_marketing_password():
     except:
         next_hash = "next_unknown"
     
-    fallback_code = generate_marketing_password_from_hash(next_hash)
+    fallback_code = generate_marketing_code_from_hash(next_hash)
     if not _next_code_printed:
         print(f"⚠️ Using fallback generated next code: {fallback_code}")
         _next_code_printed = True
@@ -337,7 +337,6 @@ FRIENDS_FAMILY_GUARD = {
 
 # Demo configuration for rapid prototyping (replace with proper auth/db for production)
 DEMO_CONFIG = {
-    "password": get_current_marketing_password(),  # Dynamic marketing password that changes with commits
     "connections": [
         {
             "id": 1,
@@ -508,18 +507,129 @@ def main_endpoint():
     Compatible with Cloud Run domain mappings with visitor tracking.
     """
     if request.method == 'GET':
-        # Get current marketing password
-        current_password = get_current_marketing_password()
+        # Get current marketing code
+        current_password = get_current_marketing_code()
         
         # Get visitor information
         visitor_data = get_visitor_data()
+        
+        # Check for authentication error in session
+        auth_error = session.get('auth_error')
+        show_tutorial = request.args.get('error') == 'auth_failed'
+        
+        # Clear the error from session after displaying
+        if auth_error:
+            session.pop('auth_error', None)
         
         # Create response with no-cache headers to ensure fresh content
         if os.path.exists('templates/index.html'):
             response = make_response(render_template('index.html', 
                                                  marketing_code=current_password,
-                                                 visitor_data=visitor_data))
+                                                 visitor_data=visitor_data,
+                                                 auth_error=auth_error,
+                                                 show_tutorial=show_tutorial))
         else:
+            # Build error message and tutorial HTML
+            error_html = ""
+            tutorial_html = ""
+            
+            if auth_error:
+                error_html = f"""
+                <div class="error-message" style="background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center;">
+                    <strong>❌ {auth_error['message']}</strong><br>
+                    <small>Current code: <code style="background: #fff3cd; padding: 2px 6px; border-radius: 3px;">{auth_error['current_code']}</code></small>
+                </div>
+                """
+            
+            if show_tutorial:
+                tutorial_html = f"""
+                <div class="tutorial-container" style="background: #d1ecf1; border: 1px solid #bee5eb; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                    <h3 style="color: #0c5460; text-align: center; margin-top: 0;">🎯 How to Get Your Marketing Code</h3>
+                    
+                    <div class="tutorial-steps" style="display: flex; flex-direction: column; gap: 15px;">
+                        <div class="step" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div class="step-number" style="background: #007bff; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">1</div>
+                            <div class="step-content">
+                                <strong>Copy the Current Code:</strong> 
+                                <div class="code-display" style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 8px; border-radius: 5px; margin: 5px 0; font-family: monospace; font-size: 16px; text-align: center; cursor: pointer;" onclick="copyToClipboard('{current_password}')" title="Click to copy">
+                                    {current_password}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="step" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div class="step-number" style="background: #28a745; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">2</div>
+                            <div class="step-content">
+                                <strong>Paste into the Code Box:</strong> 
+                                <div class="paste-animation" style="text-align: center; margin: 5px 0;">
+                                    <span class="arrow" style="font-size: 20px; animation: arrow 2s infinite;">➡️</span>
+                                    <span class="input-box" style="font-size: 20px; animation: input 2s infinite;">📝</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="step" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div class="step-number" style="background: #ffc107; color: #212529; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">3</div>
+                            <div class="step-content">
+                                <strong>Click the Launch Button:</strong> 
+                                <div class="button-animation" style="text-align: center; margin: 5px 0;">
+                                    <span class="button-icon" style="font-size: 20px; animation: button 2s infinite;">🚀</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tutorial-note" style="text-align: center; margin-top: 15px; font-style: italic; color: #6c757d;">
+                        💡 <strong>Pro Tip:</strong> The marketing code changes with each deployment, so always use the current one shown above!
+                    </div>
+                </div>
+                
+                <style>
+                    @keyframes paste {{
+                        0%, 100% {{ transform: scale(1); opacity: 1; }}
+                        50% {{ transform: scale(1.2); opacity: 0.8; }}
+                    }}
+                    @keyframes arrow {{
+                        0%, 100% {{ transform: translateX(0); opacity: 1; }}
+                        50% {{ transform: translateX(10px); opacity: 0.6; }}
+                    }}
+                    @keyframes input {{
+                        0%, 100% {{ transform: scale(1); opacity: 1; }}
+                        50% {{ transform: scale(1.1); opacity: 0.8; }}
+                    }}
+                    @keyframes button {{
+                        0%, 100% {{ transform: scale(1); opacity: 1; }}
+                        50% {{ transform: scale(1.3); opacity: 0.8; }}
+                    }}
+                    .code-display:hover {{
+                        background: #ffeaa7 !important;
+                        transform: scale(1.02);
+                        transition: all 0.2s ease;
+                    }}
+                </style>
+                
+                <script>
+                    function copyToClipboard(text) {{
+                        navigator.clipboard.writeText(text).then(function() {{
+                            // Show success feedback
+                            const codeDisplay = document.querySelector('.code-display');
+                            const originalText = codeDisplay.textContent;
+                            codeDisplay.textContent = '✅ Copied!';
+                            codeDisplay.style.background = '#d4edda';
+                            codeDisplay.style.color = '#155724';
+                            
+                            setTimeout(() => {{
+                                codeDisplay.textContent = originalText;
+                                codeDisplay.style.background = '#fff3cd';
+                                codeDisplay.style.color = '#856404';
+                            }}, 1500);
+                        }}).catch(function(err) {{
+                            console.error('Could not copy text: ', err);
+                        }});
+                    }}
+                </script>
+                """
+            
             response = make_response(f"""
         <!DOCTYPE html>
         <html>
@@ -538,6 +648,7 @@ def main_endpoint():
                 button:hover {{ background: #0056b3; }}
                 .info {{ background: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0; }}
                 .password-display {{ background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin: 10px 0; text-align: center; font-weight: bold; }}
+                .error-message {{ background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center; }}
             </style>
         </head>
         <body>
@@ -549,6 +660,10 @@ def main_endpoint():
                     <strong>Domain:</strong> {get_original_host()}<br>
                     <strong>Protocol:</strong> {get_original_protocol()}
                 </div>
+                
+                {error_html}
+                {tutorial_html}
+                
                 <form method="POST">
                     <div class="form-group">
                         <label for="password">🎯 Marketing Password:</label>
@@ -577,7 +692,7 @@ def main_endpoint():
     elif request.method == 'POST':
         # Handle authentication with simple password check
         password = request.form.get('password', '')
-        current_password = get_current_marketing_password()
+        current_password = get_current_marketing_code()
         
         if password == current_password:
             # Set session-based authentication (for when database is not available)
@@ -585,7 +700,7 @@ def main_endpoint():
             session['last_access_code'] = current_password
             
             # Get the next code for authenticated users (Cursor ownership)
-            next_password = get_next_marketing_password()
+            next_password = get_next_marketing_code()
             
             # Log successful authentication to database if available
             try:
@@ -678,11 +793,11 @@ def main_endpoint():
                     "build_version": build_version,
                     "marketing_code": current_password
                 },
-                "current_marketing_password": current_password,
-                "next_marketing_password": next_password,
+                "current_marketing_code": current_password,
+                "next_marketing_code": next_password,
                 "ownership": {
-                    "perplexity": "current_marketing_password",
-                    "cursor": "next_marketing_password"
+                    "perplexity": "current_marketing_code",
+                    "cursor": "next_marketing_code"
                 },
                 "navigation": {
                     "back_to_landing": f"{get_original_protocol()}://{get_original_host()}/",
@@ -719,11 +834,11 @@ def main_endpoint():
                     'build_version': build_version,
                     'marketing_code': current_password
                 },
-                'current_marketing_password': current_password,
-                'next_marketing_password': next_password,
+                'current_marketing_code': current_password,
+                'next_marketing_code': next_password,
                 'ownership': {
-                    'perplexity': 'current_marketing_password',
-                    'cursor': 'next_marketing_password'
+                    'perplexity': 'current_marketing_code',
+                    'cursor': 'next_marketing_code'
                 },
                 'navigation': {
                     'back_to_landing': f"{get_original_protocol()}://{get_original_host()}/",
@@ -745,6 +860,14 @@ def main_endpoint():
             
             # Redirect to prevent form resubmission (PRG pattern)
             return redirect('/authenticated', code=302)
+        else:
+            # Handle failed authentication - redirect to home with error message
+            session['auth_error'] = {
+                'message': 'Invalid password. Please try again.',
+                'current_code': current_password,
+                'timestamp': datetime.utcnow().isoformat()
+            }
+            return redirect('/?error=auth_failed', code=302)
     
     else:
         return jsonify({"error": "Method not allowed"}), 405
@@ -2139,7 +2262,7 @@ def attempt_code_recovery(visitor_id: str, user_agent: str, ip_address: str) -> 
         database_connection = os.environ.get('DATABASE_CONNECTION_STRING')
         if not database_connection:
             # Fallback: suggest current live code when database is not available
-            current_code = get_current_marketing_password()
+            current_code = get_current_marketing_code()
             return {
                 'success': True,
                 'message': f'Database not connected - using current live code: {current_code}',
@@ -2161,7 +2284,7 @@ def attempt_code_recovery(visitor_id: str, user_agent: str, ip_address: str) -> 
         
         if not visitor_history:
             # No history found - suggest current code
-            current_code = get_current_marketing_password()
+            current_code = get_current_marketing_code()
             return {
                 'success': True,
                 'message': f'No previous usage history found - using current live code: {current_code}',
@@ -2191,7 +2314,7 @@ def attempt_code_recovery(visitor_id: str, user_agent: str, ip_address: str) -> 
             message = f"Based on your recent activity, you may have tried: {suggested_code}"
         else:
             # No clear pattern - suggest current code
-            suggested_code = get_current_marketing_password()
+            suggested_code = get_current_marketing_code()
             recovery_method = 'current_code'
             message = f"Using current live code: {suggested_code}"
         
@@ -2211,7 +2334,7 @@ def attempt_code_recovery(visitor_id: str, user_agent: str, ip_address: str) -> 
     except Exception as e:
         print(f"⚠️ Error in code recovery: {e}")
         # Fallback: suggest current code on any error
-        current_code = get_current_marketing_password()
+        current_code = get_current_marketing_code()
         return {
             'success': True,
             'message': f'Recovery system error - using current live code: {current_code}',
@@ -2467,8 +2590,8 @@ if __name__ == '__main__':
     else:
         display_host = HOST
     
-    # Get current marketing password
-    current_password = get_current_marketing_password()
+    # Get current marketing code
+    current_password = get_current_marketing_code()
     
     print(f"🚀 Starting URL API Server with Visual Inspection")
     print(f"📍 Host: {display_host}")

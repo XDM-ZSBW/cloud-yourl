@@ -8,7 +8,7 @@
 ## 🎯 Requirements Implemented
 
 ### 1. Google Cloud Run Support
-- ✅ **Environment-based port configuration**: Reads `PORT` environment variable (default 8080)
+- ✅ **Environment-based port configuration**: Reads `PORT` environment variable (default 8080 for Docker/Cloud Run, dynamic for local development)
 - ✅ **Docker containerization**: Optimized Dockerfile for Cloud Run
 - ✅ **Cloud Build automation**: `cloudbuild.yaml` for automated deployment
 - ✅ **Production-ready configuration**: Compatible with Cloud Run requirements
@@ -54,7 +54,7 @@
 ```python
 # Google Cloud Run compatible
 HOST = '0.0.0.0'  # Listen on all interfaces
-PORT = int(os.environ.get('PORT', 8080))  # Read PORT from environment
+PORT = int(os.environ.get('PORT', 8080))  # Read PORT from environment (8080 for Docker/Cloud Run, dynamic for local)
 ```
 
 ### New Demo Configuration
@@ -91,7 +91,7 @@ logger = logging.getLogger(__name__)
 ### 1. Local Development
 ```bash
 python app.py
-# Access at http://localhost:8080
+# Access at http://localhost:PORT (check console output for assigned port)
 ```
 
 ### 2. Docker Testing

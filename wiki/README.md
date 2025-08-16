@@ -4,22 +4,26 @@
 **Project**: Yourl.Cloud Inc.
 **Repository**: [https://github.com/XDM-ZSBW/cloud-yourl](https://github.com/XDM-ZSBW/cloud-yourl)
 
-## 🎯 **Wiki Automation System**
+## 🎯 **Wiki Automation System** (Future Feature)
 
-This wiki is automatically synchronized from the `wiki/` directory in the main repository. Any changes you make to files in the `wiki/` folder will automatically update the GitHub Wiki after you push to the main branch.
+This wiki is planned to be automatically synchronized from the `wiki/` directory in the main repository using GitHub Actions in a future update. Currently, manual synchronization is required.
 
-## 🔄 **How the Sync Works**
+## 🔄 **How the Sync Will Work** (Future Implementation)
 
-### **Automated Workflow**
+### **Planned Automated Workflow**
 1. **Push Changes**: When you push changes to any file under `wiki/` to the main branch
-2. **Trigger Workflow**: GitHub Actions automatically detects the changes
-3. **Sync Process**: The workflow clones the wiki repository and syncs all files
-4. **Update Wiki**: Changes are committed and pushed to the GitHub Wiki
-5. **Verification**: The workflow verifies the sync was successful
+2. **Trigger Workflow**: GitHub Actions will automatically detect the changes
+3. **Sync Process**: The workflow will clone the wiki repository and sync all files
+4. **Update Wiki**: Changes will be committed and pushed to the GitHub Wiki
+5. **Verification**: The workflow will verify the sync was successful
 
-### **Two Sync Methods**
-- **Primary**: `sync-wiki.yml` - Uses rsync and git commands (faster, no dependencies)
-- **Alternative**: `sync-wiki-script.yml` - Uses the Python script (more features, dependency-aware)
+**Note**: This automation is currently in development and not yet active.
+
+### **Planned Sync Methods**
+- **Primary**: `sync-wiki.yml` - Will use rsync and git commands (faster, no dependencies)
+- **Alternative**: `sync-wiki-script.yml` - Will use the Python script (more features, dependency-aware)
+
+**Status**: Both workflows are in development and not yet active.
 
 ## 📁 **Required Structure**
 
@@ -49,18 +53,18 @@ wiki/
 2. Use proper Markdown formatting
 3. Add links to other wiki pages using `[[Page Name]]` or `[Page Name](PageName.md)`
 4. Commit and push to main branch
-5. The wiki will automatically update
+5. **Manual step required**: Manually sync to GitHub Wiki until automation is implemented
 
 ### **Editing Existing Pages**
 1. Modify any `.md` file in the `wiki/` directory
 2. Save your changes
 3. Commit and push to main branch
-4. The wiki will automatically update
+4. **Manual step required**: Manually sync to GitHub Wiki until automation is implemented
 
 ### **Deleting Pages**
 1. Remove the `.md` file from the `wiki/` directory
 2. Commit and push to main branch
-3. The page will be automatically removed from the wiki
+3. **Manual step required**: Manually remove from GitHub Wiki until automation is implemented
 
 ## 🖼️ **Adding Images**
 
@@ -104,13 +108,15 @@ wiki/
 [Yourl.Cloud Platform](https://yourl.cloud)
 ```
 
-## 🧪 **Testing the Sync**
+## 🧪 **Testing the Sync** (Future Feature)
 
-### **Test Process**
+### **Planned Test Process**
 1. **Make a Change**: Edit any file under `wiki/`
 2. **Commit & Push**: Push your changes to the main branch
 3. **Check Actions**: Go to Actions tab to see the workflow running
 4. **Verify Wiki**: Check the GitHub Wiki for your changes
+
+**Current Status**: Manual testing and synchronization required.
 
 ### **Example Test**
 ```bash
@@ -125,29 +131,36 @@ git push origin main
 # Check GitHub Actions and Wiki
 ```
 
-## 📋 **Workflow Details**
+## 📋 **Workflow Details** (Future Implementation)
 
-### **Primary Workflow (sync-wiki.yml)**
+### **Primary Workflow (sync-wiki.yml)** - In Development
 - **Trigger**: Push to main with changes in `wiki/**`
 - **Method**: rsync + git commands
 - **Dependencies**: None (uses built-in tools)
-- **Speed**: Fast execution
+- **Speed**: Fast execution (planned)
+- **Status**: Development in progress
 
-### **Alternative Workflow (sync-wiki-script.yml)**
+### **Alternative Workflow (sync-wiki-script.yml)** - In Development
 - **Trigger**: Push to main with changes in `wiki/**` or `scripts/update_wiki.py`
 - **Method**: Python script execution
 - **Dependencies**: Python 3.11+, requirements.txt
-- **Features**: Advanced processing, dependency management
+- **Features**: Advanced processing, dependency management (planned)
+- **Status**: Development in progress
 
 ## 🛠️ **Troubleshooting**
 
-### **Common Issues**
+### **Current Limitations**
+- **Automation Not Active**: Wiki automation workflows are not yet implemented
+- **Manual Sync Required**: All wiki updates must be done manually until automation is complete
+- **Development Status**: Workflows are in development and testing phase
+
+### **Future Common Issues** (When Automation is Active)
 - **Workflow Not Triggered**: Ensure you're pushing to main branch and files are under `wiki/`
 - **Permission Errors**: Check that the workflow has `contents: write` permission
 - **Sync Failures**: Verify the wiki repository exists and is accessible
 
-### **Manual Sync**
-If automation fails, you can manually sync:
+### **Manual Sync** (Current Required Method)
+Since automation is not yet implemented, manual sync is currently required:
 ```bash
 # Clone the wiki repo
 git clone https://github.com/XDM-ZSBW/cloud-yourl.wiki.git
@@ -205,9 +218,14 @@ git push
 - Use relative links to reduce external dependencies
 - Optimize images before adding to wiki/
 
-## 🚀 **Future Enhancements**
+## 🚀 **Current Development & Future Enhancements**
 
-### **Planned Features**
+### **Current Development Status**
+- **Wiki Automation**: Core workflows in development
+- **GitHub Actions Integration**: Basic structure implemented
+- **Testing & Debugging**: Ongoing refinement of sync processes
+
+### **Planned Features** (Post-Implementation)
 - **Selective Sync**: Sync only changed files for faster updates
 - **Conflict Resolution**: Handle merge conflicts automatically
 - **Backup System**: Automatic wiki backups before sync

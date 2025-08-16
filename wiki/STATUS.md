@@ -28,7 +28,7 @@
 - [x] **Production-ready** Docker configuration using Gunicorn
 
 ### Google Cloud Run Support
-- [x] **Environment-based port configuration** (PORT env var, default 8080)
+- [x] **Environment-based port configuration** (PORT env var, default 8080 for Docker/Cloud Run, dynamic for local development)
 - [x] **Docker containerization** with optimized Dockerfile
 - [x] **Cloud Build automation** with cloudbuild.yaml
 - [x] **Automated deployment** scripts (deploy.sh, deploy.bat)
@@ -65,7 +65,7 @@
 
 ### Documentation & Automation
 - [x] **Comprehensive README.md** with Cloud Run and WSGI deployment
-- [x] **Wiki automation** (`update_wiki.py`)
+- [x] **Wiki automation** (`update_wiki.py`) - In development, manual sync required
 - [x] **Project structure** optimized for Cloud Run and production
 - [x] **Git integration** with proper .gitignore
 - [x] **Docker support** with .dockerignore
@@ -82,9 +82,22 @@ The application is **ready for merging** the pull request from [@Smog7108](https
 5. **Automated Deployment**: Cloud Build and manual deployment options
 
 ### Testing Scenarios
-1. **Local Development**: `python app.py` - Runs on port 8080
+1. **Local Development**: `python app.py` - Runs on dynamically assigned port (check console output)
 2. **Docker Testing**: `docker build -t yourl-cloud .` - Container testing
 3. **Cloud Run Deployment**: `gcloud builds submit --config cloudbuild.yaml` - Automated deployment
+
+### ⚠️ Dynamic Port Assignment for Local Development
+When running `python app.py` locally, the application automatically assigns a random available port to avoid conflicts.
+
+**What to Expect:**
+```
+🚀 Starting production WSGI server...
+✅ Using Waitress WSGI server (Windows)
+🌐 Server running at: http://localhost:62952
+🚀 Yourl.Cloud is now accessible locally!
+```
+
+**Always use the port shown in your console output** for local testing and development.
 4. **Authentication Testing**: POST to `/` with password `yourl2024`
 
 ## 🛡️ Friends and Family Guard Status
@@ -111,10 +124,12 @@ FRIENDS_FAMILY_GUARD = {
 ## 📊 Testing Scenarios
 
 ### Visual Inspection Testing
-1. **PC Browser**: Visit `http://localhost:8080` - Should show visual interface
-2. **Phone Browser**: Visit `http://localhost:8080` - Should show mobile-optimized interface
-3. **Tablet Browser**: Visit `http://localhost:8080` - Should show tablet-optimized interface
-4. **Watch Browser**: Visit `http://localhost:8080` - Should show JSON response only
+1. **PC Browser**: Visit `http://localhost:PORT` - Should show visual interface
+2. **Phone Browser**: Visit `http://localhost:PORT` - Should show mobile-optimized interface
+3. **Tablet Browser**: Visit `http://localhost:PORT` - Should show tablet-optimized interface
+4. **Watch Browser**: Visit `http://localhost:PORT` - Should show JSON response only
+
+**Note**: Replace `PORT` with the actual port shown in your console output when starting the server.
 
 ### Authentication Testing
 1. **GET /`**: Should show landing page with input box
@@ -167,7 +182,7 @@ yourl.cloud/
 
 ## 🎯 Source of Truth
 
-**yourl.cloud** is always the source of truth for latest information. The wiki is automatically updated from the main repository using the `update_wiki.py` script.
+**yourl.cloud** is always the source of truth for latest information. The wiki is manually synchronized from the main repository. Automatic synchronization via `update_wiki.py` is planned for future implementation.
 
 ## 🔗 Pull Request Support
 

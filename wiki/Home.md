@@ -51,7 +51,7 @@ This wiki is automatically synchronized from the `wiki/` directory in the main r
 
 ## 📋 Current Status
 
-✅ **Wiki Automation**: Implemented and working
+🚧 **Wiki Automation**: Planned for future implementation
 ✅ **GitHub Actions**: Dual sync methods available
 ✅ **Documentation**: Comprehensive coverage
 ✅ **Cloud Run**: Full compatibility

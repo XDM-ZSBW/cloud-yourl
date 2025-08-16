@@ -70,6 +70,41 @@ Yourl.Cloud is a **trust-based AI system** for emergency and stress situation su
 
 ## 🔧 **DEVELOPMENT ENVIRONMENT SETUP**
 
+### **⚠️ Dynamic Port Assignment**
+When running the local development server, the application automatically assigns a random available port to avoid conflicts with other services.
+
+**What to Expect:**
+1. Run `python app.py`
+2. Watch the console output for the assigned port
+3. Use the displayed localhost URL for all testing
+
+**Example Console Output:**
+```
+🚀 Starting production WSGI server...
+✅ Using Waitress WSGI server (Windows)
+🌐 Server running at: http://localhost:62952
+🚀 Yourl.Cloud is now accessible locally!
+```
+
+**Use `http://localhost:62952` (or whatever port is shown) for all local development and testing.**
+
+### **Local Testing with Dynamic Port**
+```bash
+# 1. Start the server and note the port from console output
+python app.py
+
+# 2. In a new terminal, test endpoints using the port shown
+# Example: If console shows "http://localhost:62952"
+curl http://localhost:62952/health
+curl http://localhost:62952/status
+curl http://localhost:62952/
+
+# 3. Test authentication (replace PORT with actual port shown)
+curl -X POST http://localhost:PORT/ \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "password=DREAM734$"
+```
+
 ### **Prerequisites**
 ```bash
 # Python 3.11+ required
@@ -97,6 +132,8 @@ set FLASK_DEBUG=true
 
 # 4. Run local development server
 python app.py
+
+**⚠️ Important**: The server will start on a dynamically assigned port. Check the console output for the exact localhost URL.
 ```
 
 ### **Testing Clipboard Bridge Locally**

@@ -24,6 +24,6 @@ This directory contains development, testing, and build documentation for the Yo
 - [Screen Capture Troubleshooting](SCREEN_CAPTURE_TROUBLESHOOTING.md)
 
 ### **System & Prompts**
-- [Wiki Automation Implementation](WIKI_AUTOMATION_IMPLEMENTATION.md)
+- [Wiki Automation Implementation](WIKI_AUTOMATION_IMPLEMENTATION.md) (Future Feature)
 - [Zaido Quick Reference](ZAIDO_QUICK_REFERENCE.md)
 - [Cursor Thread Management](YOURL_CLOUD_CURSOR_PROMPT.md)

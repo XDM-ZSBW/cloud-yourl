@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Template</title>
+</head>
+<body>
+    <h1>Test Template</h1>
+    <p>Debug: show_tutorial = {{ show_tutorial }}</p>
+    <p>Debug: auth_error = {{ auth_error }}</p>
+    
+    {% if show_tutorial %}
+    <div style="background: yellow; padding: 20px; margin: 20px;">
+        <h2>TUTORIAL SHOULD SHOW HERE</h2>
+        <p>show_tutorial is True!</p>
+    </div>
+    {% else %}
+    <div style="background: red; padding: 20px; margin: 20px;">
+        <h2>TUTORIAL NOT SHOWING</h2>
+        <p>show_tutorial is False or undefined!</p>
+    </div>
+    {% endif %}
+    
+    {% if auth_error %}
+    <div style="background: orange; padding: 20px; margin: 20px;">
+        <h2>AUTH ERROR SHOULD SHOW HERE</h2>
+        <p>auth_error exists: {{ auth_error }}</p>
+    </div>
+    {% else %}
+    <div style="background: blue; padding: 20px; margin: 20px;">
+        <h2>NO AUTH ERROR</h2>
+        <p>auth_error is None or undefined!</p>
+    </div>
+    {% endif %}
+</body>
+</html>

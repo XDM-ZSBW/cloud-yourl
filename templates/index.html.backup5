@@ -18,29 +18,29 @@
             color: white;
             line-height: 1.6;
         }
-        
+
         .container {
             max-width: 800px;
             margin: 0 auto;
             padding: 2rem;
         }
-        
+
         .header {
             text-align: center;
             margin-bottom: 3rem;
         }
-        
+
         .header h1 {
             font-size: 2.5rem;
             margin-bottom: 0.5rem;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
-        
+
         .header p {
             font-size: 1.2rem;
             opacity: 0.9;
         }
-        
+
         .main-panel {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 20px;
@@ -49,22 +49,22 @@
             padding: 2rem;
             margin-bottom: 2rem;
         }
-        
+
         .input-section {
             margin-bottom: 2rem;
         }
-        
+
         .input-section h2 {
             margin-bottom: 1rem;
             color: #ffd700;
         }
-        
+
         .input-group {
             display: flex;
             gap: 1rem;
             margin-bottom: 1rem;
         }
-        
+
         .input-group input {
             flex: 1;
             padding: 1rem;
@@ -74,11 +74,11 @@
             color: white;
             font-size: 1rem;
         }
-        
+
         .input-group input::placeholder {
             color: rgba(255, 255, 255, 0.7);
         }
-        
+
         .submit-btn {
             background: rgba(255, 255, 255, 0.2);
             border: 2px solid rgba(255, 255, 255, 0.3);
@@ -89,12 +89,12 @@
             font-size: 1.1rem;
             transition: all 0.3s ease;
         }
-        
+
         .submit-btn:hover {
             background: rgba(255, 255, 255, 0.3);
             transform: translateY(-2px);
         }
-        
+
         .marketing-code {
             background: rgba(255, 255, 255, 0.15);
             border-radius: 15px;
@@ -104,18 +104,18 @@
             border: 2px solid #ffd700;
             animation: pulse 2s infinite;
         }
-        
+
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4); }
             70% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); }
             100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
         }
-        
+
         .marketing-code h2 {
             color: #ffd700;
             margin-bottom: 1rem;
         }
-        
+
         .code-display {
             font-family: 'Courier New', monospace;
             font-size: 1.8rem;
@@ -131,35 +131,35 @@
             text-align: center;
             letter-spacing: 2px;
         }
-        
+
         .code-display:hover {
             background: rgba(0, 0, 0, 0.4);
             border-color: rgba(255, 215, 0, 0.6);
             transform: scale(1.02);
         }
-        
+
         .code-hint {
             font-style: italic;
             opacity: 0.8;
             font-size: 0.9rem;
             margin-top: 0.5rem;
         }
-        
+
         .affiliate-links {
             margin-top: 2rem;
         }
-        
+
         .affiliate-links h2 {
             margin-bottom: 1rem;
             color: #ffd700;
         }
-        
+
         .links-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1rem;
         }
-        
+
         .affiliate-link {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
@@ -168,17 +168,17 @@
             color: white;
             transition: all 0.3s ease;
         }
-        
+
         .affiliate-link:hover {
             background: rgba(255, 255, 255, 0.2);
             transform: translateY(-2px);
         }
-        
+
         .affiliate-link h3 {
             margin-bottom: 0.5rem;
             color: #ffd700;
         }
-        
+
         .project-resources {
             background: rgba(255, 255, 255, 0.15);
             border-radius: 15px;
@@ -188,20 +188,20 @@
             margin-bottom: 2rem;
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        
+
         .project-resources h2 {
             margin-bottom: 1rem;
             color: #ffd700;
             text-align: center;
             font-size: 1.3rem;
         }
-        
+
         .resources-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 1rem;
         }
-        
+
         .resource-link {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 12px;
@@ -214,43 +214,43 @@
             align-items: center;
             gap: 0.8rem;
         }
-        
+
         .resource-link:hover {
             background: rgba(255, 255, 255, 0.2);
             transform: translateY(-3px);
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
         }
-        
+
         .resource-link .icon {
             font-size: 1.5rem;
             flex-shrink: 0;
         }
-        
+
         .resource-link .content h3 {
             margin-bottom: 0.3rem;
             color: #ffd700;
             font-size: 1.1rem;
         }
-        
+
         .resource-link .content p {
             font-size: 0.9rem;
             opacity: 0.9;
             margin: 0;
         }
-        
+
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
             }
-            
+
             .header h1 {
                 font-size: 2rem;
             }
-            
+
             .input-group {
                 flex-direction: column;
             }
-            
+
             .resources-grid {
                 grid-template-columns: 1fr;
             }
@@ -263,10 +263,10 @@
             <h1>🔗 Yourl.Cloud</h1>
             <p>AI-Friendly Service Hub - Secure and Fast</p>
         </div>
-        
-                <!-- Marketing Code Section -->
+
+        <!-- Marketing Code Section -->
         <div class="marketing-code">
-            <h2>🎯 Today's Access Code</h2>
+            <h2>🎯 Today's Marketing Code</h2>
             <div class="code-display" id="codeDisplay" onclick="copyCode()" title="Click to copy">
                 <span id="codeText">{{ marketing_code }}</span>
                 <div id="copyFeedback" style="display: none; color: #ffd700; font-size: 0.9rem; margin-top: 0.5rem;">
@@ -277,54 +277,140 @@
             <p style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem; font-style: italic;">💡 <strong>Easter Egg:</strong> Try entering one of the demo codes (CLOUD123!, FUTURE456@, INNOVATE789#) for a surprise!</p>
         </div>
 
+        <!-- Error Message Display -->
+        {% if auth_error %}
+        <div class="error-message" style="background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 10px; margin: 20px 0; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            <strong>❌ {{ auth_error.message }}</strong><br>
+            <small>Current code: <code style="background: #fff3cd; padding: 2px 6px; border-radius: 3px; font-family: monospace;">{{ auth_error.current_code }}</code></small>
+        </div>
+        {% endif %}
+
+        <!-- Tutorial Display -->
+        {% if show_tutorial %}
+        <div class="tutorial-container" style="background: #d1ecf1; border: 1px solid #bee5eb; padding: 20px; border-radius: 15px; margin: 20px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <h3 style="color: #0c5460; text-align: center; margin-top: 0; font-size: 1.4rem;">🎯 How to Get Your Marketing Code</h3>
+            
+            <div class="tutorial-steps" style="display: flex; flex-direction: column; gap: 15px;">
+                <div class="step" style="display: flex; align-items: center; gap: 10px; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div class="step-number" style="background: #007bff; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem;">1</div>
+                    <div class="step-content">
+                        <strong style="color: #0c5460;">Copy the Current Code:</strong> 
+                        <div class="code-display-tutorial" style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 8px; margin: 8px 0; font-family: monospace; font-size: 16px; text-align: center; cursor: pointer; font-weight: bold; color: #856404;" onclick="copyToClipboard('{{ marketing_code }}')" title="Click to copy">
+                            {{ marketing_code }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step" style="display: flex; align-items: center; gap: 10px; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div class="step-number" style="background: #28a745; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem;">2</div>
+                    <div class="step-content">
+                        <strong style="color: #0c5460;">Paste into the Code Box:</strong> 
+                        <div class="paste-animation" style="text-align: center; margin: 8px 0;">
+                            <span class="paste-icon" style="font-size: 24px; animation: paste 2s infinite;">📋</span>
+                            <span class="arrow" style="font-size: 24px; animation: arrow 2s infinite;">➡️</span>
+                            <span class="input-box" style="font-size: 24px; animation: input 2s infinite;">📝</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step" style="display: flex; align-items: center; gap: 10px; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div class="step-number" style="background: #ffc107; color: #212529; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem;">3</div>
+                    <div class="step-content">
+                        <strong style="color: #0c5460;">Click the Launch Button:</strong> 
+                        <div class="button-animation" style="text-align: center; margin: 8px 0;">
+                            <span class="button-icon" style="font-size: 24px; animation: button 2s infinite;">🚀</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tutorial-note" style="text-align: center; margin-top: 20px; font-style: italic; color: #6c757d; background: rgba(255,255,255,0.7); padding: 15px; border-radius: 8px;">
+                💡 <strong>Pro Tip:</strong> The marketing code changes with each deployment, so always use the current one shown above!
+            </div>
+        </div>
+        
+        <style>
+            @keyframes paste {
+                0%, 100% { transform: scale(1); opacity: 1; }
+                50% { transform: scale(1.2); opacity: 0.8; }
+            }
+            @keyframes arrow {
+                0%, 100% { transform: translateX(0); opacity: 1; }
+                50% { transform: translateX(10px); opacity: 0.6; }
+            }
+            @keyframes input {
+                0%, 100% { transform: scale(1); opacity: 1; }
+                50% { transform: scale(1.1); opacity: 0.8; }
+            }
+            @keyframes button {
+                0%, 100% { transform: scale(1); opacity: 1; }
+                50% { transform: scale(1.3); opacity: 0.8; }
+            }
+            .code-display-tutorial:hover {
+                background: #ffeaa7 !important;
+                transform: scale(1.02);
+                transition: all 0.2s ease;
+            }
+        </style>
+        
+        <script>
+            function copyToClipboard(text) {
+                navigator.clipboard.writeText(text).then(function() {
+                    // Show success feedback
+                    const codeDisplay = document.querySelector('.code-display-tutorial');
+                    const originalText = codeDisplay.textContent;
+                    codeDisplay.textContent = '✅ Copied!';
+                    codeDisplay.style.background = '#d4edda';
+                    codeDisplay.style.color = '#155724';
+                    
+                    setTimeout(() => {
+                        codeDisplay.textContent = originalText;
+                        codeDisplay.style.background = '#fff3cd';
+                        codeDisplay.style.color = '#856404';
+                    }, 1500);
+                }).catch(function(err) {
+                    console.error('Could not copy text: ', err);
+                });
+            }
+        </script>
+        {% endif %}
+
         <div class="main-panel">
             <div class="input-section">
                 <h2>🔐 Level Access</h2>
                 <form method="POST" action="/">
                     <div class="input-group">
-                        <input type="text" name="password" 
-                               placeholder="Paste the access code here (or try a demo code for a surprise!)" 
+                        <label for="password">🎯 Marketing Code:</label>
+                        <input type="text" id="password" name="password" 
+                               placeholder="Paste the marketing code here (or try a demo code for a surprise!)"
                                value=""
                                required>
                         <button type="submit" class="submit-btn">Proceed to Next Level</button>
                     </div>
                 </form>
-                
+
                 <!-- Recovery Link -->
                 <div style="text-align: center; margin-top: 1rem;">
                     <a href="/recover" style="color: #ffd700; text-decoration: none; font-size: 0.9rem; opacity: 1; font-weight: bold; padding: 0.5rem 1rem; background: rgba(255, 215, 0, 0.1); border-radius: 5px; border: 1px solid rgba(255, 215, 0, 0.3);">
                         🔐 Forgot your code? Try our recovery system
                     </a>
                 </div>
-                
+
                 <!-- Visitor Tracking Section -->
-                {% if visitor_data and visitor_data.tracking_key %}
-                <div class="visitor-tracking" style="margin-top: 1rem; padding: 1rem; background: rgba(255, 255, 255, 0.1); border-radius: 10px;">
-                    <h3 style="color: #ffd700; font-size: 1rem; margin-bottom: 0.5rem;">
-                        {% if visitor_data.has_used_code %}
-                        📊 Your Visitor Tracking Code
-                        {% else %}
-                        📊 Your Visitor Tracking Code (for analytics)
-                        {% endif %}
-                    </h3>
-                    <p style="font-size: 0.9rem; opacity: 0.8; margin: 0;">
-                        {% if visitor_data.has_used_code %}
-                        <strong style="color: #ffd700;">{{ visitor_data.tracking_key }}</strong> - This is your persistent tracking code for analytics and audit purposes.
-                        {% else %}
-                        <span style="color: rgba(255, 255, 255, 0.6);">{{ visitor_data.tracking_key }}</span> - This is your tracking code for analytics (not used for access).
-                        {% endif %}
-                    </p>
-                    <p style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem;">
+                {% if visitor_data %}
+                <div style="margin-top: 1rem; padding: 1rem; background: rgba(255, 255, 255, 0.1); border-radius: 10px; text-align: center;">
+                    <small style="opacity: 0.8;">
+                        🎯 <strong>Visit #{{ visitor_data.total_visits }}</strong>
                         {% if visitor_data.is_new_visitor %}
-                        👋 Welcome! This is your first visit.
+                        - First time here! 🎉
                         {% else %}
-                        🎯 Visit #{{ visitor_data.total_visits }} - Welcome back!
+                        - Welcome back! 👋
                         {% endif %}
-                    </p>
+                    </small>
                 </div>
                 {% endif %}
             </div>
-            
+
             <div class="affiliate-links">
                 <h2>🌟 Featured Services</h2>
                 <div class="links-grid">
@@ -336,7 +422,7 @@
                         <h3>Google Cloud Run</h3>
                         <p>Deploy and scale applications</p>
                     </a>
-                    <a href="https://flask.palletsprojects.com/" class="affiliate-link" target="_blank">
+                    <a href="https://flask.palletsprojects.com/" class="affiliate-link" target="_blank"> 
                         <h3>Flask Framework</h3>
                         <p>Python web framework</p>
                     </a>
@@ -351,7 +437,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Project Resources Section -->
         <div class="project-resources">
             <h2>📚 Project Resources</h2>
@@ -373,6 +459,7 @@
             </div>
         </div>
     </div>
+
     <script>
         function copyCode() {
             const codeText = document.getElementById('codeText').textContent;
@@ -390,7 +477,7 @@
         // Easter Egg Detection
         const demoCodes = ['CLOUD123!', 'FUTURE456@', 'INNOVATE789#'];
         const passwordInput = document.querySelector('input[name="password"]');
-        
+
         if (passwordInput) {
             passwordInput.addEventListener('input', function() {
                 const enteredCode = this.value.trim();
@@ -517,12 +604,12 @@
         function closeEasterEgg() {
             const easterEgg = document.getElementById('easter-egg');
             const overlay = document.getElementById('easter-egg-overlay');
-            
+
             if (easterEgg) {
                 easterEgg.style.animation = 'easterEggAppear 0.3s ease-in reverse';
                 setTimeout(() => easterEgg.remove(), 300);
             }
-            
+
             if (overlay) {
                 overlay.style.animation = 'fadeIn 0.3s ease-in reverse';
                 setTimeout(() => overlay.remove(), 300);
