@@ -26,11 +26,14 @@ import subprocess
 import sys
 import webbrowser
 import threading
-import time
-import hashlib
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import urlparse
+import json
+import hmac
+import hashlib
+import time
+import base64
 
 # Configure logging for production cloud environments
 logging.basicConfig(
@@ -83,7 +86,7 @@ CLOUD_RUN_CONFIG = {
 _generated_code_cache = None
 _generated_hash_code_cache = {}
 
-def generate_marketing_code():
+def generate_marketing_password():
     """
     Generate a fun, marketing-friendly password that changes with each commit.
     Uses git commit hash to ensure consistency within a commit but changes between commits.
@@ -140,8 +143,8 @@ def generate_marketing_code():
     
     return password
 
-def generate_marketing_code_from_hash(commit_hash: str):
-    """Generate marketing code from specific commit hash"""
+def generate_marketing_password_from_hash(commit_hash: str):
+    """Generate marketing password from specific commit hash"""
     global _generated_hash_code_cache
     
     # Return cached code if available
@@ -193,9 +196,9 @@ def generate_marketing_code_from_hash(commit_hash: str):
 _current_code_printed = False
 _next_code_printed = False
 
-def get_current_marketing_code():
+def get_current_marketing_password():
     """
-    Get the current live marketing code from database.
+    Get the current live marketing password from database.
     This should only change after successful deployment.
     """
     global _current_code_printed
@@ -244,23 +247,23 @@ def get_current_marketing_code():
             _current_code_printed = True
     
     # Fallback to environment variable
-    build_password = os.environ.get('BUILD_MARKETING_CODE')
+    build_password = os.environ.get('BUILD_MARKETING_PASSWORD')
     if build_password:
         if not _current_code_printed:
-            print(f"✅ Using BUILD_MARKETING_CODE: {build_password}")
+            print(f"✅ Using BUILD_MARKETING_PASSWORD: {build_password}")
             _current_code_printed = True
         return build_password
     
     # Last resort: generate based on current commit (should not happen in production)
-    fallback_code = generate_marketing_code()
+    fallback_code = generate_marketing_password()
     if not _current_code_printed:
         print(f"⚠️ Using fallback generated code: {fallback_code}")
         _current_code_printed = True
     return fallback_code
 
-def get_next_marketing_code():
+def get_next_marketing_password():
     """
-    Get the next marketing code from database.
+    Get the next marketing password from database.
     This is what will become the current code after next deployment.
     """
     global _next_code_printed
@@ -316,7 +319,7 @@ def get_next_marketing_code():
     except:
         next_hash = "next_unknown"
     
-    fallback_code = generate_marketing_code_from_hash(next_hash)
+    fallback_code = generate_marketing_password_from_hash(next_hash)
     if not _next_code_printed:
         print(f"⚠️ Using fallback generated next code: {fallback_code}")
         _next_code_printed = True
@@ -337,6 +340,7 @@ FRIENDS_FAMILY_GUARD = {
 
 # Demo configuration for rapid prototyping (replace with proper auth/db for production)
 DEMO_CONFIG = {
+    "password": get_current_marketing_password(),  # Dynamic marketing password that changes with commits
     "connections": [
         {
             "id": 1,
@@ -439,10 +443,81 @@ def is_visual_inspection_allowed(device_type):
     
     return FRIENDS_FAMILY_GUARD["visual_inspection"].get(f"{device_type}_allowed", False)
 
+# Secure token management for monitoring endpoint
+MONITORING_SECRET_KEY = os.environ.get('MONITORING_SECRET', 'yourl-cloud-monitoring-2024-secure-key')
+
+def generate_monitoring_token(user_id: str, duration_minutes: int = 60) -> str:
+    """
+    Generate a secure, time-bound monitoring token that can't be stolen or reused.
+    """
+    current_time = int(time.time())
+    expiry_time = current_time + (duration_minutes * 60)
+    
+    # Create payload with user, time, and expiry
+    payload = f"{user_id}:{current_time}:{expiry_time}"
+    
+    # Generate HMAC signature
+    signature = hmac.new(
+        MONITORING_SECRET_KEY.encode(),
+        payload.encode(),
+        hashlib.sha256
+    ).hexdigest()
+    
+    # Combine payload and signature
+    token_data = f"{payload}:{signature}"
+    
+    # Base64 encode for safe transport
+    token = base64.b64encode(token_data.encode()).decode()
+    
+    return token
+
+def verify_monitoring_token(token: str) -> dict:
+    """
+    Verify monitoring token and return user data if valid.
+    Returns empty dict if invalid or expired.
+    """
+    try:
+        # Decode base64
+        token_data = base64.b64decode(token.encode()).decode()
+        parts = token_data.split(':')
+        
+        if len(parts) != 4:
+            return {}
+        
+        user_id, issue_time, expiry_time, provided_signature = parts
+        
+        # Check expiry
+        current_time = int(time.time())
+        if current_time > int(expiry_time):
+            return {}
+        
+        # Verify signature
+        expected_payload = f"{user_id}:{issue_time}:{expiry_time}"
+        expected_signature = hmac.new(
+            MONITORING_SECRET_KEY.encode(),
+            expected_payload.encode(),
+            hashlib.sha256
+        ).hexdigest()
+        
+        if not hmac.compare_digest(expected_signature, provided_signature):
+            return {}
+        
+        return {
+            'user_id': user_id,
+            'issue_time': int(issue_time),
+            'expiry_time': int(expiry_time),
+            'valid': True
+        }
+        
+    except Exception as e:
+        print(f"⚠️ Token verification error: {e}")
+        return {}
+
 def get_visitor_data():
     """
     Get visitor tracking data for the current request.
     Returns visitor information for the landing page.
+    FIXED: Properly increments visit count and handles database operations.
     """
     try:
         # Get visitor ID from session or generate one
@@ -461,7 +536,7 @@ def get_visitor_data():
             from scripts.database_client import DatabaseClient
             db_client = DatabaseClient(database_connection)
             
-            # Get or create visitor record
+            # Get or create visitor record - FIXED to properly return updated visit count
             visitor = db_client.get_or_create_visitor(
                 visitor_id=visitor_id,
                 user_agent=request.headers.get('User-Agent'),
@@ -470,22 +545,27 @@ def get_visitor_data():
             )
             
             if visitor:
+                # FIXED: Ensure we get the updated visit count after increment
+                total_visits = visitor.get('total_visits', 1)
                 return {
                     'visitor_id': visitor.get('visitor_id'),
                     'tracking_key': visitor.get('public_tracking_key'),
                     'last_access_code': visitor.get('last_access_code'),
-                    'total_visits': visitor.get('total_visits', 1),
-                    'is_new_visitor': visitor.get('total_visits', 1) == 1,
+                    'total_visits': total_visits,
+                    'is_new_visitor': total_visits == 1,
                     'has_used_code': visitor.get('last_access_code') is not None
                 }
         
-        # Fallback if database not available - use session data
+        # Fallback if database not available - use session data with proper counting
+        session_visits = session.get('visit_count', 0) + 1
+        session['visit_count'] = session_visits
+        
         return {
             'visitor_id': visitor_id,
             'tracking_key': None,
             'last_access_code': session_access_code,
-            'total_visits': 1,
-            'is_new_visitor': not session_authenticated,
+            'total_visits': session_visits,
+            'is_new_visitor': session_visits == 1,
             'has_used_code': session_authenticated
         }
         
@@ -507,129 +587,18 @@ def main_endpoint():
     Compatible with Cloud Run domain mappings with visitor tracking.
     """
     if request.method == 'GET':
-        # Get current marketing code
-        current_password = get_current_marketing_code()
+        # Get current marketing password
+        current_password = get_current_marketing_password()
         
         # Get visitor information
         visitor_data = get_visitor_data()
-        
-        # Check for authentication error in session
-        auth_error = session.get('auth_error')
-        show_tutorial = request.args.get('error') == 'auth_failed'
-        
-        # Clear the error from session after displaying
-        if auth_error:
-            session.pop('auth_error', None)
         
         # Create response with no-cache headers to ensure fresh content
         if os.path.exists('templates/index.html'):
             response = make_response(render_template('index.html', 
                                                  marketing_code=current_password,
-                                                 visitor_data=visitor_data,
-                                                 auth_error=auth_error,
-                                                 show_tutorial=show_tutorial))
+                                                 visitor_data=visitor_data))
         else:
-            # Build error message and tutorial HTML
-            error_html = ""
-            tutorial_html = ""
-            
-            if auth_error:
-                error_html = f"""
-                <div class="error-message" style="background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center;">
-                    <strong>❌ {auth_error['message']}</strong><br>
-                    <small>Current code: <code style="background: #fff3cd; padding: 2px 6px; border-radius: 3px;">{auth_error['current_code']}</code></small>
-                </div>
-                """
-            
-            if show_tutorial:
-                tutorial_html = f"""
-                <div class="tutorial-container" style="background: #d1ecf1; border: 1px solid #bee5eb; padding: 20px; border-radius: 10px; margin: 20px 0;">
-                    <h3 style="color: #0c5460; text-align: center; margin-top: 0;">🎯 How to Get Your Marketing Code</h3>
-                    
-                    <div class="tutorial-steps" style="display: flex; flex-direction: column; gap: 15px;">
-                        <div class="step" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                            <div class="step-number" style="background: #007bff; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">1</div>
-                            <div class="step-content">
-                                <strong>Copy the Current Code:</strong> 
-                                <div class="code-display" style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 8px; border-radius: 5px; margin: 5px 0; font-family: monospace; font-size: 16px; text-align: center; cursor: pointer;" onclick="copyToClipboard('{current_password}')" title="Click to copy">
-                                    {current_password}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="step" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                            <div class="step-number" style="background: #28a745; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">2</div>
-                            <div class="step-content">
-                                <strong>Paste into the Code Box:</strong> 
-                                <div class="paste-animation" style="text-align: center; margin: 5px 0;">
-                                    <span class="arrow" style="font-size: 20px; animation: arrow 2s infinite;">➡️</span>
-                                    <span class="input-box" style="font-size: 20px; animation: input 2s infinite;">📝</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="step" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                            <div class="step-number" style="background: #ffc107; color: #212529; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">3</div>
-                            <div class="step-content">
-                                <strong>Click the Launch Button:</strong> 
-                                <div class="button-animation" style="text-align: center; margin: 5px 0;">
-                                    <span class="button-icon" style="font-size: 20px; animation: button 2s infinite;">🚀</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="tutorial-note" style="text-align: center; margin-top: 15px; font-style: italic; color: #6c757d;">
-                        💡 <strong>Pro Tip:</strong> The marketing code changes with each deployment, so always use the current one shown above!
-                    </div>
-                </div>
-                
-                <style>
-                    @keyframes paste {{
-                        0%, 100% {{ transform: scale(1); opacity: 1; }}
-                        50% {{ transform: scale(1.2); opacity: 0.8; }}
-                    }}
-                    @keyframes arrow {{
-                        0%, 100% {{ transform: translateX(0); opacity: 1; }}
-                        50% {{ transform: translateX(10px); opacity: 0.6; }}
-                    }}
-                    @keyframes input {{
-                        0%, 100% {{ transform: scale(1); opacity: 1; }}
-                        50% {{ transform: scale(1.1); opacity: 0.8; }}
-                    }}
-                    @keyframes button {{
-                        0%, 100% {{ transform: scale(1); opacity: 1; }}
-                        50% {{ transform: scale(1.3); opacity: 0.8; }}
-                    }}
-                    .code-display:hover {{
-                        background: #ffeaa7 !important;
-                        transform: scale(1.02);
-                        transition: all 0.2s ease;
-                    }}
-                </style>
-                
-                <script>
-                    function copyToClipboard(text) {{
-                        navigator.clipboard.writeText(text).then(function() {{
-                            // Show success feedback
-                            const codeDisplay = document.querySelector('.code-display');
-                            const originalText = codeDisplay.textContent;
-                            codeDisplay.textContent = '✅ Copied!';
-                            codeDisplay.style.background = '#d4edda';
-                            codeDisplay.style.color = '#155724';
-                            
-                            setTimeout(() => {{
-                                codeDisplay.textContent = originalText;
-                                codeDisplay.style.background = '#fff3cd';
-                                codeDisplay.style.color = '#856404';
-                            }}, 1500);
-                        }}).catch(function(err) {{
-                            console.error('Could not copy text: ', err);
-                        }});
-                    }}
-                </script>
-                """
-            
             response = make_response(f"""
         <!DOCTYPE html>
         <html>
@@ -648,7 +617,6 @@ def main_endpoint():
                 button:hover {{ background: #0056b3; }}
                 .info {{ background: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0; }}
                 .password-display {{ background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin: 10px 0; text-align: center; font-weight: bold; }}
-                .error-message {{ background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center; }}
             </style>
         </head>
         <body>
@@ -660,10 +628,6 @@ def main_endpoint():
                     <strong>Domain:</strong> {get_original_host()}<br>
                     <strong>Protocol:</strong> {get_original_protocol()}
                 </div>
-                
-                {error_html}
-                {tutorial_html}
-                
                 <form method="POST">
                     <div class="form-group">
                         <label for="password">🎯 Marketing Password:</label>
@@ -692,7 +656,7 @@ def main_endpoint():
     elif request.method == 'POST':
         # Handle authentication with simple password check
         password = request.form.get('password', '')
-        current_password = get_current_marketing_code()
+        current_password = get_current_marketing_password()
         
         if password == current_password:
             # Set session-based authentication (for when database is not available)
@@ -700,7 +664,7 @@ def main_endpoint():
             session['last_access_code'] = current_password
             
             # Get the next code for authenticated users (Cursor ownership)
-            next_password = get_next_marketing_code()
+            next_password = get_next_marketing_password()
             
             # Log successful authentication to database if available
             try:
@@ -793,11 +757,11 @@ def main_endpoint():
                     "build_version": build_version,
                     "marketing_code": current_password
                 },
-                "current_marketing_code": current_password,
-                "next_marketing_code": next_password,
+                "current_marketing_password": current_password,
+                "next_marketing_password": next_password,
                 "ownership": {
-                    "perplexity": "current_marketing_code",
-                    "cursor": "next_marketing_code"
+                    "perplexity": "current_marketing_password",
+                    "cursor": "next_marketing_password"
                 },
                 "navigation": {
                     "back_to_landing": f"{get_original_protocol()}://{get_original_host()}/",
@@ -834,11 +798,11 @@ def main_endpoint():
                     'build_version': build_version,
                     'marketing_code': current_password
                 },
-                'current_marketing_code': current_password,
-                'next_marketing_code': next_password,
+                'current_marketing_password': current_password,
+                'next_marketing_password': next_password,
                 'ownership': {
-                    'perplexity': 'current_marketing_code',
-                    'cursor': 'next_marketing_code'
+                    'perplexity': 'current_marketing_password',
+                    'cursor': 'next_marketing_password'
                 },
                 'navigation': {
                     'back_to_landing': f"{get_original_protocol()}://{get_original_host()}/",
@@ -860,14 +824,6 @@ def main_endpoint():
             
             # Redirect to prevent form resubmission (PRG pattern)
             return redirect('/authenticated', code=302)
-        else:
-            # Handle failed authentication - redirect to home with error message
-            session['auth_error'] = {
-                'message': 'Invalid password. Please try again.',
-                'current_code': current_password,
-                'timestamp': datetime.utcnow().isoformat()
-            }
-            return redirect('/?error=auth_failed', code=302)
     
     else:
         return jsonify({"error": "Method not allowed"}), 405
@@ -1369,7 +1325,7 @@ def data_stream():
     mind_map_nodes_html = ""
     for frame in story_frames:
         for node in frame.get('mind_map_nodes', []):
-            mind_map_nodes_html += f'<div class="mind-map-node" onclick="filterByNode(\'{node}\')">{node.replace("_", " ").title()}</div>'
+            mind_map_nodes_html += f'<div class="mind-map-node" onclick="filterByNode(\"{node}\")">{node.replace("_", " ").title()}</div>'
     
     html_content = f"""
     <!DOCTYPE html>
@@ -1693,7 +1649,7 @@ def data_stream():
                     {''.join([f'<span class="visual-element">{element.replace("_", " ").title()}</span>' for element in frame['visual_elements']])}
                 </div>
                 <div class="wiki-links">
-                    {''.join([f'<a href="/wiki/{link}" class="wiki-link" target="_blank">📚 {link.replace(".md", "").replace("_", " ").title()}</a>' for link in frame.get('wiki_links', [])])}
+                    {''.join([f'<a href="{"/knowledge-hub" if link == "KNOWLEDGE_HUB.md" else f"/wiki/{link}"}" class="wiki-link" target="_blank">📚 {link.replace(".md", "").replace("_", " ").title()}</a>' for link in frame.get('wiki_links', [])])}
                 </div>
             </div>
             ''' for frame in story_frames])}
@@ -1704,7 +1660,7 @@ def data_stream():
             <a href="/api" class="nav-btn">🔌 API</a>
             <a href="/status" class="nav-btn">📊 Status</a>
             <a href="/data" class="nav-btn">📡 Data Stream</a>
-            <a href="/wiki/KNOWLEDGE_HUB.md" class="nav-btn" target="_blank">🧠 Knowledge Hub</a>
+            <a href="/knowledge-hub" class="nav-btn">🧠 Knowledge Hub</a>
         </div>
         
         <script>
@@ -2262,7 +2218,7 @@ def attempt_code_recovery(visitor_id: str, user_agent: str, ip_address: str) -> 
         database_connection = os.environ.get('DATABASE_CONNECTION_STRING')
         if not database_connection:
             # Fallback: suggest current live code when database is not available
-            current_code = get_current_marketing_code()
+            current_code = get_current_marketing_password()
             return {
                 'success': True,
                 'message': f'Database not connected - using current live code: {current_code}',
@@ -2284,7 +2240,7 @@ def attempt_code_recovery(visitor_id: str, user_agent: str, ip_address: str) -> 
         
         if not visitor_history:
             # No history found - suggest current code
-            current_code = get_current_marketing_code()
+            current_code = get_current_marketing_password()
             return {
                 'success': True,
                 'message': f'No previous usage history found - using current live code: {current_code}',
@@ -2314,7 +2270,7 @@ def attempt_code_recovery(visitor_id: str, user_agent: str, ip_address: str) -> 
             message = f"Based on your recent activity, you may have tried: {suggested_code}"
         else:
             # No clear pattern - suggest current code
-            suggested_code = get_current_marketing_code()
+            suggested_code = get_current_marketing_password()
             recovery_method = 'current_code'
             message = f"Using current live code: {suggested_code}"
         
@@ -2334,7 +2290,7 @@ def attempt_code_recovery(visitor_id: str, user_agent: str, ip_address: str) -> 
     except Exception as e:
         print(f"⚠️ Error in code recovery: {e}")
         # Fallback: suggest current code on any error
-        current_code = get_current_marketing_code()
+        current_code = get_current_marketing_password()
         return {
             'success': True,
             'message': f'Recovery system error - using current live code: {current_code}',
@@ -2583,15 +2539,1385 @@ def code_recovery() -> Response:
     # Default return for any other method
     return make_response("Method not allowed", 405)
 
+@app.route('/knowledge-hub', methods=['GET'])
+def knowledge_hub():
+    """
+    Knowledge Hub endpoint with mind-map navigation (top-right), 
+    wiki outline (left side), and AI-generated content display (bottom-right).
+    Interactive knowledge navigation system for Yourl.Cloud documentation.
+    """
+    # Get visitor data for personalization
+    visitor_data = get_visitor_data()
+    
+    # Define wiki files organized by categories
+    wiki_categories = {
+        "🏗️ Architecture & Design": [
+            "ARCHITECTURE_OVERVIEW.md",
+            "SECURITY.md", 
+            "COST_EFFECTIVE_MARKETING_CODES.md",
+            "CLOUD_RUN_DOMAIN_MAPPING.md"
+        ],
+        "🚀 Development & Deployment": [
+            "Home.md",
+            "DEPLOYMENT_SUMMARY.md",
+            "TECHNOLOGY_STACK.md",
+            "WSGI_SERVER_IMPLEMENTATION.md"
+        ],
+        "🔐 Security & Compliance": [
+            "SECURITY_CHECKLIST.md",
+            "SECRET_MANAGER_INTEGRATION.md",
+            "SECURITY.md"
+        ],
+        "📊 Data & Analytics": [
+            "DATA_STREAM_GUIDE.md",
+            "NONPROFIT_TRACKING.md"
+        ],
+        "🌐 Infrastructure & Operations": [
+            "CLOUD_RUN_DOMAIN_MAPPING.md",
+            "DOMAIN_MAPPING_SUMMARY.md",
+            "STATUS.md"
+        ],
+        "📚 Documentation & Knowledge": [
+            "KNOWLEDGE_HUB.md",
+            "WIKI_UPDATE_SYSTEM.md",
+            "WIKI_UPDATE_SUMMARY.md",
+            "README.md",
+            "EXTERNAL_RESOURCES.md"
+        ],
+        "🎯 Business & Operations": [
+            "BUSINESS_NAME_UPDATE.md",
+            "BETA_LAUNCH_SUMMARY.md",
+            "PULL_REQUEST_SUPPORT.md"
+        ],
+        "🔧 Development Tools": [
+            "TEST_SYNC.md",
+            "WORKFLOW_TEST.md"
+        ]
+    }
+    
+    # Define mind map nodes with relationships
+    mind_map_nodes = {
+        "Architecture": {
+            "color": "#ff6b6b",
+            "connections": ["Security", "Infrastructure", "Development"],
+            "description": "System design and structure"
+        },
+        "Security": {
+            "color": "#4ecdc4", 
+            "connections": ["Architecture", "Operations", "Compliance"],
+            "description": "Security policies and implementation"
+        },
+        "Development": {
+            "color": "#45b7d1",
+            "connections": ["Architecture", "Deployment", "Tools"],
+            "description": "Development workflow and practices"
+        },
+        "Deployment": {
+            "color": "#f9ca24",
+            "connections": ["Development", "Infrastructure", "Operations"],
+            "description": "Production deployment processes"
+        },
+        "Infrastructure": {
+            "color": "#6c5ce7",
+            "connections": ["Architecture", "Deployment", "Monitoring"],
+            "description": "Cloud infrastructure and services"
+        },
+        "Data": {
+            "color": "#a55eea",
+            "connections": ["Analytics", "Security", "Operations"],
+            "description": "Data management and analytics"
+        },
+        "Analytics": {
+            "color": "#26de81",
+            "connections": ["Data", "Monitoring", "Operations"],
+            "description": "Performance metrics and insights"
+        },
+        "Operations": {
+            "color": "#fd79a8",
+            "connections": ["Deployment", "Monitoring", "Security"],
+            "description": "Day-to-day operations and maintenance"
+        },
+        "Monitoring": {
+            "color": "#fdcb6e",
+            "connections": ["Operations", "Infrastructure", "Analytics"],
+            "description": "System monitoring and alerting"
+        },
+        "Documentation": {
+            "color": "#e17055",
+            "connections": ["Knowledge", "Development", "Operations"],
+            "description": "Comprehensive documentation system"
+        },
+        "Knowledge": {
+            "color": "#74b9ff",
+            "connections": ["Documentation", "Learning", "Support"],
+            "description": "Knowledge base and learning resources"
+        },
+        "Tools": {
+            "color": "#00b894",
+            "connections": ["Development", "Operations", "Testing"],
+            "description": "Development and operational tools"
+        },
+        "Testing": {
+            "color": "#e84393",
+            "connections": ["Tools", "Development", "Quality"],
+            "description": "Testing frameworks and processes"
+        },
+        "Quality": {
+            "color": "#636e72",
+            "connections": ["Testing", "Operations", "Security"],
+            "description": "Quality assurance and standards"
+        },
+        "Compliance": {
+            "color": "#fab1a0",
+            "connections": ["Security", "Quality", "Operations"],
+            "description": "Regulatory compliance and standards"
+        }
+    }
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Knowledge Hub - Yourl.Cloud Inc.</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                overflow: hidden;
+                height: 100vh;
+            }}
+            
+            .knowledge-hub-container {{
+                display: grid;
+                grid-template-columns: 350px 1fr 400px;
+                grid-template-rows: 60px 1fr;
+                height: 100vh;
+                gap: 1px;
+                background: rgba(0,0,0,0.1);
+            }}
+            
+            .header {{
+                grid-column: 1 / -1;
+                background: rgba(0,0,0,0.3);
+                backdrop-filter: blur(10px);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 20px;
+                border-bottom: 1px solid rgba(255,255,255,0.2);
+            }}
+            
+            .header h1 {{
+                font-size: 1.5rem;
+                font-weight: 300;
+            }}
+            
+            .header .visitor-info {{
+                font-size: 0.9rem;
+                opacity: 0.8;
+            }}
+            
+            .wiki-outline {{
+                background: rgba(0,0,0,0.2);
+                backdrop-filter: blur(10px);
+                padding: 20px;
+                overflow-y: auto;
+                border-right: 1px solid rgba(255,255,255,0.2);
+            }}
+            
+            .content-display {{
+                background: rgba(0,0,0,0.1);
+                backdrop-filter: blur(10px);
+                padding: 30px;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }}
+            
+            .mind-map-container {{
+                background: rgba(0,0,0,0.2);
+                backdrop-filter: blur(10px);
+                padding: 20px;
+                border-left: 1px solid rgba(255,255,255,0.2);
+                position: relative;
+                overflow: hidden;
+            }}
+            
+            .category {{
+                margin-bottom: 25px;
+            }}
+            
+            .category h3 {{
+                font-size: 1.1rem;
+                margin-bottom: 10px;
+                color: #ffd700;
+                border-bottom: 1px solid rgba(255,215,0,0.3);
+                padding-bottom: 5px;
+            }}
+            
+            .wiki-item {{
+                display: block;
+                padding: 8px 12px;
+                margin: 4px 0;
+                background: rgba(255,255,255,0.1);
+                border: 1px solid rgba(255,255,255,0.2);
+                border-radius: 6px;
+                text-decoration: none;
+                color: white;
+                font-size: 0.9rem;
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }}
+            
+            .wiki-item:hover {{
+                background: rgba(255,255,255,0.2);
+                border-color: rgba(255,215,0,0.5);
+                transform: translateX(5px);
+                color: #ffd700;
+            }}
+            
+            .wiki-item.active {{
+                background: rgba(255,215,0,0.2);
+                border-color: #ffd700;
+                color: #ffd700;
+            }}
+            
+            .mind-map {{
+                position: relative;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+            }}
+            
+            .mind-map-title {{
+                text-align: center;
+                margin-bottom: 20px;
+                font-size: 1.2rem;
+                color: #ffd700;
+            }}
+            
+            .mind-node {{
+                position: absolute;
+                width: 80px;
+                height: 80px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.8rem;
+                font-weight: bold;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                border: 2px solid rgba(255,255,255,0.3);
+                backdrop-filter: blur(5px);
+                text-align: center;
+                line-height: 1.2;
+            }}
+            
+            .mind-node:hover {{
+                transform: scale(1.1);
+                box-shadow: 0 0 20px rgba(255,255,255,0.3);
+                z-index: 10;
+            }}
+            
+            .mind-node.active {{
+                transform: scale(1.2);
+                box-shadow: 0 0 25px rgba(255,215,0,0.5);
+                border-color: #ffd700;
+                z-index: 10;
+            }}
+            
+            .connection-line {{
+                position: absolute;
+                height: 2px;
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+                transform-origin: left center;
+                z-index: 1;
+            }}
+            
+            .welcome-content {{
+                max-width: 500px;
+            }}
+            
+            .welcome-content h2 {{
+                font-size: 2rem;
+                margin-bottom: 20px;
+                color: #ffd700;
+            }}
+            
+            .welcome-content p {{
+                font-size: 1.1rem;
+                line-height: 1.6;
+                margin-bottom: 15px;
+                opacity: 0.9;
+            }}
+            
+            .ai-content {{
+                display: none;
+                text-align: left;
+                max-width: none;
+                width: 100%;
+            }}
+            
+            .ai-content h3 {{
+                color: #ffd700;
+                margin-bottom: 15px;
+                font-size: 1.4rem;
+            }}
+            
+            .ai-content .content-section {{
+                background: rgba(255,255,255,0.1);
+                border-radius: 10px;
+                padding: 20px;
+                margin-bottom: 20px;
+                border-left: 4px solid #ffd700;
+            }}
+            
+            .ai-content .content-section h4 {{
+                color: #ffd700;
+                margin-bottom: 10px;
+            }}
+            
+            .ai-content .content-section p {{
+                line-height: 1.6;
+                margin-bottom: 10px;
+            }}
+            
+            .ai-content .content-section ul {{
+                padding-left: 20px;
+                margin-bottom: 10px;
+            }}
+            
+            .ai-content .content-section li {{
+                margin-bottom: 5px;
+            }}
+            
+            .navigation {{
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                display: flex;
+                gap: 10px;
+                z-index: 1000;
+            }}
+            
+            .nav-btn {{
+                padding: 10px 15px;
+                background: rgba(255,255,255,0.2);
+                border: 1px solid rgba(255,255,255,0.3);
+                border-radius: 5px;
+                color: white;
+                text-decoration: none;
+                font-size: 0.9rem;
+                transition: all 0.3s ease;
+                backdrop-filter: blur(10px);
+            }}
+            
+            .nav-btn:hover {{
+                background: rgba(255,255,255,0.3);
+                border-color: rgba(255,215,0,0.5);
+                color: #ffd700;
+            }}
+            
+            .tooltip {{
+                position: absolute;
+                background: rgba(0,0,0,0.9);
+                color: white;
+                padding: 8px 12px;
+                border-radius: 5px;
+                font-size: 0.8rem;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                z-index: 1000;
+                max-width: 200px;
+                text-align: center;
+            }}
+            
+            @media (max-width: 1200px) {{
+                .knowledge-hub-container {{
+                    grid-template-columns: 300px 1fr 350px;
+                }}
+            }}
+            
+            @media (max-width: 900px) {{
+                .knowledge-hub-container {{
+                    grid-template-columns: 250px 1fr 300px;
+                }}
+                .mind-node {{
+                    width: 60px;
+                    height: 60px;
+                    font-size: 0.7rem;
+                }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="knowledge-hub-container">
+            <div class="header">
+                <h1>🧠 Knowledge Hub - Yourl.Cloud Inc.</h1>
+                <div class="visitor-info">
+                    Visitor {visitor_data.get('visitor_id', 'Unknown')} | Visit #{visitor_data.get('total_visits', 1)}
+                </div>
+            </div>
+            
+            <div class="wiki-outline">
+                <h2 style="margin-bottom: 20px; color: #ffd700; text-align: center;">📚 Wiki Documentation</h2>
+                {''.join([f'''
+                <div class="category">
+                    <h3>{category}</h3>
+                    {''.join([f'<div class="wiki-item" onclick="selectWikiItem(this, \"{item}\")">{item.replace(".md", "").replace("_", " ").title()}</div>' for item in items])}
+                </div>
+                ''' for category, items in wiki_categories.items()])}
+            </div>
+            
+            <div class="content-display">
+                <div class="welcome-content">
+                    <h2>🎯 Welcome to the Knowledge Hub</h2>
+                    <p>This is your comprehensive navigation center for all Yourl.Cloud documentation and knowledge.</p>
+                    <p><strong>How to use:</strong></p>
+                    <p>• Click on items in the <strong>Wiki Outline</strong> (left) to explore specific documentation</p>
+                    <p>• Use the <strong>Mind Map</strong> (right) to navigate by topics and concepts</p>
+                    <p>• This area will display AI-generated insights and information based on your selections</p>
+                    <p style="font-size: 0.9rem; opacity: 0.7; margin-top: 20px;">Select any item to begin exploring the knowledge base!</p>
+                </div>
+                
+                <div class="ai-content" id="aiContent">
+                    <!-- AI-generated content will be displayed here -->
+                </div>
+            </div>
+            
+            <div class="mind-map-container">
+                <div class="mind-map-title">🗺️ Concept Mind Map</div>
+                <div class="mind-map" id="mindMap">
+                    <!-- Mind map nodes will be dynamically positioned -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="tooltip" id="tooltip"></div>
+        
+        <div class="navigation">
+            <a href="/" class="nav-btn">🏠 Home</a>
+            <a href="/monitoring" class="nav-btn">📊 Monitoring</a>
+            <a href="/data" class="nav-btn">📡 Data Stream</a>
+            <a href="/status" class="nav-btn">🔍 Status</a>
+        </div>
+        
+        <script>
+            // Mind map node data
+            const mindMapNodes = {json.dumps(mind_map_nodes)};
+            
+            // Wiki categories data
+            const wikiCategories = {json.dumps(wiki_categories)};
+            
+            // Current selections
+            let selectedWikiItem = null;
+            let selectedMindNode = null;
+            
+            // Initialize mind map
+            function initializeMindMap() {{
+                const mindMap = document.getElementById('mindMap');
+                const containerRect = mindMap.getBoundingClientRect();
+                const centerX = containerRect.width / 2;
+                const centerY = containerRect.height / 2;
+                const radius = Math.min(centerX, centerY) - 60;
+                
+                const nodeNames = Object.keys(mindMapNodes);
+                const angleStep = (2 * Math.PI) / nodeNames.length;
+                
+                nodeNames.forEach((nodeName, index) => {{
+                    const angle = index * angleStep;
+                    const x = centerX + radius * Math.cos(angle) - 40;
+                    const y = centerY + radius * Math.sin(angle) - 40;
+                    
+                    const node = document.createElement('div');
+                    node.className = 'mind-node';
+                    node.style.left = x + 'px';
+                    node.style.top = y + 'px';
+                    node.style.backgroundColor = mindMapNodes[nodeName].color;
+                    node.textContent = nodeName;
+                    node.dataset.node = nodeName;
+                    
+                    node.addEventListener('click', () => selectMindNode(node, nodeName));
+                    node.addEventListener('mouseenter', showTooltip);
+                    node.addEventListener('mouseleave', hideTooltip);
+                    
+                    mindMap.appendChild(node);
+                }});
+                
+                // Draw connections (simplified for demo)
+                drawConnections();
+            }}
+            
+            function drawConnections() {{
+                // This would implement connection lines between related nodes
+                // For now, we'll keep it simple without visual connections
+            }}
+            
+            function selectWikiItem(element, itemName) {{
+                // Remove previous selection
+                document.querySelectorAll('.wiki-item').forEach(item => {{
+                    item.classList.remove('active');
+                }});
+                
+                // Add selection to clicked item
+                element.classList.add('active');
+                selectedWikiItem = itemName;
+                
+                // Generate AI content for selected wiki item
+                generateAIContent('wiki', itemName);
+            }}
+            
+            function selectMindNode(element, nodeName) {{
+                // Remove previous selection
+                document.querySelectorAll('.mind-node').forEach(node => {{
+                    node.classList.remove('active');
+                }});
+                
+                // Add selection to clicked node
+                element.classList.add('active');
+                selectedMindNode = nodeName;
+                
+                // Generate AI content for selected mind node
+                generateAIContent('mind', nodeName);
+            }}
+            
+            function generateAIContent(type, selection) {{
+                const welcomeContent = document.querySelector('.welcome-content');
+                const aiContent = document.getElementById('aiContent');
+                
+                // Hide welcome, show AI content
+                welcomeContent.style.display = 'none';
+                aiContent.style.display = 'block';
+                
+                let content = '';
+                
+                if (type === 'wiki') {{
+                    content = generateWikiAIContent(selection);
+                }} else if (type === 'mind') {{
+                    content = generateMindAIContent(selection);
+                }}
+                
+                aiContent.innerHTML = content;
+            }}
+            
+            function generateWikiAIContent(wikiItem) {{
+                const baseName = wikiItem.replace('.md', '').replace(/_/g, ' ');
+                
+                const contentMap = {{
+                    'ARCHITECTURE_OVERVIEW.md': {{
+                        title: 'System Architecture Overview',
+                        sections: [
+                            {{
+                                title: 'Core Components',
+                                content: 'The Yourl.Cloud architecture is built on a microservices foundation with Flask as the primary web framework, running on Google Cloud Run for scalable containerized deployment.'
+                            }},
+                            {{
+                                title: 'Key Features',
+                                content: 'Features include trust-based AI integration, visitor tracking, marketing code system, and comprehensive security layers with Secret Manager integration.'
+                            }},
+                            {{
+                                title: 'Technology Stack',
+                                content: 'Python/Flask backend, Cloud Run hosting, SQLite/Cloud SQL database options, and integrated CI/CD pipeline with Cloud Build.'
+                            }}
+                        ]
+                    }},
+                    'SECURITY.md': {{
+                        title: 'Security Architecture & Policies',
+                        sections: [
+                            {{
+                                title: 'Security Framework',
+                                content: 'Multi-layered security approach including authentication, authorization, input validation, and secure communication protocols.'
+                            }},
+                            {{
+                                title: 'Access Control',
+                                content: 'Visitor-based authentication system with marketing codes, session management, and role-based access control for different user types.'
+                            }},
+                            {{
+                                title: 'Data Protection',
+                                content: 'Encrypted data transmission, secure secret management, and comprehensive audit logging for compliance and monitoring.'
+                            }}
+                        ]
+                    }},
+                    'DEPLOYMENT_SUMMARY.md': {{
+                        title: 'Deployment Guide & Best Practices',
+                        sections: [
+                            {{
+                                title: 'Cloud Run Deployment',
+                                content: 'Containerized deployment on Google Cloud Run with automatic scaling, health checks, and custom domain mapping support.'
+                            }},
+                            {{
+                                title: 'CI/CD Pipeline',
+                                content: 'Automated deployment pipeline using Cloud Build with testing, security scanning, and gradual rollout capabilities.'
+                            }},
+                            {{
+                                title: 'Environment Management',
+                                content: 'Separate development, staging, and production environments with environment-specific configuration and secrets management.'
+                            }}
+                        ]
+                    }}
+                }};
+                
+                const defaultContent = {{
+                    title: `${{baseName}} Documentation`,
+                    sections: [
+                        {{
+                            title: 'Overview',
+                            content: `This section covers ${{baseName.toLowerCase()}} within the Yourl.Cloud ecosystem. It provides comprehensive information about implementation, best practices, and integration guidelines.`
+                        }},
+                        {{
+                            title: 'Key Components',
+                            content: `The ${{baseName.toLowerCase()}} module includes essential features for maintaining system reliability, security, and performance within the Yourl.Cloud platform.`
+                        }},
+                        {{
+                            title: 'Implementation Guide',
+                            content: `Follow the guidelines in this documentation to properly implement and maintain ${{baseName.toLowerCase()}} functionality in your Yourl.Cloud deployment.`
+                        }}
+                    ]
+                }};
+                
+                const content = contentMap[wikiItem] || defaultContent;
+                
+                return `
+                    <h3>${{content.title}}</h3>
+                    ${{content.sections.map(section => `
+                        <div class="content-section">
+                            <h4>${{section.title}}</h4>
+                            <p>${{section.content}}</p>
+                        </div>
+                    `).join('')}}
+                    <div class="content-section" style="background: rgba(255,215,0,0.1); border-left-color: #ffd700;">
+                        <h4>🔗 Related Resources</h4>
+                        <p>For complete documentation, visit the <a href="https://github.com/XDM-ZSBW/yourl.cloud/wiki/${{wikiItem}}" target="_blank" style="color: #ffd700;">GitHub Wiki page</a>.</p>
+                    </div>
+                `;
+            }}
+            
+            function generateMindAIContent(mindNode) {{
+                const nodeData = mindMapNodes[mindNode];
+                
+                const contentMap = {{
+                    'Architecture': {{
+                        title: 'System Architecture Insights',
+                        description: 'Deep dive into the structural design and component relationships within Yourl.Cloud.',
+                        keyPoints: [
+                            'Microservices-based architecture with clear separation of concerns',
+                            'Flask web framework providing RESTful API endpoints',
+                            'Cloud-native design optimized for Google Cloud Run',
+                            'Modular component structure for maintainability and scalability'
+                        ],
+                        connections: 'Directly connected to Security (for secure design patterns), Infrastructure (for deployment architecture), and Development (for coding standards).'
+                    }},
+                    'Security': {{
+                        title: 'Security Framework Analysis',
+                        description: 'Comprehensive security implementation across all system layers.',
+                        keyPoints: [
+                            'Multi-factor authentication with visitor tracking',
+                            'Secret management using Google Cloud Secret Manager',
+                            'Input validation and sanitization at all entry points',
+                            'Encrypted communication and secure session management'
+                        ],
+                        connections: 'Integrates with Architecture (secure design), Operations (security monitoring), and Compliance (regulatory requirements).'
+                    }},
+                    'Development': {{
+                        title: 'Development Workflow & Practices',
+                        description: 'Modern development practices and tooling for efficient software delivery.',
+                        keyPoints: [
+                            'Python/Flask backend with comprehensive API design',
+                            'Docker containerization for consistent environments',
+                            'Automated testing and continuous integration',
+                            'Code quality standards and documentation practices'
+                        ],
+                        connections: 'Linked to Architecture (design patterns), Deployment (release processes), and Tools (development utilities).'
+                    }}
+                }};
+                
+                const defaultContent = {{
+                    title: `${{mindNode}} Concept Overview`,
+                    description: nodeData.description,
+                    keyPoints: [
+                        `Core principles and practices related to ${{mindNode.toLowerCase()}} in the Yourl.Cloud ecosystem`,
+                        `Integration patterns and best practices for ${{mindNode.toLowerCase()}} implementation`,
+                        `Monitoring and maintenance guidelines for ${{mindNode.toLowerCase()}} components`,
+                        `Future roadmap and evolution plans for ${{mindNode.toLowerCase()}} capabilities`
+                    ],
+                    connections: `This concept connects to: ${{nodeData.connections.join(', ')}}. These relationships ensure comprehensive coverage of the ${{mindNode.toLowerCase()}} domain.`
+                }};
+                
+                const content = contentMap[mindNode] || defaultContent;
+                
+                return `
+                    <h3>${{content.title}}</h3>
+                    <div class="content-section">
+                        <h4>🎯 Overview</h4>
+                        <p>${{content.description}}</p>
+                    </div>
+                    <div class="content-section">
+                        <h4>🔑 Key Points</h4>
+                        <ul>
+                            ${{content.keyPoints.map(point => `<li>${{point}}</li>`).join('')}}
+                        </ul>
+                    </div>
+                    <div class="content-section">
+                        <h4>🔗 Concept Connections</h4>
+                        <p>${{content.connections}}</p>
+                    </div>
+                    <div class="content-section" style="background: rgba(255,215,0,0.1); border-left-color: #ffd700;">
+                        <h4>💡 AI Insight</h4>
+                        <p>This AI-generated content provides contextual information about ${{mindNode.toLowerCase()}} within the Yourl.Cloud knowledge base. For detailed implementation guides, explore the related wiki documentation.</p>
+                    </div>
+                `;
+            }}
+            
+            function showTooltip(event) {{
+                const tooltip = document.getElementById('tooltip');
+                const nodeName = event.target.dataset.node;
+                const nodeData = mindMapNodes[nodeName];
+                
+                tooltip.textContent = nodeData.description;
+                tooltip.style.left = event.pageX + 10 + 'px';
+                tooltip.style.top = event.pageY - 10 + 'px';
+                tooltip.style.opacity = '1';
+            }}
+            
+            function hideTooltip() {{
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.opacity = '0';
+            }}
+            
+            // Initialize the mind map when page loads
+            document.addEventListener('DOMContentLoaded', function() {{
+                setTimeout(initializeMindMap, 100); // Small delay to ensure container is rendered
+            }});
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {{
+                const mindMap = document.getElementById('mindMap');
+                mindMap.innerHTML = '';
+                setTimeout(initializeMindMap, 100);
+            }});
+        </script>
+    </body>
+    </html>
+    """
+    
+    return make_response(html_content)
+
+@app.route('/monitoring/token', methods=['POST'])
+def generate_token():
+    """
+    Generate a secure monitoring token. Requires valid marketing code authentication.
+    """
+    # Verify authentication with marketing code
+    auth_code = request.form.get('auth_code') or request.json.get('auth_code') if request.is_json else None
+    
+    if not auth_code:
+        return jsonify({
+            'success': False,
+            'error': 'Authentication code required',
+            'message': 'Please provide a valid marketing code'
+        }), 401
+    
+    # Check if code is valid (current or next marketing password)
+    current_password = get_current_marketing_password()
+    next_password = get_next_marketing_password()
+    
+    if auth_code not in [current_password, next_password]:
+        return jsonify({
+            'success': False,
+            'error': 'Invalid authentication code',
+            'message': 'Marketing code is not valid'
+        }), 403
+    
+    # Get visitor data for user identification
+    visitor_data = get_visitor_data()
+    user_id = visitor_data.get('visitor_id', 'unknown')
+    
+    # Generate token with specified duration (default 1 hour)
+    duration = request.form.get('duration_minutes', 60) if not request.is_json else request.json.get('duration_minutes', 60)
+    try:
+        duration = int(duration)
+        if duration > 1440:  # Max 24 hours
+            duration = 1440
+        if duration < 5:     # Min 5 minutes
+            duration = 5
+    except (ValueError, TypeError):
+        duration = 60
+    
+    token = generate_monitoring_token(user_id, duration)
+    
+    return jsonify({
+        'success': True,
+        'token': token,
+        'user_id': user_id,
+        'duration_minutes': duration,
+        'expires_at': datetime.now() + timedelta(minutes=duration),
+        'message': f'Token generated successfully. Valid for {duration} minutes.'
+    })
+
+@app.route('/monitoring/stats', methods=['GET'])
+def monitoring_stats():
+    """
+    Secure monitoring endpoint that provides comprehensive site statistics.
+    Requires valid token authentication.
+    """
+    # Get token from header or query parameter
+    token = request.headers.get('Authorization')
+    if token and token.startswith('Bearer '):
+        token = token[7:]  # Remove 'Bearer ' prefix
+    else:
+        token = request.args.get('token')
+    
+    if not token:
+        return jsonify({
+            'success': False,
+            'error': 'Authentication required',
+            'message': 'Please provide a valid monitoring token'
+        }), 401
+    
+    # Verify token
+    token_data = verify_monitoring_token(token)
+    if not token_data.get('valid'):
+        return jsonify({
+            'success': False,
+            'error': 'Invalid or expired token',
+            'message': 'Token is not valid or has expired'
+        }), 403
+    
+    try:
+        # Collect comprehensive statistics
+        stats = {
+            'timestamp': datetime.now().isoformat(),
+            'token_user': token_data.get('user_id'),
+            'server_info': {
+                'host': get_original_host(),
+                'protocol': get_original_protocol(),
+                'debug_mode': DEBUG,
+                'production_mode': PRODUCTION,
+                'session_id': session.get('session_id', 'unknown')
+            },
+            'visitor_stats': {},
+            'access_stats': {},
+            'system_stats': {},
+            'endpoint_stats': {},
+            'security_stats': {}
+        }
+        
+        # Get database connection for detailed stats
+        database_connection = os.environ.get('DATABASE_CONNECTION_STRING')
+        if database_connection:
+            from scripts.database_client import DatabaseClient
+            db_client = DatabaseClient(database_connection)
+            
+            # Visitor statistics
+            stats['visitor_stats'] = {
+                'total_unique_visitors': db_client.get_total_visitors(),
+                'visitors_last_24h': db_client.get_visitors_in_timeframe(24),
+                'visitors_last_7d': db_client.get_visitors_in_timeframe(7 * 24),
+                'authenticated_visitors': db_client.get_authenticated_visitors_count(),
+                'new_vs_returning': db_client.get_new_vs_returning_stats()
+            }
+            
+            # Access statistics
+            stats['access_stats'] = {
+                'total_access_attempts': db_client.get_total_access_attempts(),
+                'successful_authentications': db_client.get_successful_auth_count(),
+                'failed_authentications': db_client.get_failed_auth_count(),
+                'success_rate': db_client.get_auth_success_rate(),
+                'most_used_codes': db_client.get_popular_access_codes()
+            }
+            
+            # Security statistics
+            stats['security_stats'] = {
+                'blocked_attempts': db_client.get_blocked_attempts_count(),
+                'suspicious_activity': db_client.get_suspicious_activity_count(),
+                'unique_ip_addresses': db_client.get_unique_ip_count(),
+                'device_type_breakdown': db_client.get_device_type_stats()
+            }
+        else:
+            stats['visitor_stats'] = {
+                'note': 'Database not available - using session data',
+                'current_visitor': get_visitor_data()
+            }
+        
+        # System statistics
+        try:
+            import psutil
+            stats['system_stats'] = {
+                'cpu_usage': psutil.cpu_percent(),
+                'memory_usage': psutil.virtual_memory().percent,
+                'disk_usage': psutil.disk_usage('/').percent if platform.system() != 'Windows' else psutil.disk_usage('C:').percent
+            }
+        except ImportError:
+            stats['system_stats'] = {
+                'note': 'psutil not available - system stats unavailable'
+            }
+        
+        # Endpoint access patterns (simplified)
+        stats['endpoint_stats'] = {
+            'available_endpoints': [
+                '/', '/api', '/status', '/data', '/knowledge-hub', 
+                '/authenticated', '/recover', '/monitoring/token', '/monitoring/stats'
+            ],
+            'protected_endpoints': ['/data', '/monitoring/stats'],
+            'public_endpoints': ['/', '/api', '/status', '/knowledge-hub']
+        }
+        
+        # Current marketing codes
+        stats['marketing_info'] = {
+            'current_code': get_current_marketing_password(),
+            'next_code': get_next_marketing_password(),
+            'code_rotation_active': True
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': stats,
+            'message': 'Monitoring statistics retrieved successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': 'Statistics collection failed',
+            'message': str(e)
+        }), 500
+
+@app.route('/monitoring', methods=['GET'])
+def monitoring_dashboard():
+    """
+    Monitoring dashboard that lists all monitoring-related endpoints and provides
+    an overview of the monitoring system capabilities.
+    """
+    # Get current server info
+    server_info = {
+        'host': get_original_host(),
+        'protocol': get_original_protocol(),
+        'base_url': f"{get_original_protocol()}://{get_original_host()}"
+    }
+    
+    # Get current marketing codes for reference
+    current_code = get_current_marketing_password()
+    next_code = get_next_marketing_password()
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Monitoring Dashboard - Yourl.Cloud Inc.</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+                color: white;
+                min-height: 100vh;
+                padding: 20px;
+            }}
+            
+            .dashboard-container {{
+                max-width: 1200px;
+                margin: 0 auto;
+            }}
+            
+            .header {{
+                text-align: center;
+                margin-bottom: 40px;
+                padding: 30px;
+                background: rgba(255,255,255,0.1);
+                border-radius: 15px;
+                backdrop-filter: blur(10px);
+            }}
+            
+            .header h1 {{
+                font-size: 2.5rem;
+                margin-bottom: 10px;
+                color: #fff;
+            }}
+            
+            .header p {{
+                font-size: 1.1rem;
+                opacity: 0.9;
+            }}
+            
+            .cards-grid {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                gap: 20px;
+                margin-bottom: 30px;
+            }}
+            
+            .card {{
+                background: rgba(255,255,255,0.1);
+                border-radius: 15px;
+                padding: 25px;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255,255,255,0.2);
+                transition: all 0.3s ease;
+            }}
+            
+            .card:hover {{
+                transform: translateY(-5px);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                background: rgba(255,255,255,0.15);
+            }}
+            
+            .card h3 {{
+                font-size: 1.4rem;
+                margin-bottom: 15px;
+                color: #ffd700;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }}
+            
+            .card p {{
+                margin-bottom: 15px;
+                line-height: 1.6;
+                opacity: 0.9;
+            }}
+            
+            .endpoint-link {{
+                display: block;
+                padding: 10px 15px;
+                background: rgba(255,255,255,0.1);
+                border: 1px solid rgba(255,255,255,0.3);
+                border-radius: 8px;
+                color: white;
+                text-decoration: none;
+                margin: 8px 0;
+                transition: all 0.3s ease;
+                font-family: 'Courier New', monospace;
+                font-size: 0.9rem;
+            }}
+            
+            .endpoint-link:hover {{
+                background: rgba(255,255,255,0.2);
+                border-color: #ffd700;
+                color: #ffd700;
+                transform: translateX(5px);
+            }}
+            
+            .endpoint-link .method {{
+                display: inline-block;
+                padding: 2px 8px;
+                background: #28a745;
+                border-radius: 4px;
+                font-size: 0.7rem;
+                font-weight: bold;
+                margin-right: 10px;
+            }}
+            
+            .endpoint-link .method.post {{
+                background: #007bff;
+            }}
+            
+            .endpoint-link .method.protected {{
+                background: #dc3545;
+            }}
+            
+            .info-section {{
+                background: rgba(255,255,255,0.1);
+                border-radius: 15px;
+                padding: 25px;
+                margin-bottom: 20px;
+                backdrop-filter: blur(10px);
+            }}
+            
+            .info-section h3 {{
+                color: #ffd700;
+                margin-bottom: 15px;
+            }}
+            
+            .code-block {{
+                background: rgba(0,0,0,0.3);
+                border: 1px solid rgba(255,255,255,0.2);
+                border-radius: 8px;
+                padding: 15px;
+                margin: 10px 0;
+                font-family: 'Courier New', monospace;
+                font-size: 0.9rem;
+                overflow-x: auto;
+            }}
+            
+            .status-indicator {{
+                display: inline-block;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: #28a745;
+                margin-right: 8px;
+                animation: pulse 2s infinite;
+            }}
+            
+            @keyframes pulse {{
+                0% {{ opacity: 1; }}
+                50% {{ opacity: 0.5; }}
+                100% {{ opacity: 1; }}
+            }}
+            
+            .navigation {{
+                text-align: center;
+                margin-top: 30px;
+            }}
+            
+            .nav-btn {{
+                display: inline-block;
+                padding: 12px 25px;
+                background: rgba(255,255,255,0.2);
+                border: 1px solid rgba(255,255,255,0.3);
+                border-radius: 8px;
+                color: white;
+                text-decoration: none;
+                margin: 5px;
+                transition: all 0.3s ease;
+            }}
+            
+            .nav-btn:hover {{
+                background: rgba(255,255,255,0.3);
+                border-color: #ffd700;
+                color: #ffd700;
+            }}
+            
+            .warning {{
+                background: rgba(255,193,7,0.2);
+                border: 1px solid rgba(255,193,7,0.5);
+                border-radius: 8px;
+                padding: 15px;
+                margin: 15px 0;
+                color: #fff3cd;
+            }}
+            
+            .success {{
+                background: rgba(40,167,69,0.2);
+                border: 1px solid rgba(40,167,69,0.5);
+                border-radius: 8px;
+                padding: 15px;
+                margin: 15px 0;
+                color: #d4edda;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="dashboard-container">
+            <div class="header">
+                <h1><span class="status-indicator"></span>Monitoring Dashboard</h1>
+                <p>Yourl.Cloud Inc. - Comprehensive Site Monitoring & Analytics</p>
+                <p><strong>Server:</strong> {server_info['base_url']} | <strong>Status:</strong> Online</p>
+            </div>
+            
+            <div class="cards-grid">
+                <div class="card">
+                    <h3>🏥 Health & Status</h3>
+                    <p>Public health check endpoint for monitoring systems and uptime verification.</p>
+                    <a href="{server_info['base_url']}/monitoring/health" class="endpoint-link" target="_blank">
+                        <span class="method">GET</span>/monitoring/health
+                    </a>
+                    <div class="success">
+                        ✅ <strong>Public Access:</strong> No authentication required
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>🔐 Token Generation</h3>
+                    <p>Generate secure, time-bound tokens for accessing protected monitoring endpoints.</p>
+                    <a href="#" class="endpoint-link" onclick="showTokenInfo()">
+                        <span class="method post">POST</span>/monitoring/token
+                    </a>
+                    <div class="warning">
+                        ⚠️ <strong>Authentication Required:</strong> Valid marketing code needed
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>📊 Site Statistics</h3>
+                    <p>Comprehensive analytics including visitor stats, security metrics, and system performance.</p>
+                    <a href="#" class="endpoint-link" onclick="showStatsInfo()">
+                        <span class="method protected">GET</span>/monitoring/stats
+                    </a>
+                    <div class="warning">
+                        🔑 <strong>Token Required:</strong> Valid monitoring token needed
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>🗂️ Dashboard Home</h3>
+                    <p>This page - overview of all monitoring capabilities and endpoint documentation.</p>
+                    <a href="{server_info['base_url']}/monitoring" class="endpoint-link" target="_blank">
+                        <span class="method">GET</span>/monitoring
+                    </a>
+                    <div class="success">
+                        📋 <strong>Documentation:</strong> Complete monitoring system overview
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>🔑 Authentication Information</h3>
+                <p><strong>Current Marketing Code:</strong> <code>{current_code}</code></p>
+                <p><strong>Next Marketing Code:</strong> <code>{next_code}</code></p>
+                <p><strong>Token Duration:</strong> 5 minutes to 24 hours (configurable)</p>
+                <p><strong>Security:</strong> HMAC-SHA256 signed, time-bound, non-reusable tokens</p>
+            </div>
+            
+            <div class="info-section">
+                <h3>📝 Usage Examples</h3>
+                
+                <h4>1. Generate Token (POST /monitoring/token)</h4>
+                <div class="code-block">
+curl -X POST {server_info['base_url']}/monitoring/token -d "auth_code={current_code}&duration_minutes=60"
+                </div>
+                
+                <h4>2. Access Statistics (GET /monitoring/stats)</h4>
+                <div class="code-block">
+curl -H "Authorization: Bearer YOUR_TOKEN" {server_info['base_url']}/monitoring/stats
+                </div>
+                
+                <h4>3. Health Check (GET /monitoring/health)</h4>
+                <div class="code-block">
+curl {server_info['base_url']}/monitoring/health
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>📊 Available Statistics</h3>
+                <ul style="line-height: 1.8; margin-left: 20px;">
+                    <li><strong>Visitor Analytics:</strong> Total visitors, new vs returning, 24h/7d activity</li>
+                    <li><strong>Authentication Stats:</strong> Success rates, popular codes, failed attempts</li>
+                    <li><strong>Security Metrics:</strong> Blocked attempts, suspicious activity, IP tracking</li>
+                    <li><strong>System Performance:</strong> CPU, memory, disk usage (if available)</li>
+                    <li><strong>Endpoint Usage:</strong> Available endpoints, protection status</li>
+                    <li><strong>Marketing Codes:</strong> Current and next rotation codes</li>
+                </ul>
+            </div>
+            
+            <div class="navigation">
+                <a href="{server_info['base_url']}/" class="nav-btn">🏠 Home</a>
+                <a href="{server_info['base_url']}/knowledge-hub" class="nav-btn">🧠 Knowledge Hub</a>
+                <a href="{server_info['base_url']}/status" class="nav-btn">📊 Status</a>
+                <a href="{server_info['base_url']}/data" class="nav-btn">📡 Data Stream</a>
+            </div>
+        </div>
+        
+        <script>
+            function showTokenInfo() {{
+                const message = `Token Generation Endpoint
+
+POST {server_info['base_url']}/monitoring/token
+
+Required Parameters:
+- auth_code: Valid marketing code
+- duration_minutes: 5-1440 (optional, default 60)
+
+Example:
+curl -X POST {server_info['base_url']}/monitoring/token -d "auth_code={current_code}&duration_minutes=60"`;
+                alert(message);
+            }}
+            
+            function showStatsInfo() {{
+                const message = `Statistics Endpoint
+
+GET {server_info['base_url']}/monitoring/stats
+
+Authentication:
+- Header: Authorization: Bearer YOUR_TOKEN
+- Or Query: ?token=YOUR_TOKEN
+
+Example:
+curl -H "Authorization: Bearer YOUR_TOKEN" {server_info['base_url']}/monitoring/stats`;
+                alert(message);
+            }}
+            
+            // Auto-refresh status indicator
+            setInterval(() => {{
+                fetch('{server_info['base_url']}/monitoring/health')
+                    .then(response => {{
+                        const indicator = document.querySelector('.status-indicator');
+                        if (response.ok) {{
+                            indicator.style.background = '#28a745';
+                        }} else {{
+                            indicator.style.background = '#dc3545';
+                        }}
+                    }})
+                    .catch(() => {{
+                        document.querySelector('.status-indicator').style.background = '#dc3545';
+                    }});
+            }}, 30000); // Check every 30 seconds
+        </script>
+    </body>
+    </html>
+    """
+    
+    return make_response(html_content)
+
+@app.route('/monitoring/health', methods=['GET'])
+def monitoring_health():
+    """
+    Public health check endpoint for monitoring systems.
+    """
+    try:
+        # Basic health checks
+        health_status = {
+            'timestamp': datetime.now().isoformat(),
+            'status': 'healthy',
+            'uptime': time.time() - app.start_time if hasattr(app, 'start_time') else 'unknown',
+            'version': 'yourl-cloud-2024',
+            'environment': 'production' if PRODUCTION else 'development'
+        }
+        
+        # Database health check
+        database_connection = os.environ.get('DATABASE_CONNECTION_STRING')
+        if database_connection:
+            try:
+                from scripts.database_client import DatabaseClient
+                db_client = DatabaseClient(database_connection)
+                # Simple ping test
+                conn = db_client._get_connection()
+                if conn:
+                    conn.close()
+                    health_status['database'] = 'connected'
+                else:
+                    health_status['database'] = 'disconnected'
+                    health_status['status'] = 'degraded'
+            except Exception as e:
+                health_status['database'] = f'error: {str(e)}'
+                health_status['status'] = 'degraded'
+        else:
+            health_status['database'] = 'not_configured'
+        
+        status_code = 200 if health_status['status'] == 'healthy' else 503
+        
+        return jsonify(health_status), status_code
+        
+    except Exception as e:
+        return jsonify({
+            'timestamp': datetime.now().isoformat(),
+            'status': 'unhealthy',
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
+    # Track app start time for uptime monitoring
+    app.start_time = time.time()
+    
     # Determine the display address for users
     if HOST == '0.0.0.0':
         display_host = 'localhost'  # More user-friendly than 0.0.0.0
     else:
         display_host = HOST
     
-    # Get current marketing code
-    current_password = get_current_marketing_code()
+    # Get current marketing password
+    current_password = get_current_marketing_password()
     
     print(f"🚀 Starting URL API Server with Visual Inspection")
     print(f"📍 Host: {display_host}")

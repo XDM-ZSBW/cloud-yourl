@@ -548,7 +548,259 @@ class DatabaseClient:
         finally:
             conn.close()
     
-    def get_active_authorizations(self) -> List[Dict[str, Any]]:
+    # Monitoring and statistics methods
+    def get_total_visitors(self) -> int:
+        """Get total number of unique visitors"""
+        conn = self._get_connection()
+        if not conn:
+            return 0
+        
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT COUNT(DISTINCT visitor_id) FROM visitor_tracking")
+                result = cursor.fetchone()
+                return result[0] if result else 0
+        except Exception as e:
+            logger.error(f"Error getting total visitors: {e}")
+            return 0
+        finally:
+            conn.close()
+    
+    def get_visitors_in_timeframe(self, hours: int) -> int:
+        """Get number of visitors in the last N hours"""
+        conn = self._get_connection()
+        if not conn:
+            return 0
+        
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    SELECT COUNT(DISTINCT visitor_id) FROM visitor_tracking 
+                    WHERE last_visit_at >= NOW() - INTERVAL %s HOUR
+                """, (hours,))
+                result = cursor.fetchone()
+                return result[0] if result else 0
+        except Exception as e:
+            logger.error(f"Error getting visitors in timeframe: {e}")
+            return 0
+        finally:
+            conn.close()
+    
+    def get_authenticated_visitors_count(self) -> int:
+        """Get number of visitors who have authenticated"""
+        conn = self._get_connection()
+        if not conn:
+            return 0
+        
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    SELECT COUNT(DISTINCT visitor_id) FROM visitor_tracking 
+                    WHERE last_access_code IS NOT NULL
+                """)
+                result = cursor.fetchone()
+                return result[0] if result else 0
+        except Exception as e:
+            logger.error(f"Error getting authenticated visitors: {e}")
+            return 0
+        finally:
+            conn.close()
+    
+    def get_new_vs_returning_stats(self) -> dict:
+        """Get new vs returning visitor statistics"""
+        conn = self._get_connection()
+        if not conn:
+            return {}
+        
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    SELECT 
+                        SUM(CASE WHEN total_visits = 1 THEN 1 ELSE 0 END) as new_visitors,
+                        SUM(CASE WHEN total_visits > 1 THEN 1 ELSE 0 END) as returning_visitors
+                    FROM visitor_tracking
+                """)
+                result = cursor.fetchone()
+                if result:
+                    return {
+                        'new_visitors': result[0] or 0,
+                        'returning_visitors': result[1] or 0
+                    }
+                return {'new_visitors': 0, 'returning_visitors': 0}
+        except Exception as e:
+            logger.error(f"Error getting new vs returning stats: {e}")
+            return {}
+        finally:
+            conn.close()
+    
+    def get_total_access_attempts(self) -> int:
+        """Get total number of access attempts"""
+        conn = self._get_connection()
+        if not conn:
+            return 0
+        
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT COUNT(*) FROM visitor_access_history")
+                result = cursor.fetchone()
+                return result[0] if result else 0
+        except Exception as e:
+            logger.error(f"Error getting total access attempts: {e}")
+            return 0
+        finally:
+            conn.close()
+    
+    def get_successful_auth_count(self) -> int:
+        """Get number of successful authentications"""
+        conn = self._get_connection()
+        if not conn:
+            return 0
+        
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT COUNT(*) FROM visitor_access_history WHERE success = true")
+                result = cursor.fetchone()
+                return result[0] if result else 0
+        except Exception as e:
+            logger.error(f"Error getting successful auth count: {e}")
+            return 0
+        finally:
+            conn.close()
+    
+    def get_failed_auth_count(self) -> int:
+        """Get number of failed authentications"""
+        conn = self._get_connection()
+        if not conn:
+            return 0
+        
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT COUNT(*) FROM visitor_access_history WHERE success = false")
+                result = cursor.fetchone()
+                return result[0] if result else 0
+        except Exception as e:
+            logger.error(f"Error getting failed auth count: {e}")
+            return 0
+        finally:
+            conn.close()
+    
+    def get_auth_success_rate(self) -> float:
+        """Get authentication success rate as percentage"""
+        total = self.get_total_access_attempts()
+        if total == 0:
+            return 0.0
+        
+        successful = self.get_successful_auth_count()
+        return (successful / total) * 100
+    
+    def get_popular_access_codes(self) -> list:
+        """Get most frequently used access codes"""
+        conn = self._get_connection()
+        if not conn:
+            return []
+        
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    SELECT access_code, COUNT(*) as usage_count
+                    FROM visitor_access_history 
+                    WHERE success = true
+                    GROUP BY access_code 
+                    ORDER BY usage_count DESC 
+                    LIMIT 10
+                """)
+                results = cursor.fetchall()
+                return [{'code': row[0], 'count': row[1]} for row in results]
+        except Exception as e:
+            logger.error(f"Error getting popular access codes: {e}")
+            return []
+        finally:
+            conn.close()
+    
+    def get_blocked_attempts_count(self) -> int:
+        """Get number of blocked access attempts"""
+        conn = self._get_connection()
+        if not conn:
+            return 0
+        
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    SELECT COUNT(*) FROM visitor_access_history 
+                    WHERE success = false AND access_code IS NOT NULL
+                """)
+                result = cursor.fetchone()
+                return result[0] if result else 0
+        except Exception as e:
+            logger.error(f"Error getting blocked attempts: {e}")
+            return 0
+        finally:
+            conn.close()
+    
+    def get_suspicious_activity_count(self) -> int:
+        """Get count of suspicious activity (multiple failed attempts from same IP)"""
+        conn = self._get_connection()
+        if not conn:
+            return 0
+        
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    SELECT COUNT(DISTINCT ip_address) 
+                    FROM visitor_access_history 
+                    WHERE success = false 
+                    GROUP BY ip_address 
+                    HAVING COUNT(*) >= 5
+                """)
+                result = cursor.fetchone()
+                return result[0] if result else 0
+        except Exception as e:
+            logger.error(f"Error getting suspicious activity count: {e}")
+            return 0
+        finally:
+            conn.close()
+    
+    def get_unique_ip_count(self) -> int:
+        """Get number of unique IP addresses"""
+        conn = self._get_connection()
+        if not conn:
+            return 0
+        
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT COUNT(DISTINCT ip_address) FROM visitor_tracking")
+                result = cursor.fetchone()
+                return result[0] if result else 0
+        except Exception as e:
+            logger.error(f"Error getting unique IP count: {e}")
+            return 0
+        finally:
+            conn.close()
+    
+    def get_device_type_stats(self) -> dict:
+        """Get device type breakdown statistics"""
+        conn = self._get_connection()
+        if not conn:
+            return {}
+        
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    SELECT device_type, COUNT(*) as count
+                    FROM visitor_tracking 
+                    WHERE device_type IS NOT NULL
+                    GROUP BY device_type 
+                    ORDER BY count DESC
+                """)
+                results = cursor.fetchall()
+                return {row[0]: row[1] for row in results}
+        except Exception as e:
+            logger.error(f"Error getting device type stats: {e}")
+            return {}
+        finally:
+            conn.close()
+
+def get_active_authorizations(self) -> List[Dict[str, Any]]:
         """Get all active authorizations"""
         conn = self._get_connection()
         if not conn:
@@ -587,16 +839,18 @@ class DatabaseClient:
                 visitor = cursor.fetchone()
                 
                 if visitor:
-                    # Update last visit
+                    # Update last visit and get updated record
                     cursor.execute("""
                         UPDATE visitor_tracking 
                         SET last_visit_at = NOW(), total_visits = total_visits + 1,
                             user_agent = %s, ip_address = %s, device_type = %s
                         WHERE visitor_id = %s
+                        RETURNING *
                     """, (user_agent, ip_address, device_type, visitor_id))
                     
+                    updated_visitor = cursor.fetchone()
                     conn.commit()
-                    return dict(visitor)
+                    return dict(updated_visitor) if updated_visitor else dict(visitor)
                 else:
                     # Create new visitor
                     import random
