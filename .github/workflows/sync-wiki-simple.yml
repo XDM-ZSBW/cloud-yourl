@@ -118,8 +118,17 @@ jobs:
             echo "📝 Changes detected, committing and pushing..."
             git add -A
             git commit -m "chore(wiki): sync from main repo @ ${{ github.sha }}"
-            git push origin HEAD:wiki || git push -u origin wiki
-            echo "✅ Wiki updated successfully"
+            
+            # Try to push to main branch first (GitHub Wikis use main by default)
+            if git push origin main 2>/dev/null; then
+              echo "✅ Wiki updated successfully (pushed to main branch)"
+            else
+              # If main branch doesn't exist, try to create it
+              echo "🔄 Creating main branch and pushing..."
+              git branch -M main
+              git push -u origin main
+              echo "✅ Wiki updated successfully (created main branch)"
+            fi
           else
             echo "ℹ️ No changes to commit"
           fi
@@ -133,5 +142,8 @@ jobs:
             echo ""
             echo "📄 Home.md preview:"
             head -20 wiki-repo/Home.md
+            echo ""
+            echo "🌿 Current branch:"
+            cd wiki-repo && git branch -a
           fi
           echo "✅ Wiki sync verification complete"
