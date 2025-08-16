@@ -98,6 +98,9 @@ jobs:
             echo "🚀 Creating new wiki repository..."
             mkdir -p wiki-repo
             cd wiki-repo
+            
+            # Set default branch to main before init
+            git config --global init.defaultBranch main
             git init
             git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git"
             
