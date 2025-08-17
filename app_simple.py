@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Simple API Server with Visual Inspection and Google Cloud Run Support
-====================================================================
+===================================================================
 
 A simplified Flask application for container deployment.
 Enhanced for Google Cloud Run deployment with basic functionality.
@@ -50,8 +50,17 @@ CLOUD_RUN_CONFIG = {
     "readiness_check_path": "/health"
 }
 
+# Global password cache to ensure consistency
+_current_password = None
+_next_password = None
+
 def generate_simple_password():
-    """Generate a simple password for testing"""
+    """Generate a simple password for testing - cached for consistency"""
+    global _current_password
+    
+    if _current_password is not None:
+        return _current_password
+    
     words = ["CLOUD", "FUTURE", "INNOVATE", "DREAM", "BUILD", "CREATE"]
     symbols = ["!", "@", "#", "$", "%", "&"]
     
@@ -64,7 +73,30 @@ def generate_simple_password():
     symbol = random.choice(symbols)
     number = random.randint(10, 999)
     
-    return f"{word}{number}{symbol}"
+    _current_password = f"{word}{number}{symbol}"
+    return _current_password
+
+def generate_next_password():
+    """Generate the next password for authenticated users"""
+    global _next_password
+    
+    if _next_password is not None:
+        return _next_password
+    
+    words = ["ROCKET", "STAR", "MOON", "SUN", "OCEAN", "MOUNTAIN"]
+    symbols = ["!", "@", "#", "$", "%", "&"]
+    
+    # Use a different seed for next password
+    fallback_id = os.environ.get('BUILD_ID', str(int(datetime.now().timestamp()))) + "_next"
+    hash_num = int(hashlib.md5(fallback_id.encode()).hexdigest()[:8], 16)
+    
+    random.seed(hash_num)
+    word = random.choice(words)
+    symbol = random.choice(symbols)
+    number = random.randint(10, 999)
+    
+    _next_password = f"{word}{number}{symbol}"
+    return _next_password
 
 # Friends and Family Guard Ruleset
 FRIENDS_FAMILY_GUARD = {
@@ -77,6 +109,43 @@ FRIENDS_FAMILY_GUARD = {
     },
     "session_id": "f1d78acb-de07-46e0-bfa7-f5b75e3c0c49",
     "organization": "Yourl.Cloud Inc."
+}
+
+# Demo configuration for rapid prototyping
+DEMO_CONFIG = {
+    "password": generate_simple_password(),
+    "connections": [
+        {
+            "id": 1,
+            "name": "GitHub Repository",
+            "url": "https://github.com/XDM-ZSBW/yourl.cloud",
+            "description": "Source code and documentation"
+        },
+        {
+            "id": 2,
+            "name": "Google Cloud Run",
+            "url": "https://cloud.google.com/run",
+            "description": "Deploy and scale applications"
+        },
+        {
+            "id": 3,
+            "name": "Flask Framework",
+            "url": "https://flask.palletsprojects.com/",
+            "description": "Python web framework"
+        },
+        {
+            "id": 4,
+            "name": "Perplexity AI",
+            "url": "https://perplexity.ai",
+            "description": "AI-powered search and assistance"
+        },
+        {
+            "id": 5,
+            "name": "Cursor IDE",
+            "url": "https://cursor.sh",
+            "description": "AI-powered code editor"
+        }
+    ]
 }
 
 # Configure Flask for Cloud Run domain mapping compatibility
@@ -125,6 +194,7 @@ def main_endpoint():
     if request.method == 'GET':
         current_password = generate_simple_password()
         
+        # Rich landing page content
         html_content = f"""
         <!DOCTYPE html>
         <html>
@@ -133,40 +203,209 @@ def main_endpoint():
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <style>
-                body {{ font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }}
-                .container {{ max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
-                h1 {{ color: #333; text-align: center; }}
+                body {{ 
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                    margin: 0; 
+                    padding: 0; 
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    min-height: 100vh;
+                    color: #333;
+                }}
+                .container {{ 
+                    max-width: 1200px; 
+                    margin: 0 auto; 
+                    padding: 20px;
+                    background: rgba(255, 255, 255, 0.95);
+                    border-radius: 15px;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                    margin-top: 20px;
+                    margin-bottom: 20px;
+                }}
+                .header {{ 
+                    text-align: center; 
+                    padding: 40px 0;
+                    border-bottom: 3px solid #667eea;
+                    margin-bottom: 30px;
+                }}
+                .logo {{ 
+                    font-size: 3rem; 
+                    font-weight: bold; 
+                    color: #667eea;
+                    margin-bottom: 10px;
+                }}
+                .tagline {{ 
+                    font-size: 1.2rem; 
+                    color: #666;
+                    margin-bottom: 20px;
+                }}
+                .form-section {{
+                    background: #f8f9fa;
+                    padding: 30px;
+                    border-radius: 10px;
+                    margin: 30px 0;
+                    text-align: center;
+                }}
                 .form-group {{ margin: 20px 0; }}
-                label {{ display: block; margin-bottom: 5px; font-weight: bold; }}
-                input[type="text"], input[type="password"] {{ width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }}
-                button {{ background: #007bff; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }}
-                button:hover {{ background: #0056b3; }}
-                .info {{ background: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0; }}
-                .password-display {{ background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin: 10px 0; text-align: center; font-weight: bold; }}
+                label {{ 
+                    display: block; 
+                    margin-bottom: 10px; 
+                    font-weight: bold; 
+                    font-size: 1.1rem;
+                    color: #333;
+                }}
+                input[type="text"], input[type="password"] {{ 
+                    width: 100%; 
+                    max-width: 400px;
+                    padding: 15px; 
+                    border: 2px solid #ddd; 
+                    border-radius: 10px; 
+                    font-size: 16px; 
+                    text-align: center;
+                    transition: border-color 0.3s ease;
+                }}
+                input[type="text"]:focus, input[type="password"]:focus {{ 
+                    border-color: #667eea;
+                    outline: none;
+                }}
+                button {{ 
+                    background: linear-gradient(45deg, #667eea, #764ba2);
+                    color: white; 
+                    padding: 15px 40px; 
+                    border: none; 
+                    border-radius: 25px; 
+                    cursor: pointer; 
+                    font-size: 18px; 
+                    font-weight: bold;
+                    transition: transform 0.3s ease, box-shadow 0.3s ease;
+                }}
+                button:hover {{ 
+                    transform: translateY(-2px);
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                }}
+                .password-display {{ 
+                    background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+                    color: white;
+                    padding: 20px; 
+                    border-radius: 15px; 
+                    margin: 30px 0; 
+                    text-align: center; 
+                    font-weight: bold;
+                    font-size: 1.2rem;
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                }}
+                .info {{ 
+                    background: #e7f3ff; 
+                    padding: 20px; 
+                    border-radius: 10px; 
+                    margin: 20px 0; 
+                    border-left: 5px solid #667eea;
+                }}
+                .connections-grid {{
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                    gap: 20px;
+                    margin: 30px 0;
+                }}
+                .connection-card {{
+                    background: white;
+                    padding: 25px;
+                    border-radius: 10px;
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                    border-top: 4px solid #667eea;
+                    transition: transform 0.3s ease;
+                }}
+                .connection-card:hover {{
+                    transform: translateY(-5px);
+                }}
+                .connection-card h3 {{
+                    color: #667eea;
+                    margin-bottom: 15px;
+                    font-size: 1.3rem;
+                }}
+                .connection-card a {{
+                    color: #667eea;
+                    text-decoration: none;
+                    font-weight: bold;
+                }}
+                .connection-card a:hover {{
+                    text-decoration: underline;
+                }}
+                .footer {{
+                    text-align: center;
+                    padding: 30px 0;
+                    color: #666;
+                    border-top: 2px solid #eee;
+                    margin-top: 30px;
+                }}
+                .status-badge {{
+                    display: inline-block;
+                    padding: 5px 15px;
+                    border-radius: 20px;
+                    font-size: 0.9rem;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                    margin: 5px;
+                }}
+                .status-success {{ background: #d4edda; color: #155724; }}
+                .status-info {{ background: #d1ecf1; color: #0c5460; }}
             </style>
         </head>
         <body>
             <div class="container">
-                <h1>🚀 Yourl.Cloud</h1>
-                <div class="info">
-                    <strong>URL API Server with Visual Inspection</strong><br>
-                    Production-ready Flask application with security features.<br>
-                    <strong>Domain:</strong> {get_original_host()}<br>
-                    <strong>Protocol:</strong> {get_original_protocol()}
+                <!-- Header with Company Identity -->
+                <div class="header">
+                    <div class="logo">Yourl.Cloud Inc.</div>
+                    <div class="tagline">Secure Cloud Infrastructure & API Services</div>
+                    <p>United States • Global Operations • Enterprise Solutions</p>
                 </div>
-                <form method="POST">
-                    <div class="form-group">
-                        <label for="password">🎯 Marketing Password:</label>
-                        <input type="text" id="password" name="password" placeholder="Enter the fun marketing password" value="" required>
+
+                <!-- Authentication Form Section -->
+                <div class="form-section">
+                    <h2>🚀 Launch Your Experience</h2>
+                    <p>Enter the marketing password to access enhanced services and visual inspection capabilities.</p>
+                    
+                    <form method="POST">
+                        <div class="form-group">
+                            <label for="password">🎯 Marketing Password:</label>
+                            <input type="text" id="password" name="password" placeholder="Enter the fun marketing password" value="" required>
+                        </div>
+                        <button type="submit">🚀 Launch Experience</button>
+                    </form>
+                    
+                    <div class="password-display">
+                        <strong>🎪 Current Marketing Password:</strong> {current_password}
                     </div>
-                    <button type="submit">🚀 Launch Experience</button>
-                </form>
-                <div class="password-display">
-                    <strong>🎪 Current Marketing Password:</strong> {current_password}
+                    
+                    <div class="info">
+                        <strong>🔒 Security Note:</strong> This password changes with each deployment to ensure security.<br>
+                        <strong>🌐 Health Check:</strong> <a href="/health">/health</a> | 
+                        <strong>📊 Status:</strong> <a href="/status">/status</a> |
+                        <strong>🔌 API:</strong> <a href="/api">/api</a>
+                    </div>
                 </div>
+
+                <!-- Company Information Section -->
                 <div class="info">
-                    <strong>Health Check:</strong> <a href="/health">/health</a><br>
-                    <strong>Status:</strong> <a href="/status">/status</a>
+                    <h3>🏢 About Yourl.Cloud Inc.</h3>
+                    <p>Yourl.Cloud Inc. is a leading technology company specializing in cloud infrastructure, API services, and digital solutions. Based in the United States, we serve clients globally with secure, scalable, and innovative technology solutions.</p>
+                    <p><strong>Founded:</strong> 2024 | <strong>Headquarters:</strong> United States | <strong>Industry:</strong> Cloud Computing, API Services, Digital Infrastructure</p>
+                </div>
+
+                <!-- Connections Grid -->
+                <div class="connections-grid">
+                    {''.join([f'''
+                    <div class="connection-card">
+                        <h3>{conn['name']}</h3>
+                        <p>{conn['description']}</p>
+                        <a href="{conn['url']}" target="_blank">🔗 Visit {conn['name']}</a>
+                    </div>
+                    ''' for conn in DEMO_CONFIG['connections']])}
+                </div>
+
+                <!-- Footer -->
+                <div class="footer">
+                    <p>&copy; 2024 Yourl.Cloud Inc. All rights reserved. | United States | Global Operations</p>
+                    <p>Built with ❤️ for secure, scalable cloud solutions</p>
                 </div>
             </div>
         </body>
@@ -182,18 +421,42 @@ def main_endpoint():
     elif request.method == 'POST':
         password = request.form.get('password', '')
         current_password = generate_simple_password()
+        next_password = generate_next_password()
         
         if password == current_password:
             session['authenticated'] = True
             session['last_access_code'] = current_password
             
-            return jsonify({
+            # Get current build version/commit hash
+            try:
+                import subprocess
+                build_version = subprocess.check_output(['git', 'rev-parse', 'HEAD'], 
+                                                     text=True, stderr=subprocess.DEVNULL).strip()[:8]
+            except:
+                build_version = "unknown"
+            
+            # Create JSON response with actual URL and personalized data
+            json_response = {
                 "status": "authenticated",
                 "message": "🎉 Welcome to Yourl.Cloud!",
+                "experience_level": "authenticated_user",
                 "current_marketing_password": current_password,
+                "next_marketing_password": next_password,
+                "ownership": {
+                    "perplexity": "current_marketing_password",
+                    "cursor": "next_marketing_password"
+                },
+                "navigation": {
+                    "back_to_landing": f"{get_original_protocol()}://{get_original_host()}/",
+                    "api_endpoint": f"{get_original_protocol()}://{get_original_host()}/api",
+                    "status_page": f"{get_original_protocol()}://{get_original_host()}/status"
+                },
                 "timestamp": datetime.utcnow().isoformat(),
-                "organization": FRIENDS_FAMILY_GUARD["organization"]
-            })
+                "organization": FRIENDS_FAMILY_GUARD["organization"],
+                "build_version": build_version
+            }
+            
+            return jsonify(json_response)
         else:
             return jsonify({
                 "status": "failed",
