@@ -530,31 +530,36 @@ def get_visitor_data():
         session_authenticated = session.get('authenticated', False)
         session_access_code = session.get('last_access_code')
         
-        # Try to get database connection
+        # Try to get database connection with timeout protection
         database_connection = os.environ.get('DATABASE_CONNECTION_STRING')
         if database_connection:
-            from scripts.database_client import DatabaseClient
-            db_client = DatabaseClient(database_connection)
+            try:
+                from scripts.database_client import DatabaseClient
+                db_client = DatabaseClient(database_connection)
+                
+                # Get or create visitor record - FIXED to properly return updated visit count
+                visitor = db_client.get_or_create_visitor(
+                    visitor_id=visitor_id,
+                    user_agent=request.headers.get('User-Agent'),
+                    ip_address=get_client_ip(),
+                    device_type=detect_device_type(request.headers.get('User-Agent', ''))
+                )
             
-            # Get or create visitor record - FIXED to properly return updated visit count
-            visitor = db_client.get_or_create_visitor(
-                visitor_id=visitor_id,
-                user_agent=request.headers.get('User-Agent'),
-                ip_address=get_client_ip(),
-                device_type=detect_device_type(request.headers.get('User-Agent', ''))
-            )
-            
-            if visitor:
-                # FIXED: Ensure we get the updated visit count after increment
-                total_visits = visitor.get('total_visits', 1)
-                return {
-                    'visitor_id': visitor.get('visitor_id'),
-                    'tracking_key': visitor.get('public_tracking_key'),
-                    'last_access_code': visitor.get('last_access_code'),
-                    'total_visits': total_visits,
-                    'is_new_visitor': total_visits == 1,
-                    'has_used_code': visitor.get('last_access_code') is not None
-                }
+                if visitor:
+                    # FIXED: Ensure we get the updated visit count after increment
+                    total_visits = visitor.get('total_visits', 1)
+                    return {
+                        'visitor_id': visitor.get('visitor_id'),
+                        'tracking_key': visitor.get('public_tracking_key'),
+                        'last_access_code': visitor.get('last_access_code'),
+                        'total_visits': total_visits,
+                        'is_new_visitor': total_visits == 1,
+                        'has_used_code': visitor.get('last_access_code') is not None
+                    }
+            except Exception as e:
+                # Database connection failed - fall through to session-based fallback
+                print(f"⚠️ Database visitor tracking failed: {e}")
+                pass
         
         # Fallback if database not available - use session data with proper counting
         session_visits = session.get('visit_count', 0) + 1
@@ -1329,7 +1334,7 @@ def data_stream():
     for frame in story_frames:
         for node in frame.get('mind_map_nodes', []):
             node_display = node.replace("_", " ").title()
-            mind_map_nodes_html += f'<div class="mind-map-node" onclick="filterByNode(\"{node}\")">{node_display}</div>'
+            mind_map_nodes_html += f'<div class="mind-map-node" onclick="filterByNode(\'{node}\')">{node_display}</div>'
     
     html_content = f"""
     <!DOCTYPE html>
@@ -4165,11 +4170,6 @@ def monitoring_stats():
     
     # Check for session authentication first (from landing page login)
     if session.get('authenticated', False) and session.get('last_access_code'):
-        # User is authenticated via landing page login
-        visitor_data = get_visitor_data()
-        authenticated_user = visitor_data.get('visitor_id', 'session_user')
-        auth_method = 'session'
-        
         # Verify the session is still valid with current or previous marketing codes
         current_code = get_current_marketing_password()
         next_code = get_next_marketing_password()
@@ -4180,6 +4180,16 @@ def monitoring_stats():
             session.pop('authenticated', None)
             session.pop('last_access_code', None)
             authenticated_user = None
+        else:
+            # User is authenticated via landing page login - get visitor ID safely
+            try:
+                visitor_id = request.cookies.get('visitor_id', 'session_user')
+                authenticated_user = visitor_id
+                auth_method = 'session'
+            except Exception as e:
+                print(f"⚠️ Error getting visitor ID for monitoring stats: {e}")
+                authenticated_user = 'session_user'
+                auth_method = 'session'
     
     # If no session auth, check for token authentication
     if not authenticated_user:
@@ -4247,42 +4257,77 @@ def monitoring_stats():
             'security_stats': {}
         }
         
-        # Get database connection for detailed stats
+        # Get database connection for detailed stats with timeout protection
         database_connection = os.environ.get('DATABASE_CONNECTION_STRING')
         if database_connection:
-            from scripts.database_client import DatabaseClient
-            db_client = DatabaseClient(database_connection)
-            
-            # Visitor statistics
-            stats['visitor_stats'] = {
-                'total_unique_visitors': db_client.get_total_visitors(),
-                'visitors_last_24h': db_client.get_visitors_in_timeframe(24),
-                'visitors_last_7d': db_client.get_visitors_in_timeframe(7 * 24),
-                'authenticated_visitors': db_client.get_authenticated_visitors_count(),
-                'new_vs_returning': db_client.get_new_vs_returning_stats()
-            }
-            
-            # Access statistics
-            stats['access_stats'] = {
-                'total_access_attempts': db_client.get_total_access_attempts(),
-                'successful_authentications': db_client.get_successful_auth_count(),
-                'failed_authentications': db_client.get_failed_auth_count(),
-                'success_rate': db_client.get_auth_success_rate(),
-                'most_used_codes': db_client.get_popular_access_codes()
-            }
-            
-            # Security statistics
-            stats['security_stats'] = {
-                'blocked_attempts': db_client.get_blocked_attempts_count(),
-                'suspicious_activity': db_client.get_suspicious_activity_count(),
-                'unique_ip_addresses': db_client.get_unique_ip_count(),
-                'device_type_breakdown': db_client.get_device_type_stats()
-            }
+            try:
+                from scripts.database_client import DatabaseClient
+                db_client = DatabaseClient(database_connection)
+                
+                # Visitor statistics with error handling
+                try:
+                    stats['visitor_stats'] = {
+                        'total_unique_visitors': db_client.get_total_visitors(),
+                        'visitors_last_24h': db_client.get_visitors_in_timeframe(24),
+                        'visitors_last_7d': db_client.get_visitors_in_timeframe(7 * 24),
+                        'authenticated_visitors': db_client.get_authenticated_visitors_count(),
+                        'new_vs_returning': db_client.get_new_vs_returning_stats()
+                    }
+                except Exception as e:
+                    print(f"⚠️ Visitor stats collection failed: {e}")
+                    stats['visitor_stats'] = {'error': 'Visitor stats unavailable', 'details': str(e)}
+                
+                # Access statistics with error handling
+                try:
+                    stats['access_stats'] = {
+                        'total_access_attempts': db_client.get_total_access_attempts(),
+                        'successful_authentications': db_client.get_successful_auth_count(),
+                        'failed_authentications': db_client.get_failed_auth_count(),
+                        'success_rate': db_client.get_auth_success_rate(),
+                        'most_used_codes': db_client.get_popular_access_codes()
+                    }
+                except Exception as e:
+                    print(f"⚠️ Access stats collection failed: {e}")
+                    stats['access_stats'] = {'error': 'Access stats unavailable', 'details': str(e)}
+                
+                # Security statistics with error handling
+                try:
+                    stats['security_stats'] = {
+                        'blocked_attempts': db_client.get_blocked_attempts_count(),
+                        'suspicious_activity': db_client.get_suspicious_activity_count(),
+                        'unique_ip_addresses': db_client.get_unique_ip_count(),
+                        'device_type_breakdown': db_client.get_device_type_stats()
+                    }
+                except Exception as e:
+                    print(f"⚠️ Security stats collection failed: {e}")
+                    stats['security_stats'] = {'error': 'Security stats unavailable', 'details': str(e)}
+                    
+            except Exception as e:
+                # Database connection completely failed
+                print(f"⚠️ Database connection failed for monitoring stats: {e}")
+                stats['visitor_stats'] = {
+                    'note': 'Database connection failed - using session data',
+                    'current_visitor': get_visitor_data(),
+                    'error': str(e)
+                }
+                stats['access_stats'] = {'error': 'Database unavailable', 'details': str(e)}
+                stats['security_stats'] = {'error': 'Database unavailable', 'details': str(e)}
         else:
-            stats['visitor_stats'] = {
-                'note': 'Database not available - using session data',
-                'current_visitor': get_visitor_data()
-            }
+            # Database not configured - use simple session data
+            try:
+                visitor_data = get_visitor_data()
+                stats['visitor_stats'] = {
+                    'note': 'Database not configured - using session data',
+                    'current_visitor': visitor_data
+                }
+            except Exception as e:
+                print(f"⚠️ Session visitor data failed: {e}")
+                stats['visitor_stats'] = {
+                    'note': 'Database not configured and session data unavailable',
+                    'error': str(e)
+                }
+            stats['access_stats'] = {'note': 'Database not configured'}
+            stats['security_stats'] = {'note': 'Database not configured'}
         
         # System statistics
         try:
