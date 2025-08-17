@@ -9,7 +9,9 @@ import time
 
 def test_monitoring_endpoints():
     """Test the monitoring endpoints"""
-    base_url = "http://localhost:54338"  # Adjust port as needed
+    # Get port from user input since it changes on restart
+    port = input("Enter the current server port (check console output when app.py starts): ")
+    base_url = f"http://localhost:{port}"
     
     print("🧪 Testing Monitoring Endpoints")
     print("=" * 50)

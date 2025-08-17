@@ -822,8 +822,11 @@ def main_endpoint():
                     'previous_url': landing_page_version.get('landing_page_url')
                 }
             
+            # Check if there's a redirect after auth and use it, otherwise go to authenticated page
+            redirect_url = session.pop('redirect_after_auth', '/authenticated')
+            
             # Redirect to prevent form resubmission (PRG pattern)
-            return redirect('/authenticated', code=302)
+            return redirect(redirect_url, code=302)
     
     else:
         return jsonify({"error": "Method not allowed"}), 405
@@ -1325,7 +1328,8 @@ def data_stream():
     mind_map_nodes_html = ""
     for frame in story_frames:
         for node in frame.get('mind_map_nodes', []):
-            mind_map_nodes_html += f'<div class="mind-map-node" onclick="filterByNode(\"{node}\")">{node.replace("_", " ").title()}</div>'
+            node_display = node.replace("_", " ").title()
+            mind_map_nodes_html += f'<div class="mind-map-node" onclick="filterByNode(\"{node}\")">{node_display}</div>'
     
     html_content = f"""
     <!DOCTYPE html>
@@ -2973,7 +2977,11 @@ def knowledge_hub():
                 {''.join([f'''
                 <div class="category">
                     <h3>{category}</h3>
-                    {''.join([f'<div class="wiki-item" onclick="selectWikiItem(this, \"{item}\")">{item.replace(".md", "").replace("_", " ").title()}</div>' for item in items])}
+                    {''.join([
+                        f'<div class="wiki-item" onclick="selectWikiItem(this, \'{item}\')">{item_title}</div>' 
+                        for item in items 
+                        for item_title in [item.replace(".md", "").replace("_", " ").title()]
+                    ])}
                 </div>
                 ''' for category, items in wiki_categories.items()])}
             </div>
@@ -3316,14 +3324,27 @@ def generate_token():
     """
     Generate a secure monitoring token. Requires valid marketing code authentication.
     """
-    # Verify authentication with marketing code
-    auth_code = request.form.get('auth_code') or request.json.get('auth_code') if request.is_json else None
+    # Verify authentication with marketing code - check multiple sources
+    auth_code = None
+    
+    # Try form data first
+    if request.form.get('auth_code'):
+        auth_code = request.form.get('auth_code')
+    # Try JSON data
+    elif request.is_json and request.json and request.json.get('auth_code'):
+        auth_code = request.json.get('auth_code')
+    # Try query parameters as fallback
+    elif request.args.get('auth_code'):
+        auth_code = request.args.get('auth_code')
+    # Try request.values (includes both form and args)
+    elif request.values.get('auth_code'):
+        auth_code = request.values.get('auth_code')
     
     if not auth_code:
         return jsonify({
             'success': False,
             'error': 'Authentication code required',
-            'message': 'Please provide a valid marketing code'
+            'message': 'Please provide a valid marketing code via form data, JSON, or query parameter'
         }), 401
     
     # Check if code is valid (current or next marketing password)
@@ -3363,40 +3384,855 @@ def generate_token():
         'message': f'Token generated successfully. Valid for {duration} minutes.'
     })
 
+def render_monitoring_stats_html(stats, authenticated_user, auth_method):
+    """Render monitoring statistics as HTML for browser viewing"""
+    
+    # Get server info for the template
+    server_info = {
+        'host': get_original_host(),
+        'protocol': get_original_protocol(),
+        'base_url': f"{get_original_protocol()}://{get_original_host()}"
+    }
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Monitoring Statistics - Yourl.Cloud Inc.</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+                color: white;
+                min-height: 100vh;
+                padding: 20px;
+            }}
+            .container {{
+                max-width: 1200px;
+                margin: 0 auto;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 15px;
+                padding: 30px;
+                backdrop-filter: blur(10px);
+            }}
+            .header {{
+                text-align: center;
+                margin-bottom: 40px;
+                padding-bottom: 20px;
+                border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            }}
+            .grid {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                gap: 25px;
+                margin: 30px 0;
+            }}
+            .card {{
+                background: rgba(255, 255, 255, 0.15);
+                border-radius: 12px;
+                padding: 25px;
+                backdrop-filter: blur(5px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }}
+            .card h3 {{
+                color: #ffd700;
+                margin-bottom: 15px;
+                font-size: 1.3rem;
+            }}
+            .stat-item {{
+                display: flex;
+                justify-content: space-between;
+                margin: 10px 0;
+                padding: 8px 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }}
+            .stat-value {{
+                font-weight: bold;
+                color: #4CAF50;
+            }}
+            .nav-btn {{
+                display: inline-block;
+                background: rgba(255, 255, 255, 0.2);
+                color: white;
+                padding: 12px 24px;
+                border-radius: 8px;
+                text-decoration: none;
+                margin: 0 10px 10px 0;
+                transition: all 0.3s;
+            }}
+            .nav-btn:hover {{
+                background: rgba(255, 255, 255, 0.3);
+                transform: translateY(-2px);
+            }}
+            .auth-info {{
+                background: rgba(40, 167, 69, 0.2);
+                border: 1px solid rgba(40, 167, 69, 0.5);
+                border-radius: 8px;
+                padding: 15px;
+                margin-bottom: 25px;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>📊 Monitoring Statistics</h1>
+                <p>Yourl.Cloud Inc. - Real-time System Analytics</p>
+                <p><strong>Last Updated:</strong> {stats['timestamp']}</p>
+            </div>
+            
+            <div class="auth-info">
+                <strong>✅ Authenticated:</strong> {authenticated_user} 
+                <span style="opacity: 0.8;">({auth_method} authentication)</span>
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>🖥️ Server Information</h3>
+                    <div class="stat-item">
+                        <span>Host:</span>
+                        <span class="stat-value">{stats['server_info']['host']}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Protocol:</span>
+                        <span class="stat-value">{stats['server_info']['protocol']}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Environment:</span>
+                        <span class="stat-value">{"Production" if stats['server_info']['production_mode'] else "Development"}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Debug Mode:</span>
+                        <span class="stat-value">{"Enabled" if stats['server_info']['debug_mode'] else "Disabled"}</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>⚡ System Performance</h3>
+                    {"".join([f'<div class="stat-item"><span>{key.replace("_", " ").title()}:</span><span class="stat-value">{value}{"%" if "usage" in key else ""}</span></div>' for key, value in stats['system_stats'].items() if key != 'note'])}
+                    {f'<p style="opacity: 0.8; font-style: italic; margin-top: 10px;">{stats["system_stats"]["note"]}</p>' if stats['system_stats'].get('note') else ''}
+                </div>
+                
+                <div class="card">
+                    <h3>👥 Visitor Statistics</h3>
+                    {"".join([f'<div class="stat-item"><span>{key.replace("_", " ").title()}:</span><span class="stat-value">{value}</span></div>' for key, value in stats['visitor_stats'].items() if key not in ['note', 'current_visitor']])}
+                    {f'<p style="opacity: 0.8; font-style: italic; margin-top: 10px;">{stats["visitor_stats"]["note"]}</p>' if stats['visitor_stats'].get('note') else ''}
+                </div>
+                
+                <div class="card">
+                    <h3>🔐 Security & Access</h3>
+                    {"".join([f'<div class="stat-item"><span>{key.replace("_", " ").title()}:</span><span class="stat-value">{value}</span></div>' for key, value in stats['access_stats'].items()])}
+                    {"".join([f'<div class="stat-item"><span>{key.replace("_", " ").title()}:</span><span class="stat-value">{value}</span></div>' for key, value in stats['security_stats'].items()])}
+                </div>
+                
+                <div class="card">
+                    <h3>🚀 Endpoint Information</h3>
+                    <div class="stat-item">
+                        <span>Available Endpoints:</span>
+                        <span class="stat-value">{len(stats['endpoint_stats']['available_endpoints'])}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Protected Endpoints:</span>
+                        <span class="stat-value">{len(stats['endpoint_stats']['protected_endpoints'])}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Public Endpoints:</span>
+                        <span class="stat-value">{len(stats['endpoint_stats']['public_endpoints'])}</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>🔑 Marketing Codes</h3>
+                    <div class="stat-item">
+                        <span>Current Code:</span>
+                        <span class="stat-value">{stats['marketing_info']['current_code']}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Next Code:</span>
+                        <span class="stat-value">{stats['marketing_info']['next_code']}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Code Rotation:</span>
+                        <span class="stat-value">{"Active" if stats['marketing_info']['code_rotation_active'] else "Inactive"}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 40px;">
+                <a href="{server_info['base_url']}/" class="nav-btn">🏠 Home</a>
+                <a href="{server_info['base_url']}/monitoring" class="nav-btn">📊 Monitoring Dashboard</a>
+                <a href="{server_info['base_url']}/knowledge-hub" class="nav-btn">🧠 Knowledge Hub</a>
+                <a href="javascript:location.reload()" class="nav-btn">🔄 Refresh</a>
+            </div>
+        </div>
+        
+        <script>
+            // Auto-refresh every 30 seconds
+            setTimeout(() => {{
+                location.reload();
+            }}, 30000);
+        </script>
+    </body>
+    </html>
+    """
+    
+    return make_response(html_content)
+
+# Cache and Trust Management Functions
+def clear_cached_codes_and_tokens():
+    """Clear all cached marketing codes, tokens, and session data"""
+    global _current_code_printed, _next_code_printed
+    
+    results = {
+        'cleared_items': [],
+        'errors': []
+    }
+    
+    try:
+        # Reset global cache flags
+        _current_code_printed = False
+        _next_code_printed = False
+        results['cleared_items'].append('Global code cache flags')
+        
+        # Clear session data for all active sessions (if we had session management)
+        # Note: Flask sessions are per-request, so we clear current session
+        if session:
+            session_keys = list(session.keys())
+            for key in session_keys:
+                if key in ['authenticated', 'last_access_code', 'redirect_after_auth', 'auth_data']:
+                    session.pop(key, None)
+                    results['cleared_items'].append(f'Session: {key}')
+        
+        # Clear any environment-based cache
+        cache_env_vars = ['BUILD_MARKETING_PASSWORD', 'CACHED_CURRENT_CODE', 'CACHED_NEXT_CODE']
+        for var in cache_env_vars:
+            if os.environ.get(var):
+                os.environ.pop(var, None)
+                results['cleared_items'].append(f'Environment: {var}')
+        
+        results['success'] = True
+        results['message'] = f"Successfully cleared {len(results['cleared_items'])} cached items"
+        
+    except Exception as e:
+        results['errors'].append(str(e))
+        results['success'] = False
+        results['message'] = f"Cache clearing failed: {str(e)}"
+    
+    return results
+
+def rebuild_codes_from_shared_context(trust_verification=None):
+    """Rebuild codes and tokens from shared trusted sources"""
+    results = {
+        'rebuilt_items': [],
+        'errors': [],
+        'trust_verified': False
+    }
+    
+    try:
+        # Verify trust first
+        if trust_verification:
+            current_code = get_current_marketing_password()
+            if trust_verification == current_code:
+                results['trust_verified'] = True
+            else:
+                results['errors'].append('Trust verification failed - invalid code')
+                results['success'] = False
+                return results
+        
+        # Try to rebuild from database first
+        database_connection = os.environ.get('DATABASE_CONNECTION_STRING')
+        if database_connection:
+            try:
+                from scripts.database_client import DatabaseClient
+                db_client = DatabaseClient(database_connection)
+                
+                # Get fresh codes from database
+                current_from_db = db_client.get_current_marketing_code()
+                next_from_db = db_client.get_next_marketing_code()
+                
+                if current_from_db:
+                    results['rebuilt_items'].append(f'Current code from database: {current_from_db}')
+                if next_from_db:
+                    results['rebuilt_items'].append(f'Next code from database: {next_from_db}')
+                    
+            except Exception as e:
+                results['errors'].append(f'Database rebuild failed: {str(e)}')
+        
+        # Try to rebuild from Secret Manager
+        try:
+            from scripts.secret_manager_client import SecretManagerClient
+            client = SecretManagerClient(os.environ.get('GOOGLE_CLOUD_PROJECT', 'yourl-cloud'))
+            
+            current_from_sm = client.get_current_marketing_code()
+            next_from_sm = client.get_next_marketing_code()
+            
+            if current_from_sm:
+                results['rebuilt_items'].append(f'Current code from Secret Manager: {current_from_sm}')
+            if next_from_sm:
+                results['rebuilt_items'].append(f'Next code from Secret Manager: {next_from_sm}')
+                
+        except Exception as e:
+            results['errors'].append(f'Secret Manager rebuild failed: {str(e)}')
+        
+        # Generate fresh fallback codes if needed
+        if not results['rebuilt_items']:
+            try:
+                fresh_current = generate_marketing_password()
+                fresh_next = generate_marketing_password_from_hash(get_git_info()['commit_hash'])
+                results['rebuilt_items'].append(f'Generated fresh current code: {fresh_current}')
+                results['rebuilt_items'].append(f'Generated fresh next code: {fresh_next}')
+            except Exception as e:
+                results['errors'].append(f'Fresh code generation failed: {str(e)}')
+        
+        if results['rebuilt_items']:
+            results['success'] = True
+            results['message'] = f"Successfully rebuilt {len(results['rebuilt_items'])} items"
+        else:
+            results['success'] = False
+            results['message'] = "No items could be rebuilt"
+            
+    except Exception as e:
+        results['errors'].append(str(e))
+        results['success'] = False
+        results['message'] = f"Rebuild failed: {str(e)}"
+    
+    return results
+
+def get_cache_status():
+    """Get current cache status and statistics"""
+    status = {
+        'cache_flags': {
+            'current_code_printed': _current_code_printed,
+            'next_code_printed': _next_code_printed
+        },
+        'session_data': {
+            'authenticated': session.get('authenticated', False),
+            'has_access_code': bool(session.get('last_access_code')),
+            'has_auth_data': bool(session.get('auth_data')),
+            'session_keys': list(session.keys()) if session else []
+        },
+        'environment_cache': {},
+        'available_sources': {
+            'database': bool(os.environ.get('DATABASE_CONNECTION_STRING')),
+            'secret_manager': bool(os.environ.get('GOOGLE_CLOUD_PROJECT')),
+            'fallback_generation': True
+        }
+    }
+    
+    # Check environment cache
+    cache_vars = ['BUILD_MARKETING_PASSWORD', 'CACHED_CURRENT_CODE', 'CACHED_NEXT_CODE']
+    for var in cache_vars:
+        status['environment_cache'][var] = bool(os.environ.get(var))
+    
+    return status
+
+def render_cache_management_html(cache_status, authenticated_user, auth_method):
+    """Render cache management interface as HTML"""
+    server_info = {
+        'host': get_original_host(),
+        'protocol': get_original_protocol(),
+        'base_url': f"{get_original_protocol()}://{get_original_host()}"
+    }
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Cache Management - Yourl.Cloud Inc.</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+                color: white;
+                min-height: 100vh;
+                padding: 20px;
+            }}
+            .container {{
+                max-width: 1000px;
+                margin: 0 auto;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 15px;
+                padding: 30px;
+                backdrop-filter: blur(10px);
+            }}
+            .header {{
+                text-align: center;
+                margin-bottom: 40px;
+                padding-bottom: 20px;
+                border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            }}
+            .card {{
+                background: rgba(255, 255, 255, 0.15);
+                border-radius: 12px;
+                padding: 25px;
+                margin: 20px 0;
+                backdrop-filter: blur(5px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }}
+            .card h3 {{
+                color: #ffd700;
+                margin-bottom: 15px;
+                font-size: 1.3rem;
+            }}
+            .status-item {{
+                display: flex;
+                justify-content: space-between;
+                margin: 10px 0;
+                padding: 8px 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }}
+            .status-value {{
+                font-weight: bold;
+                color: #4CAF50;
+            }}
+            .status-false {{ color: #f44336; }}
+            .status-true {{ color: #4CAF50; }}
+            .btn {{
+                background: #007bff;
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 8px;
+                cursor: pointer;
+                margin: 10px 10px 10px 0;
+                font-size: 1rem;
+                transition: all 0.3s;
+            }}
+            .btn:hover {{ background: #0056b3; transform: translateY(-2px); }}
+            .btn-danger {{ background: #dc3545; }}
+            .btn-danger:hover {{ background: #a71e2a; }}
+            .btn-warning {{ background: #ffc107; color: #000; }}
+            .btn-warning:hover {{ background: #d39e00; }}
+            .form-group {{
+                margin: 15px 0;
+            }}
+            .form-group label {{
+                display: block;
+                margin-bottom: 5px;
+                font-weight: bold;
+            }}
+            .form-group input {{
+                width: 100%;
+                padding: 10px;
+                border: 1px solid rgba(255,255,255,0.3);
+                border-radius: 5px;
+                background: rgba(255,255,255,0.1);
+                color: white;
+                font-size: 1rem;
+            }}
+            .form-group input::placeholder {{
+                color: rgba(255,255,255,0.6);
+            }}
+            .auth-info {{
+                background: rgba(40, 167, 69, 0.2);
+                border: 1px solid rgba(40, 167, 69, 0.5);
+                border-radius: 8px;
+                padding: 15px;
+                margin-bottom: 25px;
+            }}
+            .warning {{
+                background: rgba(255, 193, 7, 0.2);
+                border: 1px solid rgba(255, 193, 7, 0.5);
+                border-radius: 8px;
+                padding: 15px;
+                margin: 15px 0;
+                color: #fff3cd;
+            }}
+            .nav-btn {{
+                display: inline-block;
+                background: rgba(255, 255, 255, 0.2);
+                color: white;
+                padding: 12px 24px;
+                border-radius: 8px;
+                text-decoration: none;
+                margin: 0 10px 10px 0;
+                transition: all 0.3s;
+            }}
+            .nav-btn:hover {{
+                background: rgba(255, 255, 255, 0.3);
+                transform: translateY(-2px);
+            }}
+            #result {{
+                margin-top: 20px;
+                padding: 15px;
+                border-radius: 8px;
+                display: none;
+            }}
+            .result-success {{
+                background: rgba(40, 167, 69, 0.2);
+                border: 1px solid rgba(40, 167, 69, 0.5);
+                color: #d4edda;
+            }}
+            .result-error {{
+                background: rgba(220, 53, 69, 0.2);
+                border: 1px solid rgba(220, 53, 69, 0.5);
+                color: #f8d7da;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🔧 Cache Management</h1>
+                <p>Yourl.Cloud Inc. - Code & Token Cache Control</p>
+            </div>
+            
+            <div class="auth-info">
+                <strong>✅ Authenticated:</strong> {authenticated_user} 
+                <span style="opacity: 0.8;">({auth_method} authentication)</span>
+            </div>
+            
+            <div class="warning">
+                <strong>⚠️ Warning:</strong> Cache operations affect system behavior. Use with caution in production environments.
+            </div>
+            
+            <div class="card">
+                <h3>📊 Current Cache Status</h3>
+                <div class="status-item">
+                    <span>Current Code Cached:</span>
+                    <span class="status-value status-{str(cache_status['cache_flags']['current_code_printed']).lower()}">{cache_status['cache_flags']['current_code_printed']}</span>
+                </div>
+                <div class="status-item">
+                    <span>Next Code Cached:</span>
+                    <span class="status-value status-{str(cache_status['cache_flags']['next_code_printed']).lower()}">{cache_status['cache_flags']['next_code_printed']}</span>
+                </div>
+                <div class="status-item">
+                    <span>Session Authenticated:</span>
+                    <span class="status-value status-{str(cache_status['session_data']['authenticated']).lower()}">{cache_status['session_data']['authenticated']}</span>
+                </div>
+                <div class="status-item">
+                    <span>Active Session Keys:</span>
+                    <span class="status-value">{len(cache_status['session_data']['session_keys'])}</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>🔄 Available Data Sources</h3>
+                <div class="status-item">
+                    <span>Database Connection:</span>
+                    <span class="status-value status-{str(cache_status['available_sources']['database']).lower()}">{cache_status['available_sources']['database']}</span>
+                </div>
+                <div class="status-item">
+                    <span>Secret Manager:</span>
+                    <span class="status-value status-{str(cache_status['available_sources']['secret_manager']).lower()}">{cache_status['available_sources']['secret_manager']}</span>
+                </div>
+                <div class="status-item">
+                    <span>Fallback Generation:</span>
+                    <span class="status-value status-{str(cache_status['available_sources']['fallback_generation']).lower()}">{cache_status['available_sources']['fallback_generation']}</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>🛠️ Cache Operations</h3>
+                
+                <div style="margin: 20px 0;">
+                    <h4>🗑️ Clear Cache</h4>
+                    <p style="opacity: 0.8; margin: 10px 0;">Remove all cached codes, tokens, and session data</p>
+                    <button onclick="performAction('clear')" class="btn btn-danger">Clear All Cache</button>
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <h4>🔄 Rebuild Cache</h4>
+                    <p style="opacity: 0.8; margin: 10px 0;">Rebuild codes and tokens from trusted shared sources</p>
+                    <div class="form-group">
+                        <label for="trustCode">Trust Verification Code (optional):</label>
+                        <input type="password" id="trustCode" placeholder="Enter current marketing code for verification">
+                    </div>
+                    <button onclick="performAction('rebuild')" class="btn btn-warning">Rebuild Cache</button>
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <h4>📋 Refresh Status</h4>
+                    <p style="opacity: 0.8; margin: 10px 0;">Get updated cache status information</p>
+                    <button onclick="performAction('status')" class="btn">Refresh Status</button>
+                </div>
+            </div>
+            
+            <div id="result"></div>
+            
+            <div style="text-align: center; margin-top: 40px;">
+                <a href="{server_info['base_url']}/" class="nav-btn">🏠 Home</a>
+                <a href="{server_info['base_url']}/monitoring" class="nav-btn">📊 Monitoring Dashboard</a>
+                <a href="{server_info['base_url']}/monitoring/stats" class="nav-btn">📈 Statistics</a>
+                <a href="javascript:location.reload()" class="nav-btn">🔄 Refresh</a>
+            </div>
+        </div>
+        
+        <script>
+            function performAction(action) {{
+                const resultDiv = document.getElementById('result');
+                const trustCode = document.getElementById('trustCode').value;
+                
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '<p>🔄 Processing...</p>';
+                resultDiv.className = '';
+                
+                const formData = new FormData();
+                formData.append('action', action);
+                if (trustCode && action === 'rebuild') {{
+                    formData.append('trust_code', trustCode);
+                }}
+                
+                fetch(window.location.href, {{
+                    method: 'POST',
+                    body: formData
+                }})
+                .then(response => response.json())
+                .then(data => {{
+                    resultDiv.className = data.success ? 'result-success' : 'result-error';
+                    
+                    let html = '<h4>' + (data.success ? '✅ Success' : '❌ Error') + '</h4>';
+                    html += '<p><strong>Message:</strong> ' + data.message + '</p>';
+                    
+                    if (data.cleared_items && data.cleared_items.length > 0) {{
+                        html += '<p><strong>Cleared Items:</strong></p><ul>';
+                        data.cleared_items.forEach(item => {{
+                            html += '<li>' + item + '</li>';
+                        }});
+                        html += '</ul>';
+                    }}
+                    
+                    if (data.rebuilt_items && data.rebuilt_items.length > 0) {{
+                        html += '<p><strong>Rebuilt Items:</strong></p><ul>';
+                        data.rebuilt_items.forEach(item => {{
+                            html += '<li>' + item + '</li>';
+                        }});
+                        html += '</ul>';
+                    }}
+                    
+                    if (data.errors && data.errors.length > 0) {{
+                        html += '<p><strong>Errors:</strong></p><ul>';
+                        data.errors.forEach(error => {{
+                            html += '<li style="color: #f8d7da;">' + error + '</li>';
+                        }});
+                        html += '</ul>';
+                    }}
+                    
+                    if (data.trust_verified !== undefined) {{
+                        html += '<p><strong>Trust Verification:</strong> ' + (data.trust_verified ? '✅ Verified' : '❌ Failed') + '</p>';
+                    }}
+                    
+                    resultDiv.innerHTML = html;
+                    
+                    // Auto-refresh page after successful operations
+                    if (data.success && (action === 'clear' || action === 'rebuild')) {{
+                        setTimeout(() => {{
+                            location.reload();
+                        }}, 3000);
+                    }}
+                }})
+                .catch(error => {{
+                    resultDiv.className = 'result-error';
+                    resultDiv.innerHTML = '<h4>❌ Network Error</h4><p>' + error.message + '</p>';
+                }});
+            }}
+        </script>
+    </body>
+    </html>
+    """
+    
+    return make_response(html_content)
+
+@app.route('/monitoring/cache', methods=['GET', 'POST'])
+def cache_management():
+    """
+    Cache management endpoint for clearing and rebuilding codes/tokens.
+    Requires authentication and supports trust verification.
+    """
+    # Check authentication (same as monitoring/stats)
+    authenticated_user = None
+    auth_method = None
+    
+    # Check for session authentication first
+    if session.get('authenticated', False) and session.get('last_access_code'):
+        visitor_data = get_visitor_data()
+        authenticated_user = visitor_data.get('visitor_id', 'session_user')
+        auth_method = 'session'
+    
+    # Check for token authentication
+    if not authenticated_user:
+        token = request.headers.get('Authorization')
+        if token and token.startswith('Bearer '):
+            token = token[7:]
+        else:
+            token = request.args.get('token')
+        
+        if not token:
+            if request.headers.get('Accept', '').find('text/html') != -1:
+                session['redirect_after_auth'] = request.url
+                return redirect(f"{get_original_protocol()}://{get_original_host()}/")
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Authentication required',
+                    'message': 'Please authenticate to access cache management'
+                }), 401
+        
+        token_data = verify_monitoring_token(token)
+        if not token_data.get('valid'):
+            if request.headers.get('Accept', '').find('text/html') != -1:
+                session['redirect_after_auth'] = request.url
+                return redirect(f"{get_original_protocol()}://{get_original_host()}/")
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid token',
+                    'message': 'Token is invalid or expired'
+                }), 403
+        
+        authenticated_user = token_data.get('user_id', 'token_user')
+        auth_method = 'token'
+    
+    if request.method == 'GET':
+        # Return cache status and management interface
+        cache_status = get_cache_status()
+        
+        if request.headers.get('Accept', '').find('text/html') != -1:
+            # Return HTML interface
+            return render_cache_management_html(cache_status, authenticated_user, auth_method)
+        else:
+            # Return JSON status
+            return jsonify({
+                'success': True,
+                'data': cache_status,
+                'authenticated_user': authenticated_user,
+                'auth_method': auth_method
+            })
+    
+    elif request.method == 'POST':
+        # Handle cache operations
+        action = request.form.get('action') or (request.json.get('action') if request.is_json else None)
+        trust_code = request.form.get('trust_code') or (request.json.get('trust_code') if request.is_json else None)
+        
+        if not action:
+            return jsonify({
+                'success': False,
+                'error': 'No action specified',
+                'message': 'Please specify an action: clear, rebuild, or status'
+            }), 400
+        
+        if action == 'clear':
+            results = clear_cached_codes_and_tokens()
+        elif action == 'rebuild':
+            results = rebuild_codes_from_shared_context(trust_code)
+        elif action == 'status':
+            results = {
+                'success': True,
+                'data': get_cache_status(),
+                'message': 'Cache status retrieved'
+            }
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid action',
+                'message': 'Action must be: clear, rebuild, or status'
+            }), 400
+        
+        # Log the cache operation
+        try:
+            database_connection = os.environ.get('DATABASE_CONNECTION_STRING')
+            if database_connection:
+                from scripts.database_client import DatabaseClient
+                db_client = DatabaseClient(database_connection)
+                db_client.log_usage(
+                    code=f"cache_{action}",
+                    user_agent=request.headers.get('User-Agent'),
+                    ip_address=get_client_ip(),
+                    endpoint=f"/monitoring/cache/{action}",
+                    success=results.get('success', False),
+                    session_id=session.get('session_id'),
+                    device_type="cache_management"
+                )
+        except Exception as e:
+            print(f"⚠️ Cache operation logging failed: {e}")
+        
+        return jsonify(results)
+
 @app.route('/monitoring/stats', methods=['GET'])
 def monitoring_stats():
     """
     Secure monitoring endpoint that provides comprehensive site statistics.
-    Requires valid token authentication.
+    Supports both session authentication (from landing page login) and token authentication.
     """
-    # Get token from header or query parameter
-    token = request.headers.get('Authorization')
-    if token and token.startswith('Bearer '):
-        token = token[7:]  # Remove 'Bearer ' prefix
-    else:
-        token = request.args.get('token')
+    authenticated_user = None
+    auth_method = None
     
-    if not token:
-        return jsonify({
-            'success': False,
-            'error': 'Authentication required',
-            'message': 'Please provide a valid monitoring token'
-        }), 401
+    # Check for session authentication first (from landing page login)
+    if session.get('authenticated', False) and session.get('last_access_code'):
+        # User is authenticated via landing page login
+        visitor_data = get_visitor_data()
+        authenticated_user = visitor_data.get('visitor_id', 'session_user')
+        auth_method = 'session'
+        
+        # Verify the session is still valid with current or previous marketing codes
+        current_code = get_current_marketing_password()
+        next_code = get_next_marketing_password()
+        session_code = session.get('last_access_code')
+        
+        if session_code not in [current_code, next_code]:
+            # Session code is outdated, clear session and require new auth
+            session.pop('authenticated', None)
+            session.pop('last_access_code', None)
+            authenticated_user = None
     
-    # Verify token
-    token_data = verify_monitoring_token(token)
-    if not token_data.get('valid'):
-        return jsonify({
-            'success': False,
-            'error': 'Invalid or expired token',
-            'message': 'Token is not valid or has expired'
-        }), 403
+    # If no session auth, check for token authentication
+    if not authenticated_user:
+        token = request.headers.get('Authorization')
+        if token and token.startswith('Bearer '):
+            token = token[7:]  # Remove 'Bearer ' prefix
+        else:
+            token = request.args.get('token')
+        
+        if not token:
+            # Check if this is a browser request (Accept header contains text/html)
+            if request.headers.get('Accept', '').find('text/html') != -1:
+                # Store the requested URL for redirect after authentication
+                session['redirect_after_auth'] = request.url
+                # Redirect to landing page for authentication
+                return redirect(f"{get_original_protocol()}://{get_original_host()}/")
+            else:
+                # API request - return JSON error
+                return jsonify({
+                    'success': False,
+                    'error': 'Authentication required',
+                    'message': 'Please log in with a marketing code on the landing page, or provide a valid monitoring token',
+                    'auth_options': {
+                        'session_login': f"{get_original_protocol()}://{get_original_host()}/",
+                        'token_generation': f"{get_original_protocol()}://{get_original_host()}/monitoring/token"
+                    }
+                }), 401
+        
+        # Verify token
+        token_data = verify_monitoring_token(token)
+        if not token_data.get('valid'):
+            # Check if this is a browser request
+            if request.headers.get('Accept', '').find('text/html') != -1:
+                # Store the requested URL and redirect to landing page
+                session['redirect_after_auth'] = request.url
+                return redirect(f"{get_original_protocol()}://{get_original_host()}/")
+            else:
+                # API request - return JSON error
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid or expired token',
+                    'message': 'Token is not valid or has expired. Please generate a new token or log in via the landing page.'
+                }), 403
+        
+        authenticated_user = token_data.get('user_id', 'token_user')
+        auth_method = 'token'
     
     try:
         # Collect comprehensive statistics
         stats = {
             'timestamp': datetime.now().isoformat(),
-            'token_user': token_data.get('user_id'),
+            'authenticated_user': authenticated_user,
+            'auth_method': auth_method,
             'server_info': {
                 'host': get_original_host(),
                 'protocol': get_original_protocol(),
@@ -3478,18 +4314,40 @@ def monitoring_stats():
             'code_rotation_active': True
         }
         
-        return jsonify({
-            'success': True,
-            'data': stats,
-            'message': 'Monitoring statistics retrieved successfully'
-        })
+        # Check if this is a browser request (Accept header contains text/html)
+        if request.headers.get('Accept', '').find('text/html') != -1:
+            # Return HTML template for browser viewing
+            return render_monitoring_stats_html(stats, authenticated_user, auth_method)
+        else:
+            # Return JSON for API requests
+            return jsonify({
+                'success': True,
+                'data': stats,
+                'message': 'Monitoring statistics retrieved successfully'
+            })
         
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': 'Statistics collection failed',
-            'message': str(e)
-        }), 500
+        # Check if this is a browser request for error handling too
+        if request.headers.get('Accept', '').find('text/html') != -1:
+            # Return HTML error page for browsers
+            return f"""
+            <html>
+            <head><title>Monitoring Error</title></head>
+            <body style="font-family: Arial, sans-serif; padding: 20px;">
+                <h1>🚨 Monitoring Statistics Error</h1>
+                <p><strong>Error:</strong> Statistics collection failed</p>
+                <p><strong>Details:</strong> {str(e)}</p>
+                <p><a href="{get_original_protocol()}://{get_original_host()}/">← Back to Home</a></p>
+            </body>
+            </html>
+            """, 500
+        else:
+            # Return JSON error for API requests
+            return jsonify({
+                'success': False,
+                'error': 'Statistics collection failed',
+                'message': str(e)
+            }), 500
 
 @app.route('/monitoring', methods=['GET'])
 def monitoring_dashboard():
@@ -3742,11 +4600,14 @@ def monitoring_dashboard():
                 <div class="card">
                     <h3>📊 Site Statistics</h3>
                     <p>Comprehensive analytics including visitor stats, security metrics, and system performance.</p>
-                    <a href="#" class="endpoint-link" onclick="showStatsInfo()">
+                    <a href="{server_info['base_url']}/monitoring/stats" class="endpoint-link" target="_blank">
                         <span class="method protected">GET</span>/monitoring/stats
                     </a>
+                    <div class="success">
+                        ✅ <strong>Session Auth:</strong> Auto-accessible after landing page login
+                    </div>
                     <div class="warning">
-                        🔑 <strong>Token Required:</strong> Valid monitoring token needed
+                        🔑 <strong>Alt Auth:</strong> Valid monitoring token also accepted
                     </div>
                 </div>
                 
@@ -3773,17 +4634,24 @@ def monitoring_dashboard():
             <div class="info-section">
                 <h3>📝 Usage Examples</h3>
                 
-                <h4>1. Generate Token (POST /monitoring/token)</h4>
+                <h4>1. Access Statistics (Session Auth - Recommended)</h4>
+                <div class="code-block">
+# Step 1: Login on landing page with marketing code: {current_code}
+# Step 2: Access stats directly (session automatically used)
+curl -b cookies.txt {server_info['base_url']}/monitoring/stats
+                </div>
+                
+                <h4>2. Generate Token (POST /monitoring/token)</h4>
                 <div class="code-block">
 curl -X POST {server_info['base_url']}/monitoring/token -d "auth_code={current_code}&duration_minutes=60"
                 </div>
                 
-                <h4>2. Access Statistics (GET /monitoring/stats)</h4>
+                <h4>3. Access Statistics (Token Auth)</h4>
                 <div class="code-block">
 curl -H "Authorization: Bearer YOUR_TOKEN" {server_info['base_url']}/monitoring/stats
                 </div>
                 
-                <h4>3. Health Check (GET /monitoring/health)</h4>
+                <h4>4. Health Check (Public)</h4>
                 <div class="code-block">
 curl {server_info['base_url']}/monitoring/health
                 </div>
