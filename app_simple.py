@@ -20,6 +20,7 @@ import platform
 import random
 import hashlib
 from datetime import datetime
+import time
 
 # Configure logging for production cloud environments
 logging.basicConfig(
@@ -53,6 +54,9 @@ CLOUD_RUN_CONFIG = {
 # Global password cache to ensure consistency
 _current_password = None
 _next_password = None
+
+# App start time for uptime monitoring
+_app_start_time = None
 
 def generate_simple_password():
     """Generate a simple password for testing - cached for consistency"""
@@ -622,6 +626,517 @@ def status():
         }
     })
 
+@app.route('/monitoring/health', methods=['GET'])
+def monitoring_health():
+    """Public health check endpoint for monitoring systems."""
+    try:
+        # Basic health checks
+        global _app_start_time
+        uptime = 'unknown'
+        if _app_start_time:
+            uptime = time.time() - _app_start_time
+        
+        health_status = {
+            'timestamp': datetime.now().isoformat(),
+            'status': 'healthy',
+            'uptime': uptime,
+            'version': 'yourl-cloud-2024',
+            'environment': 'production' if PRODUCTION else 'development'
+        }
+        
+        # Database health check
+        database_connection = os.environ.get('DATABASE_CONNECTION_STRING')
+        if database_connection:
+            try:
+                from scripts.database_client import DatabaseClient
+                db_client = DatabaseClient(database_connection)
+                # Simple ping test
+                conn = db_client._get_connection()
+                if conn:
+                    conn.close()
+                    health_status['database'] = 'connected'
+                else:
+                    health_status['database'] = 'disconnected'
+                    health_status['status'] = 'degraded'
+            except Exception as e:
+                health_status['database'] = f'error: {str(e)}'
+                health_status['status'] = 'degraded'
+        else:
+            health_status['database'] = 'not_configured'
+        
+        status_code = 200 if health_status['status'] == 'healthy' else 503
+        
+        return jsonify(health_status), status_code
+        
+    except Exception as e:
+        return jsonify({
+            'timestamp': datetime.now().isoformat(),
+            'status': 'unhealthy',
+            'error': str(e)
+        }), 500
+
+@app.route('/monitoring', methods=['GET'])
+def monitoring_dashboard():
+    """Monitoring dashboard for authenticated users."""
+    # Check if user is authenticated
+    if not session.get('authenticated', False):
+        return jsonify({
+            "error": "Access denied",
+            "message": "Authentication required for monitoring access"
+        }), 401
+    
+    return jsonify({
+        "monitoring": {
+            "status": "active",
+            "endpoints": {
+                "health": "/monitoring/health",
+                "dashboard": "/monitoring"
+            },
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    })
+
+@app.route('/data', methods=['GET'])
+def data_stream():
+    """Enhanced data stream endpoint providing vertical linear datastream with horizontally scrollable wiki stories."""
+    # Check if visitor has authenticated (used a valid code previously)
+    if not session.get('authenticated', False):
+        return make_response(f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Access Denied - Data Stream</title>
+            <style>
+                body {{ 
+                    font-family: 'Courier New', monospace;
+                    background: #000;
+                    color: #ff0000;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                    margin: 0;
+                }}
+                .access-denied {{
+                    text-align: center;
+                    padding: 40px;
+                    border: 2px solid #ff0000;
+                    border-radius: 10px;
+                    background: rgba(255, 0, 0, 0.1);
+                }}
+                .error-code {{
+                    font-size: 3rem;
+                    margin-bottom: 20px;
+                    text-shadow: 0 0 20px #ff0000;
+                }}
+                .message {{
+                    font-size: 1.2rem;
+                    margin-bottom: 30px;
+                }}
+                .nav-btn {{
+                    display: inline-block;
+                    padding: 10px 20px;
+                    background: #ff0000;
+                    color: #000;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    font-weight: bold;
+                    margin: 10px;
+                }}
+                .nav-btn:hover {{
+                    background: #cc0000;
+                    color: #fff;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="access-denied">
+                <div class="error-code">🔒 ACCESS DENIED</div>
+                <div class="message">
+                    <p><strong>Data Stream Access Restricted</strong></p>
+                    <p>This endpoint is only accessible to authenticated users.</p>
+                    <p>You must first use a valid marketing code on the landing page.</p>
+                </div>
+                <div>
+                    <a href="/" class="nav-btn">🏠 Return to Landing Page</a>
+                    <a href="/status" class="nav-btn">📊 Service Status</a>
+                </div>
+            </div>
+        </body>
+        </html>
+        """, 403)
+    
+    # Generate dynamic story frames
+    import time
+    current_time = time.time()
+    
+    story_frames = [
+        {
+            "id": "frame_001",
+            "timestamp": current_time - 3600,
+            "title": "The Trust-Based AI Revolution",
+            "content": "Yourl.Cloud Inc. stands at the forefront of a new era - the Trust-Based AI Revolution. We're not just building technology; we're creating a foundation of trust that enables AI to serve families across locations with integrity and reliability.",
+            "category": "vision_future",
+            "visual_elements": ["ai_trust", "family_bridge", "location_spanning"],
+            "scroll_position": 0,
+            "wiki_links": ["ARCHITECTURE_OVERVIEW.md", "BUSINESS_NAME_UPDATE.md"],
+            "mind_map_nodes": ["trust", "ai", "family", "innovation"]
+        },
+        {
+            "id": "frame_002", 
+            "timestamp": current_time - 1800,
+            "title": "The Clipboard Bridge Phenomenon",
+            "content": "At cb.yourl.cloud, we've created something extraordinary - a clipboard bridge that transcends physical boundaries. AI assistants can now share context seamlessly across family locations, creating a unified experience that feels like magic.",
+            "category": "breakthrough_technology",
+            "visual_elements": ["clipboard_bridge", "context_sharing", "seamless_experience"],
+            "scroll_position": 100,
+            "wiki_links": ["CLIPBOARD_BRIDGE_DEPLOYMENT.md", "ZAIDO_CLIPBOARD_RECOVERY_GUIDE.md"],
+            "mind_map_nodes": ["clipboard", "bridge", "context", "unified"]
+        }
+    ]
+    
+    # Create the enhanced HTML response with vertical datastream
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Data Stream - Yourl.Cloud Inc.</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ 
+                font-family: 'Courier New', monospace;
+                background: #000;
+                color: #00ff00;
+                overflow-x: auto;
+                overflow-y: hidden;
+            }}
+            .datastream-container {{
+                display: flex;
+                flex-direction: column;
+                min-height: 100vh;
+                width: max-content;
+                padding: 20px;
+            }}
+            .frame {{
+                width: 800px;
+                min-height: 300px;
+                margin: 20px 0;
+                padding: 30px;
+                background: rgba(0, 255, 0, 0.05);
+                border: 1px solid #00ff00;
+                border-radius: 10px;
+                position: relative;
+                overflow: hidden;
+                transition: all 0.3s ease;
+            }}
+            .frame::before {{
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: linear-gradient(90deg, #00ff00, #00aa00, #00ff00);
+                animation: pulse 2s infinite;
+            }}
+            @keyframes pulse {{
+                0% {{ opacity: 0.5; }}
+                50% {{ opacity: 1; }}
+                100% {{ opacity: 0.5; }}
+            }}
+            .frame:hover {{
+                background: rgba(0, 255, 0, 0.1);
+                transform: scale(1.02);
+                box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            }}
+            .frame-header {{
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+            }}
+            .frame-id {{
+                font-weight: bold;
+                color: #00aa00;
+            }}
+            .frame-timestamp {{
+                font-size: 0.9rem;
+                color: #00aa00;
+            }}
+            .frame-category {{
+                display: inline-block;
+                padding: 5px 10px;
+                background: rgba(0, 255, 0, 0.2);
+                border: 1px solid #00ff00;
+                border-radius: 5px;
+                font-size: 0.8rem;
+                margin-bottom: 10px;
+            }}
+            .frame-title {{
+                font-size: 1.5rem;
+                font-weight: bold;
+                margin-bottom: 15px;
+                color: #00ff00;
+            }}
+            .frame-content {{
+                line-height: 1.6;
+                margin-bottom: 20px;
+            }}
+            .visual-elements {{
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin-bottom: 15px;
+            }}
+            .visual-element {{
+                padding: 5px 10px;
+                background: rgba(0, 255, 0, 0.2);
+                border: 1px solid #00ff00;
+                border-radius: 5px;
+                font-size: 0.8rem;
+            }}
+            .wiki-links {{
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin-top: 15px;
+                padding-top: 15px;
+                border-top: 1px solid rgba(0, 255, 0, 0.3);
+            }}
+            .wiki-link {{
+                padding: 5px 10px;
+                background: rgba(0, 255, 0, 0.1);
+                border: 1px solid #00ff00;
+                border-radius: 5px;
+                font-size: 0.8rem;
+                text-decoration: none;
+                color: #00ff00;
+                transition: all 0.3s ease;
+            }}
+            .wiki-link:hover {{
+                background: rgba(0, 255, 0, 0.3);
+                transform: scale(1.05);
+            }}
+            .navigation {{
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 10px;
+            }}
+            .nav-btn {{
+                padding: 10px 20px;
+                background: #00ff00;
+                color: #000;
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold;
+                transition: all 0.3s ease;
+            }}
+            .nav-btn:hover {{
+                background: #00aa00;
+                color: #fff;
+                transform: scale(1.05);
+            }}
+            .data-stream-title {{
+                text-align: center;
+                font-size: 2rem;
+                margin-bottom: 30px;
+                color: #00ff00;
+                text-shadow: 0 0 20px #00ff00;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="datastream-container">
+            <div class="data-stream-title">🚀 YOURL.CLOUD TRUST-BASED AI DATASTREAM</div>
+            
+            {''.join([f'''
+            <div class="frame" data-scroll="{frame['scroll_position']}" data-category="{frame['category']}" data-nodes="{','.join(frame.get('mind_map_nodes', []))}">
+                <div class="frame-header">
+                    <span class="frame-id">{frame['id']}</span>
+                    <span class="frame-timestamp">{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(frame['timestamp']))}</span>
+                </div>
+                <div class="frame-category">{frame['category'].replace('_', ' ').title()}</div>
+                <div class="frame-title">{frame['title']}</div>
+                <div class="frame-content">{frame['content']}</div>
+                <div class="visual-elements">
+                    {''.join(['<span class="visual-element">' + element.replace("_", " ").title() + '</span>' for element in frame['visual_elements']])}
+                </div>
+                <div class="wiki-links">
+                    {''.join(['<a href="/knowledge-hub" class="wiki-link" target="_blank">📚 ' + link.replace(".md", "").replace("_", " ").title() + '</a>' for link in frame.get('wiki_links', [])])}
+                </div>
+            </div>
+            ''' for frame in story_frames])}
+        </div>
+        
+        <div class="navigation">
+            <a href="/" class="nav-btn">🏠 Home</a>
+            <a href="/api" class="nav-btn">🔌 API</a>
+            <a href="/status" class="nav-btn">📊 Status</a>
+            <a href="/data" class="nav-btn">📡 Data Stream</a>
+            <a href="/knowledge-hub" class="nav-btn">🧠 Knowledge Hub</a>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return make_response(html_content)
+
+@app.route('/knowledge-hub', methods=['GET'])
+def knowledge_hub():
+    """Knowledge Hub endpoint providing access to wiki documentation."""
+    # Check if user is authenticated
+    if not session.get('authenticated', False):
+        return jsonify({
+            "error": "Access denied",
+            "message": "Authentication required for knowledge hub access"
+        }), 401
+    
+    # Create knowledge hub HTML
+    html_content = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Knowledge Hub - Yourl.Cloud Inc.</title>
+        <style>
+            body { 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                margin: 0; 
+                padding: 20px; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                color: #333;
+            }
+            .container { 
+                max-width: 1200px; 
+                margin: 0 auto; 
+                background: rgba(255, 255, 255, 0.95);
+                border-radius: 15px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                padding: 30px;
+                margin-top: 20px;
+            }
+            .header { 
+                text-align: center; 
+                padding: 20px 0;
+                border-bottom: 3px solid #667eea;
+                margin-bottom: 30px;
+            }
+            .header h1 { 
+                color: #667eea;
+                margin-bottom: 10px;
+            }
+            .knowledge-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 20px;
+                margin: 30px 0;
+            }
+            .knowledge-card {
+                background: white;
+                padding: 25px;
+                border-radius: 10px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                border-top: 4px solid #667eea;
+                transition: transform 0.3s ease;
+            }
+            .knowledge-card:hover {
+                transform: translateY(-5px);
+            }
+            .knowledge-card h3 {
+                color: #667eea;
+                margin-bottom: 15px;
+            }
+            .knowledge-card p {
+                color: #666;
+                line-height: 1.6;
+            }
+            .navigation {
+                text-align: center;
+                margin-top: 30px;
+                padding-top: 30px;
+                border-top: 2px solid #eee;
+            }
+            .nav-btn {
+                display: inline-block;
+                background: #667eea;
+                color: white;
+                padding: 12px 25px;
+                text-decoration: none;
+                border-radius: 25px;
+                margin: 10px;
+                transition: all 0.3s ease;
+                font-weight: bold;
+            }
+            .nav-btn:hover {
+                background: #5a6fd8;
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🧠 Knowledge Hub</h1>
+                <p>Yourl.Cloud Inc. - Comprehensive Documentation & Resources</p>
+            </div>
+            
+            <div class="knowledge-grid">
+                <div class="knowledge-card">
+                    <h3>🏗️ Architecture Overview</h3>
+                    <p>Comprehensive guide to the Yourl.Cloud system architecture, including cloud infrastructure, API design, and security protocols.</p>
+                </div>
+                
+                <div class="knowledge-card">
+                    <h3>🚀 Deployment Guide</h3>
+                    <p>Step-by-step instructions for deploying Yourl.Cloud applications to Google Cloud Run with domain mapping support.</p>
+                </div>
+                
+                <div class="knowledge-card">
+                    <h3>🔒 Security Documentation</h3>
+                    <p>Detailed security protocols, authentication methods, and best practices for maintaining secure cloud operations.</p>
+                </div>
+                
+                <div class="knowledge-card">
+                    <h3>📱 API Reference</h3>
+                    <p>Complete API documentation including endpoints, authentication, request/response formats, and example usage.</p>
+                </div>
+                
+                <div class="knowledge-card">
+                    <h3>🛠️ Development Setup</h3>
+                    <p>Local development environment setup, testing procedures, and contribution guidelines for developers.</p>
+                </div>
+                
+                <div class="knowledge-card">
+                    <h3>📊 Monitoring & Analytics</h3>
+                    <p>System monitoring, health checks, performance metrics, and operational insights for production environments.</p>
+                </div>
+            </div>
+            
+            <div class="navigation">
+                <a href="/" class="nav-btn">🏠 Back to Home</a>
+                <a href="/data" class="nav-btn">📡 Data Stream</a>
+                <a href="/api" class="nav-btn">🔌 API</a>
+                <a href="/status" class="nav-btn">📊 Status</a>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return make_response(html_content)
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors by returning the request URL."""
@@ -650,6 +1165,9 @@ def internal_error(error):
     }), 500
 
 if __name__ == '__main__':
+    # Track app start time for uptime monitoring
+    _app_start_time = time.time()
+    
     print(f"🚀 Starting simplified URL API Server")
     print(f"📍 Host: {HOST}")
     print(f"🐛 Debug: {DEBUG}")
