@@ -337,13 +337,48 @@ def main_endpoint():
                 .connection-card a:hover {{
                     text-decoration: underline;
                 }}
-                .footer {{
-                    text-align: center;
-                    padding: 30px 0;
-                    color: #666;
-                    border-top: 2px solid #eee;
-                    margin-top: 30px;
-                }}
+                                 .footer {{
+                     text-align: center;
+                     padding: 30px 0;
+                     color: #666;
+                     border-top: 2px solid #eee;
+                     margin-top: 30px;
+                 }}
+                 .footer-nav {{
+                     margin-bottom: 20px;
+                 }}
+                 .footer-nav h4 {{
+                     color: #667eea;
+                     margin-bottom: 15px;
+                     font-size: 1.2rem;
+                 }}
+                 .nav-links {{
+                     display: flex;
+                     justify-content: center;
+                     flex-wrap: wrap;
+                     gap: 15px;
+                     margin-bottom: 20px;
+                 }}
+                 .nav-link {{
+                     display: inline-block;
+                     padding: 8px 16px;
+                     background: linear-gradient(45deg, #667eea, #764ba2);
+                     color: white;
+                     text-decoration: none;
+                     border-radius: 20px;
+                     font-size: 0.9rem;
+                     font-weight: bold;
+                     transition: all 0.3s ease;
+                 }}
+                 .nav-link:hover {{
+                     transform: translateY(-2px);
+                     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                     background: linear-gradient(45deg, #5a6fd8, #6a4c93);
+                 }}
+                 .footer-info {{
+                     border-top: 1px solid #eee;
+                     padding-top: 20px;
+                 }}
                 .status-badge {{
                     display: inline-block;
                     padding: 5px 15px;
@@ -409,11 +444,25 @@ def main_endpoint():
                     ''' for conn in DEMO_CONFIG['connections']])}
                 </div>
 
-                <!-- Footer -->
-                <div class="footer">
-                    <p>&copy; 2024 Yourl.Cloud Inc. All rights reserved. | United States | Global Operations</p>
-                    <p>Built with ❤️ for secure, scalable cloud solutions</p>
-                </div>
+                                 <!-- Footer Navigation -->
+                 <div class="footer">
+                     <div class="footer-nav">
+                         <h4>🔗 Quick Navigation</h4>
+                         <div class="nav-links">
+                             <a href="/" class="nav-link">🏠 Home</a>
+                             <a href="/health" class="nav-link">🏥 Health</a>
+                             <a href="/status" class="nav-link">📊 Status</a>
+                             <a href="/api" class="nav-link">🔌 API</a>
+                             <a href="/monitoring" class="nav-link">📈 Monitoring</a>
+                             <a href="/data" class="nav-link">📡 Data Stream</a>
+                             <a href="/knowledge-hub" class="nav-link">🧠 Knowledge Hub</a>
+                         </div>
+                     </div>
+                     <div class="footer-info">
+                         <p>&copy; 2024 Yourl.Cloud Inc. All rights reserved. | United States | Global Operations</p>
+                         <p>Built with ❤️ for secure, scalable cloud solutions</p>
+                     </div>
+                 </div>
             </div>
         </body>
         </html>
@@ -581,53 +630,469 @@ def get_request_url():
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint for Cloud Run domain mapping compatibility."""
-    return jsonify({
-        "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
-        "service": "url-api",
-        "version": "1.0.0",
-        "friends_family_guard": FRIENDS_FAMILY_GUARD["enabled"],
-        "cloud_run_support": True,
-        "domain_mapping": {
-            "enabled": CLOUD_RUN_CONFIG["domain_mapping_enabled"],
-            "region": CLOUD_RUN_CONFIG["region"],
-            "health_check_path": CLOUD_RUN_CONFIG["health_check_path"]
-        },
-        "wsgi_server": "gunicorn",
-        "production_mode": True,
-        "deployment_model": "all_instances_production",
-        "port": PORT,
-        "host": get_original_host(),
-        "protocol": get_original_protocol()
-    })
+    # Check if HTML format is requested
+    if request.args.get('format') == 'json':
+        return jsonify({
+            "status": "healthy",
+            "timestamp": datetime.utcnow().isoformat(),
+            "service": "url-api",
+            "version": "1.0.0",
+            "friends_family_guard": FRIENDS_FAMILY_GUARD["enabled"],
+            "cloud_run_support": True,
+            "domain_mapping": {
+                "enabled": CLOUD_RUN_CONFIG["domain_mapping_enabled"],
+                "region": CLOUD_RUN_CONFIG["region"],
+                "health_check_path": CLOUD_RUN_CONFIG["health_check_path"]
+            },
+            "wsgi_server": "gunicorn",
+            "production_mode": True,
+            "deployment_model": "all_instances_production",
+            "port": PORT,
+            "host": get_original_host(),
+            "protocol": get_original_protocol()
+        })
+    
+    # Create rich HTML health check page
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Health Check - Yourl.Cloud Inc.</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                margin: 0; 
+                padding: 20px; 
+                background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                min-height: 100vh;
+                color: #333;
+            }}
+            .container {{ 
+                max-width: 1000px; 
+                margin: 0 auto; 
+                background: rgba(255, 255, 255, 0.98);
+                border-radius: 15px;
+                box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+                padding: 30px;
+                margin-top: 20px;
+            }}
+            .header {{ 
+                text-align: center; 
+                padding: 30px 0;
+                border-bottom: 3px solid #28a745;
+                margin-bottom: 30px;
+            }}
+            .header h1 {{ 
+                color: #28a745;
+                margin-bottom: 10px;
+                font-size: 2.5rem;
+            }}
+            .header p {{ 
+                color: #666;
+                font-size: 1.1rem;
+            }}
+            .health-status {{
+                background: #d4edda;
+                border: 2px solid #c3e6cb;
+                border-radius: 15px;
+                padding: 25px;
+                margin: 30px 0;
+                text-align: center;
+            }}
+            .status-indicator {{
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                background: #28a745;
+                border-radius: 50%;
+                margin-right: 10px;
+                animation: pulse 2s infinite;
+            }}
+            @keyframes pulse {{
+                0% {{ opacity: 1; }}
+                50% {{ opacity: 0.5; }}
+                100% {{ opacity: 1; }}
+            }}
+            .health-grid {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 20px;
+                margin: 30px 0;
+            }}
+            .health-card {{
+                background: white;
+                padding: 25px;
+                border-radius: 15px;
+                box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+                border-top: 4px solid #28a745;
+                transition: transform 0.3s ease;
+            }}
+            .health-card:hover {{
+                transform: translateY(-5px);
+            }}
+            .health-card h3 {{
+                color: #28a745;
+                margin-bottom: 15px;
+                font-size: 1.3rem;
+            }}
+            .health-card p {{
+                color: #666;
+                line-height: 1.6;
+                margin-bottom: 10px;
+            }}
+            .footer {{
+                text-align: center;
+                padding: 30px 0;
+                color: #666;
+                border-top: 2px solid #eee;
+                margin-top: 30px;
+            }}
+            .footer-nav {{
+                margin-bottom: 20px;
+            }}
+            .footer-nav h4 {{
+                color: #28a745;
+                margin-bottom: 15px;
+                font-size: 1.2rem;
+            }}
+            .nav-links {{
+                display: flex;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 15px;
+                margin-bottom: 20px;
+            }}
+            .nav-link {{
+                display: inline-block;
+                padding: 8px 16px;
+                background: linear-gradient(45deg, #28a745, #20c997);
+                color: white;
+                text-decoration: none;
+                border-radius: 20px;
+                font-size: 0.9rem;
+                font-weight: bold;
+                transition: all 0.3s ease;
+            }}
+            .nav-link:hover {{
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                background: linear-gradient(45deg, #218838, #1ea085);
+            }}
+            .footer-info {{
+                border-top: 1px solid #eee;
+                padding-top: 20px;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🏥 Health Check</h1>
+                <p>Yourl.Cloud Inc. - System Health & Status Monitoring</p>
+            </div>
+            
+            <div class="health-status">
+                <h2><span class="status-indicator"></span>System Status: HEALTHY</h2>
+                <p><strong>Service:</strong> URL API Server | <strong>Version:</strong> 1.0.0 | <strong>Environment:</strong> Production</p>
+                <p><strong>Timestamp:</strong> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+            </div>
+            
+            <div class="health-grid">
+                <div class="health-card">
+                    <h3>🛡️ Security Status</h3>
+                    <p><strong>Friends & Family Guard:</strong> {'Enabled' if FRIENDS_FAMILY_GUARD['enabled'] else 'Disabled'}</p>
+                    <p><strong>Organization:</strong> {FRIENDS_FAMILY_GUARD['organization']}</p>
+                    <p><strong>Session ID:</strong> {FRIENDS_FAMILY_GUARD['session_id'][:8]}...</p>
+                </div>
+                
+                <div class="health-card">
+                    <h3>☁️ Cloud Run Status</h3>
+                    <p><strong>Support:</strong> Enabled</p>
+                    <p><strong>Domain Mapping:</strong> {'Enabled' if CLOUD_RUN_CONFIG['domain_mapping_enabled'] else 'Disabled'}</p>
+                    <p><strong>Region:</strong> {CLOUD_RUN_CONFIG['region']}</p>
+                </div>
+                
+                <div class="health-card">
+                    <h3>🚀 Server Information</h3>
+                    <p><strong>WSGI Server:</strong> Gunicorn</p>
+                    <p><strong>Production Mode:</strong> Active</p>
+                    <p><strong>Port:</strong> {PORT}</p>
+                </div>
+                
+                <div class="health-card">
+                    <h3>🌐 Network Status</h3>
+                    <p><strong>Host:</strong> {get_original_host()}</p>
+                    <p><strong>Protocol:</strong> {get_original_protocol()}</p>
+                    <p><strong>Status:</strong> Online</p>
+                </div>
+            </div>
+            
+            <!-- Footer Navigation -->
+            <div class="footer">
+                <div class="footer-nav">
+                    <h4>🔗 Quick Navigation</h4>
+                    <div class="nav-links">
+                        <a href="/" class="nav-link">🏠 Home</a>
+                        <a href="/health" class="nav-link">🏥 Health</a>
+                        <a href="/status" class="nav-link">📊 Status</a>
+                        <a href="/api" class="nav-link">🔌 API</a>
+                        <a href="/monitoring" class="nav-link">📈 Monitoring</a>
+                        <a href="/data" class="nav-link">📡 Data Stream</a>
+                        <a href="/knowledge-hub" class="nav-link">🧠 Knowledge Hub</a>
+                    </div>
+                </div>
+                <div class="footer-info">
+                    <p>&copy; 2024 Yourl.Cloud Inc. All rights reserved. | United States | Global Operations</p>
+                    <p>Built with ❤️ for secure, scalable cloud solutions</p>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return make_response(html_content)
 
 @app.route('/status', methods=['GET'])
 def status():
     """Status endpoint with service information."""
-    return jsonify({
-        "service": "URL API with Visual Inspection",
-        "version": "1.0.0",
-        "status": "running",
-        "port": PORT,
-        "host": get_original_host(),
-        "timestamp": datetime.utcnow().isoformat(),
-        "session_id": FRIENDS_FAMILY_GUARD["session_id"],
-        "organization": FRIENDS_FAMILY_GUARD["organization"],
-        "friends_family_guard": FRIENDS_FAMILY_GUARD["enabled"],
-        "visual_inspection": FRIENDS_FAMILY_GUARD["visual_inspection"],
-        "cloud_run_support": True,
-        "demo_mode": True,
-        "wsgi_server": "gunicorn",
-        "production_mode": True,
-        "deployment_model": "all_instances_production",
-        "domain_mapping": {
-            "enabled": CLOUD_RUN_CONFIG["domain_mapping_enabled"],
-            "region": CLOUD_RUN_CONFIG["region"],
-            "original_host": get_original_host(),
-            "original_protocol": get_original_protocol(),
-            "client_ip": get_client_ip()
-        }
-    })
+    # Check if JSON format is requested
+    if request.args.get('format') == 'json':
+        return jsonify({
+            "service": "URL API with Visual Inspection",
+            "version": "1.0.0",
+            "status": "running",
+            "port": PORT,
+            "host": get_original_host(),
+            "timestamp": datetime.utcnow().isoformat(),
+            "session_id": FRIENDS_FAMILY_GUARD["session_id"],
+            "organization": FRIENDS_FAMILY_GUARD["organization"],
+            "friends_family_guard": FRIENDS_FAMILY_GUARD["enabled"],
+            "visual_inspection": FRIENDS_FAMILY_GUARD["visual_inspection"],
+            "cloud_run_support": True,
+            "demo_mode": True,
+            "wsgi_server": "gunicorn",
+            "production_mode": True,
+            "deployment_model": "all_instances_production",
+            "domain_mapping": {
+                "enabled": CLOUD_RUN_CONFIG["domain_mapping_enabled"],
+                "region": CLOUD_RUN_CONFIG["region"],
+                "original_host": get_original_host(),
+                "original_protocol": get_original_protocol(),
+                "client_ip": get_client_ip()
+            }
+        })
+    
+    # Create rich HTML status page
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Service Status - Yourl.Cloud Inc.</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                margin: 0; 
+                padding: 20px; 
+                background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+                min-height: 100vh;
+                color: #333;
+            }}
+            .container {{ 
+                max-width: 1200px; 
+                margin: 0 auto; 
+                background: rgba(255, 255, 255, 0.98);
+                border-radius: 15px;
+                box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+                padding: 30px;
+                margin-top: 20px;
+            }}
+            .header {{ 
+                text-align: center; 
+                padding: 30px 0;
+                border-bottom: 3px solid #17a2b8;
+                margin-bottom: 30px;
+            }}
+            .header h1 {{ 
+                color: #17a2b8;
+                margin-bottom: 10px;
+                font-size: 2.5rem;
+            }}
+            .header p {{ 
+                color: #666;
+                font-size: 1.1rem;
+            }}
+            .status-overview {{
+                background: #d1ecf1;
+                border: 2px solid #bee5eb;
+                border-radius: 15px;
+                padding: 25px;
+                margin: 30px 0;
+                text-align: center;
+            }}
+            .status-indicator {{
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                background: #28a745;
+                border-radius: 50%;
+                margin-right: 10px;
+                animation: pulse 2s infinite;
+            }}
+            @keyframes pulse {{
+                0% {{ opacity: 1; }}
+                50% {{ opacity: 0.5; }}
+                100% {{ opacity: 1; }}
+            }}
+            .status-grid {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                gap: 25px;
+                margin: 30px 0;
+            }}
+            .status-card {{
+                background: white;
+                padding: 25px;
+                border-radius: 15px;
+                box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+                border-top: 4px solid #17a2b8;
+                transition: transform 0.3s ease;
+            }}
+            .status-card:hover {{
+                transform: translateY(-5px);
+            }}
+            .status-card h3 {{
+                color: #17a2b8;
+                margin-bottom: 15px;
+                font-size: 1.3rem;
+            }}
+            .status-card p {{
+                color: #666;
+                line-height: 1.6;
+                margin-bottom: 10px;
+            }}
+            .footer {{
+                text-align: center;
+                padding: 30px 0;
+                color: #666;
+                border-top: 2px solid #eee;
+                margin-top: 30px;
+            }}
+            .footer-nav {{
+                margin-bottom: 20px;
+            }}
+            .footer-nav h4 {{
+                color: #17a2b8;
+                margin-bottom: 15px;
+                font-size: 1.2rem;
+            }}
+            .nav-links {{
+                display: flex;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 15px;
+                margin-bottom: 20px;
+            }}
+            .nav-link {{
+                display: inline-block;
+                padding: 8px 16px;
+                background: linear-gradient(45deg, #17a2b8, #138496);
+                color: white;
+                text-decoration: none;
+                border-radius: 20px;
+                font-size: 0.9rem;
+                font-weight: bold;
+                transition: all 0.3s ease;
+            }}
+            .nav-link:hover {{
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                background: linear-gradient(45deg, #138496, #117a8b);
+            }}
+            .footer-info {{
+                border-top: 1px solid #eee;
+                padding-top: 20px;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>📊 Service Status</h1>
+                <p>Yourl.Cloud Inc. - Real-time Service Information & Monitoring</p>
+            </div>
+            
+            <div class="status-overview">
+                <h2><span class="status-indicator"></span>Service Status: RUNNING</h2>
+                <p><strong>Service:</strong> URL API with Visual Inspection | <strong>Version:</strong> 1.0.0 | <strong>Environment:</strong> Production</p>
+                <p><strong>Timestamp:</strong> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+            </div>
+            
+            <div class="status-grid">
+                <div class="status-card">
+                    <h3>🛡️ Security Configuration</h3>
+                    <p><strong>Friends & Family Guard:</strong> {'Enabled' if FRIENDS_FAMILY_GUARD['enabled'] else 'Disabled'}</p>
+                    <p><strong>Organization:</strong> {FRIENDS_FAMILY_GUARD['organization']}</p>
+                    <p><strong>Session ID:</strong> {FRIENDS_FAMILY_GUARD['session_id'][:8]}...</p>
+                    <p><strong>Visual Inspection:</strong> {'Enabled' if FRIENDS_FAMILY_GUARD['visual_inspection']['pc_allowed'] else 'Disabled'}</p>
+                </div>
+                
+                <div class="status-card">
+                    <h3>☁️ Cloud Run Status</h3>
+                    <p><strong>Support:</strong> Enabled</p>
+                    <p><strong>Domain Mapping:</strong> {'Enabled' if CLOUD_RUN_CONFIG['domain_mapping_enabled'] else 'Disabled'}</p>
+                    <p><strong>Region:</strong> {CLOUD_RUN_CONFIG['region']}</p>
+                    <p><strong>Deployment Model:</strong> All Instances Production</p>
+                </div>
+                
+                <div class="status-card">
+                    <h3>🚀 Server Information</h3>
+                    <p><strong>WSGI Server:</strong> Gunicorn</p>
+                    <p><strong>Production Mode:</strong> Active</p>
+                    <p><strong>Port:</strong> {PORT}</p>
+                    <p><strong>Demo Mode:</strong> {'Enabled' if True else 'Disabled'}</p>
+                </div>
+                
+                <div class="status-card">
+                    <h3>🌐 Network Status</h3>
+                    <p><strong>Host:</strong> {get_original_host()}</p>
+                    <p><strong>Protocol:</strong> {get_original_protocol()}</p>
+                    <p><strong>Client IP:</strong> {get_client_ip()}</p>
+                    <p><strong>Status:</strong> Online</p>
+                </div>
+            </div>
+            
+            <!-- Footer Navigation -->
+            <div class="footer">
+                <div class="footer-nav">
+                    <h4>🔗 Quick Navigation</h4>
+                    <div class="nav-links">
+                        <a href="/" class="nav-link">🏠 Home</a>
+                        <a href="/health" class="nav-link">🏥 Health</a>
+                        <a href="/status" class="nav-link">📊 Status</a>
+                        <a href="/api" class="nav-link">🔌 API</a>
+                        <a href="/monitoring" class="nav-link">📈 Monitoring</a>
+                        <a href="/data" class="nav-link">📡 Data Stream</a>
+                        <a href="/knowledge-hub" class="nav-link">🧠 Knowledge Hub</a>
+                    </div>
+                </div>
+                <div class="footer-info">
+                    <p>&copy; 2024 Yourl.Cloud Inc. All rights reserved. | United States | Global Operations</p>
+                    <p>Built with ❤️ for secure, scalable cloud solutions</p>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return make_response(html_content)
 
 @app.route('/monitoring/health', methods=['GET'])
 def monitoring_health():
@@ -669,14 +1134,306 @@ def monitoring_health():
         
         status_code = 200 if health_status['status'] == 'healthy' else 503
         
-        return jsonify(health_status), status_code
+        # Check if JSON format is requested
+        if request.args.get('format') == 'json':
+            return jsonify(health_status), status_code
+        
+        # Create rich HTML health check page
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Monitoring Health - Yourl.Cloud Inc.</title>
+            <style>
+                * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+                body {{ 
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                    margin: 0; 
+                    padding: 20px; 
+                    background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+                    min-height: 100vh;
+                    color: #333;
+                }}
+                .container {{ 
+                    max-width: 1000px; 
+                    margin: 0 auto; 
+                    background: rgba(255, 255, 255, 0.98);
+                    border-radius: 15px;
+                    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+                    padding: 30px;
+                    margin-top: 20px;
+                }}
+                .header {{ 
+                    text-align: center; 
+                    padding: 30px 0;
+                    border-bottom: 3px solid #6f42c1;
+                    margin-bottom: 30px;
+                }}
+                .header h1 {{ 
+                    color: #6f42c1;
+                    margin-bottom: 10px;
+                    font-size: 2.5rem;
+                }}
+                .header p {{ 
+                    color: #666;
+                    font-size: 1.1rem;
+                }}
+                .health-status {{
+                    background: #d4edda;
+                    border: 2px solid #c3e6cb;
+                    border-radius: 15px;
+                    padding: 25px;
+                    margin: 30px 0;
+                    text-align: center;
+                }}
+                .status-indicator {{
+                    display: inline-block;
+                    width: 20px;
+                    height: 20px;
+                    background: #28a745;
+                    border-radius: 50%;
+                    margin-right: 10px;
+                    animation: pulse 2s infinite;
+                }}
+                @keyframes pulse {{
+                    0% {{ opacity: 1; }}
+                    50% {{ opacity: 0.5; }}
+                    100% {{ opacity: 1; }}
+                }}
+                .health-grid {{
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                    gap: 20px;
+                    margin: 30px 0;
+                }}
+                .health-card {{
+                    background: white;
+                    padding: 25px;
+                    border-radius: 15px;
+                    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+                    border-top: 4px solid #6f42c1;
+                    transition: transform 0.3s ease;
+                }}
+                .health-card:hover {{
+                    transform: translateY(-5px);
+                }}
+                .health-card h3 {{
+                    color: #6f42c1;
+                    margin-bottom: 15px;
+                    font-size: 1.3rem;
+                }}
+                .health-card p {{
+                    color: #666;
+                    line-height: 1.6;
+                    margin-bottom: 10px;
+                }}
+                .footer {{
+                    text-align: center;
+                    padding: 30px 0;
+                    color: #666;
+                    border-top: 2px solid #eee;
+                    margin-top: 30px;
+                }}
+                .footer-nav {{
+                    margin-bottom: 20px;
+                }}
+                .footer-nav h4 {{
+                    color: #6f42c1;
+                    margin-bottom: 15px;
+                    font-size: 1.2rem;
+                }}
+                .nav-links {{
+                    display: flex;
+                    justify-content: center;
+                    flex-wrap: wrap;
+                    gap: 15px;
+                    margin-bottom: 20px;
+                }}
+                .nav-link {{
+                    display: inline-block;
+                    padding: 8px 16px;
+                    background: linear-gradient(45deg, #6f42c1, #e83e8c);
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 20px;
+                    font-size: 0.9rem;
+                    font-weight: bold;
+                    transition: all 0.3s ease;
+                }}
+                .nav-link:hover {{
+                    transform: translateY(-2px);
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                    background: linear-gradient(45deg, #5a32a3, #d63384);
+                }}
+                .footer-info {{
+                    border-top: 1px solid #eee;
+                    padding-top: 20px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🏥 Monitoring Health</h1>
+                    <p>Yourl.Cloud Inc. - Advanced Health Monitoring & System Status</p>
+                </div>
+                
+                <div class="health-status">
+                    <h2><span class="status-indicator"></span>System Status: {health_status['status'].upper()}</h2>
+                    <p><strong>Version:</strong> {health_status['version']} | <strong>Environment:</strong> {health_status['environment'].title()}</p>
+                    <p><strong>Timestamp:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+                </div>
+                
+                <div class="health-grid">
+                    <div class="health-card">
+                        <h3>⏰ System Uptime</h3>
+                        <p><strong>Uptime:</strong> {uptime if isinstance(uptime, (int, float)) else uptime} seconds</p>
+                        <p><strong>Start Time:</strong> {'Tracked' if _app_start_time else 'Not tracked'}</p>
+                        <p><strong>Status:</strong> {'Active' if _app_start_time else 'Unknown'}</p>
+                    </div>
+                    
+                    <div class="health-card">
+                        <h3>🗄️ Database Status</h3>
+                        <p><strong>Connection:</strong> {health_status['database']}</p>
+                        <p><strong>Status:</strong> {'Connected' if health_status['database'] == 'connected' else 'Disconnected'}</p>
+                        <p><strong>Health:</strong> {'Good' if health_status['database'] == 'connected' else 'Needs attention'}</p>
+                    </div>
+                    
+                    <div class="health-card">
+                        <h3>🔧 System Health</h3>
+                        <p><strong>Overall Status:</strong> {health_status['status'].title()}</p>
+                        <p><strong>Response Code:</strong> {status_code}</p>
+                        <p><strong>Environment:</strong> {health_status['environment'].title()}</p>
+                    </div>
+                    
+                    <div class="health-card">
+                        <h3>📊 Monitoring Info</h3>
+                        <p><strong>Endpoint:</strong> /monitoring/health</p>
+                        <p><strong>Access:</strong> Public</p>
+                        <p><strong>Format:</strong> HTML/JSON</p>
+                    </div>
+                </div>
+                
+                <!-- Footer Navigation -->
+                <div class="footer">
+                    <div class="footer-nav">
+                        <h4>🔗 Quick Navigation</h4>
+                        <div class="nav-links">
+                            <a href="/" class="nav-link">🏠 Home</a>
+                            <a href="/health" class="nav-link">🏥 Health</a>
+                            <a href="/status" class="nav-link">📊 Status</a>
+                            <a href="/api" class="nav-link">🔌 API</a>
+                            <a href="/monitoring" class="nav-link">📈 Monitoring</a>
+                            <a href="/data" class="nav-link">📡 Data Stream</a>
+                            <a href="/knowledge-hub" class="nav-link">🧠 Knowledge Hub</a>
+                        </div>
+                    </div>
+                    <div class="footer-info">
+                        <p>&copy; 2024 Yourl.Cloud Inc. All rights reserved. | United States | Global Operations</p>
+                        <p>Built with ❤️ for secure, scalable cloud solutions</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return make_response(html_content), status_code
         
     except Exception as e:
-        return jsonify({
+        error_response = {
             'timestamp': datetime.now().isoformat(),
             'status': 'unhealthy',
             'error': str(e)
-        }), 500
+        }
+        
+        # Check if JSON format is requested
+        if request.args.get('format') == 'json':
+            return jsonify(error_response), 500
+        
+        # Return HTML error page
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Health Error - Yourl.Cloud Inc.</title>
+            <style>
+                body {{ 
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                    margin: 0; 
+                    padding: 20px; 
+                    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+                    min-height: 100vh;
+                    color: #333;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }}
+                .error-container {{ 
+                    background: rgba(255, 255, 255, 0.98);
+                    border-radius: 15px;
+                    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+                    padding: 40px;
+                    text-align: center;
+                    max-width: 600px;
+                }}
+                .error-icon {{ font-size: 4rem; margin-bottom: 20px; }}
+                .error-title {{ color: #dc3545; margin-bottom: 15px; font-size: 2rem; }}
+                .error-message {{ color: #666; margin-bottom: 30px; }}
+                .footer {{
+                    text-align: center;
+                    padding: 30px 0;
+                    color: #666;
+                    border-top: 2px solid #eee;
+                    margin-top: 30px;
+                }}
+                .nav-links {{
+                    display: flex;
+                    justify-content: center;
+                    flex-wrap: wrap;
+                    gap: 15px;
+                    margin-bottom: 20px;
+                }}
+                .nav-link {{
+                    display: inline-block;
+                    padding: 8px 16px;
+                    background: linear-gradient(45deg, #dc3545, #c82333);
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 20px;
+                    font-size: 0.9rem;
+                    font-weight: bold;
+                    transition: all 0.3s ease;
+                }}
+                .nav-link:hover {{
+                    transform: translateY(-2px);
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="error-container">
+                <div class="error-icon">❌</div>
+                <div class="error-title">Health Check Failed</div>
+                <div class="error-message">An error occurred while checking system health: {str(e)}</div>
+                
+                <div class="footer">
+                    <div class="nav-links">
+                        <a href="/" class="nav-link">🏠 Home</a>
+                        <a href="/health" class="nav-link">🏥 Health</a>
+                        <a href="/status" class="nav-link">📊 Status</a>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return make_response(html_content), 500
 
 @app.route('/monitoring', methods=['GET'])
 def monitoring_dashboard():
@@ -1895,30 +2652,296 @@ def knowledge_hub():
 
 @app.errorhandler(404)
 def not_found(error):
-    """Handle 404 errors by returning the request URL."""
-    return jsonify({
-        "error": "Not Found",
-        "url": request.url,
-        "message": "The requested resource was not found, but here's your request URL",
-        "timestamp": datetime.utcnow().isoformat(),
-        "friends_family_guard": FRIENDS_FAMILY_GUARD["enabled"],
-        "cloud_run": {
-            "original_host": get_original_host(),
-            "original_protocol": get_original_protocol()
-        }
-    }), 404
+    """Handle 404 errors with rich HTML and footer navigation."""
+    # Check if JSON format is requested
+    if request.args.get('format') == 'json':
+        return jsonify({
+            "error": "Not Found",
+            "url": request.url,
+            "message": "The requested resource was not found, but here's your request URL",
+            "timestamp": datetime.utcnow().isoformat(),
+            "friends_family_guard": FRIENDS_FAMILY_GUARD["enabled"],
+            "cloud_run": {
+                "original_host": get_original_host(),
+                "original_protocol": get_original_protocol()
+            }
+        }), 404
+    
+    # Create rich HTML 404 page
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Page Not Found - Yourl.Cloud Inc.</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                margin: 0; 
+                padding: 20px; 
+                background: linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%);
+                min-height: 100vh;
+                color: #333;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }}
+            .error-container {{ 
+                background: rgba(255, 255, 255, 0.98);
+                border-radius: 15px;
+                box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+                padding: 40px;
+                text-align: center;
+                max-width: 700px;
+            }}
+            .error-code {{ 
+                font-size: 6rem; 
+                margin-bottom: 20px; 
+                color: #fd7e14;
+                font-weight: bold;
+            }}
+            .error-title {{ 
+                color: #fd7e14; 
+                margin-bottom: 15px; 
+                font-size: 2rem; 
+            }}
+            .error-message {{ 
+                color: #666; 
+                margin-bottom: 20px; 
+                line-height: 1.6;
+            }}
+            .url-display {{
+                background: #f8f9fa;
+                border: 2px solid #e9ecef;
+                border-radius: 10px;
+                padding: 20px;
+                margin: 20px 0;
+                font-family: 'Courier New', monospace;
+                font-size: 14px;
+                word-break: break-all;
+            }}
+            .footer {{
+                text-align: center;
+                padding: 30px 0;
+                color: #666;
+                border-top: 2px solid #eee;
+                margin-top: 30px;
+            }}
+            .footer-nav {{
+                margin-bottom: 20px;
+            }}
+            .footer-nav h4 {{
+                color: #fd7e14;
+                margin-bottom: 15px;
+                font-size: 1.2rem;
+            }}
+            .nav-links {{
+                display: flex;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 15px;
+                margin-bottom: 20px;
+            }}
+            .nav-link {{
+                display: inline-block;
+                padding: 8px 16px;
+                background: linear-gradient(45deg, #fd7e14, #e83e8c);
+                color: white;
+                text-decoration: none;
+                border-radius: 20px;
+                font-size: 0.9rem;
+                font-weight: bold;
+                transition: all 0.3s ease;
+            }}
+            .nav-link:hover {{
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                background: linear-gradient(45deg, #e8690b, #d63384);
+            }}
+            .footer-info {{
+                border-top: 1px solid #eee;
+                padding-top: 20px;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="error-container">
+            <div class="error-code">404</div>
+            <div class="error-title">Page Not Found</div>
+            <div class="error-message">
+                The requested resource was not found, but here's your request URL for reference.
+            </div>
+            
+            <div class="url-display">
+                <strong>Requested URL:</strong><br>
+                {request.url}
+            </div>
+            
+            <!-- Footer Navigation -->
+            <div class="footer">
+                <div class="footer-nav">
+                    <h4>🔗 Quick Navigation</h4>
+                    <div class="nav-links">
+                        <a href="/" class="nav-link">🏠 Home</a>
+                        <a href="/health" class="nav-link">🏥 Health</a>
+                        <a href="/status" class="nav-link">📊 Status</a>
+                        <a href="/api" class="nav-link">🔌 API</a>
+                        <a href="/monitoring" class="nav-link">📈 Monitoring</a>
+                        <a href="/data" class="nav-link">📡 Data Stream</a>
+                        <a href="/knowledge-hub" class="nav-link">🧠 Knowledge Hub</a>
+                    </div>
+                </div>
+                <div class="footer-info">
+                    <p>&copy; 2024 Yourl.Cloud Inc. All rights reserved. | United States | Global Operations</p>
+                    <p>Built with ❤️ for secure, scalable cloud solutions</p>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return make_response(html_content), 404
 
 @app.errorhandler(500)
 def internal_error(error):
-    """Handle 500 errors."""
+    """Handle 500 errors with rich HTML and footer navigation."""
     logger.error(f"Internal server error: {str(error)}")
-    return jsonify({
-        "error": "Internal Server Error",
-        "url": request.url,
-        "message": "An internal server error occurred",
-        "timestamp": datetime.utcnow().isoformat(),
-        "friends_family_guard": FRIENDS_FAMILY_GUARD["enabled"]
-    }), 500
+    
+    # Check if JSON format is requested
+    if request.args.get('format') == 'json':
+        return jsonify({
+            "error": "Internal Server Error",
+            "url": request.url,
+            "message": "An internal server error occurred",
+            "timestamp": datetime.utcnow().isoformat(),
+            "friends_family_guard": FRIENDS_FAMILY_GUARD["enabled"]
+        }), 500
+    
+    # Create rich HTML 500 error page
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Server Error - Yourl.Cloud Inc.</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                margin: 0; 
+                padding: 20px; 
+                background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+                min-height: 100vh;
+                color: #333;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }}
+            .error-container {{ 
+                background: rgba(255, 255, 255, 0.98);
+                border-radius: 15px;
+                box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+                padding: 40px;
+                text-align: center;
+                max-width: 700px;
+            }}
+            .error-code {{ 
+                font-size: 6rem; 
+                margin-bottom: 20px; 
+                color: #dc3545;
+                font-weight: bold;
+            }}
+            .error-title {{ 
+                color: #dc3545; 
+                margin-bottom: 15px; 
+                font-size: 2rem; 
+            }}
+            .error-message {{ 
+                color: #666; 
+                margin-bottom: 20px; 
+                line-height: 1.6;
+            }}
+            .footer {{
+                text-align: center;
+                padding: 30px 0;
+                color: #666;
+                border-top: 2px solid #eee;
+                margin-top: 30px;
+            }}
+            .footer-nav {{
+                margin-bottom: 20px;
+            }}
+            .footer-nav h4 {{
+                color: #dc3545;
+                margin-bottom: 15px;
+                font-size: 1.2rem;
+            }}
+            .nav-links {{
+                display: flex;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 15px;
+                margin-bottom: 20px;
+            }}
+            .nav-link {{
+                display: inline-block;
+                padding: 8px 16px;
+                background: linear-gradient(45deg, #dc3545, #c82333);
+                color: white;
+                text-decoration: none;
+                border-radius: 20px;
+                font-size: 0.9rem;
+                font-weight: bold;
+                transition: all 0.3s ease;
+            }}
+            .nav-link:hover {{
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                background: linear-gradient(45deg, #c82333, #bd2130);
+            }}
+            .footer-info {{
+                border-top: 1px solid #eee;
+                padding-top: 20px;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="error-container">
+            <div class="error-code">500</div>
+            <div class="error-title">Internal Server Error</div>
+            <div class="error-message">
+                An internal server error occurred. Our team has been notified and is working to resolve this issue.
+            </div>
+            
+            <!-- Footer Navigation -->
+            <div class="footer">
+                <div class="footer-nav">
+                    <h4>🔗 Quick Navigation</h4>
+                    <div class="nav-links">
+                        <a href="/" class="nav-link">🏠 Home</a>
+                        <a href="/health" class="nav-link">🏥 Health</a>
+                        <a href="/status" class="nav-link">📊 Status</a>
+                        <a href="/api" class="nav-link">🔌 API</a>
+                        <a href="/monitoring" class="nav-link">📈 Monitoring</a>
+                        <a href="/data" class="nav-link">📡 Data Stream</a>
+                        <a href="/knowledge-hub" class="nav-link">🧠 Knowledge Hub</a>
+                    </div>
+                </div>
+                <div class="footer-info">
+                    <p>&copy; 2024 Yourl.Cloud Inc. All rights reserved. | United States | Global Operations</p>
+                    <p>Built with ❤️ for secure, scalable cloud solutions</p>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return make_response(html_content), 500
 
 if __name__ == '__main__':
     # Track app start time for uptime monitoring

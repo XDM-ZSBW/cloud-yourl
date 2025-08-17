@@ -28,10 +28,9 @@ def main():
     print("🚀 Starting Yourl.Cloud API Server (Local Development)")
     print("=" * 60)
     
-    # Set production environment variables
+    # Set production environment variables (removed problematic WERKZEUG_RUN_MAIN)
     os.environ['FLASK_ENV'] = 'production'
     os.environ['FLASK_DEBUG'] = 'False'
-    os.environ['WERKZEUG_RUN_MAIN'] = 'true'
     
     # Find a random available port
     local_port = find_free_port()
@@ -59,9 +58,10 @@ def main():
             ENV='production'
         )
         
-        # Track start time for uptime monitoring
-        if hasattr(app, '_app_start_time') is False:
-            app._app_start_time = time.time()
+        # Track start time for uptime monitoring (using module-level variable)
+        global _app_start_time
+        if '_app_start_time' not in globals():
+            _app_start_time = time.time()
         
         print(f"✅ App configured for production")
         print(f"🌐 Server starting on http://localhost:{local_port}")
