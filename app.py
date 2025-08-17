@@ -1645,23 +1645,23 @@ def data_stream():
         <div class="datastream-container">
             <div class="data-stream-title">🚀 YOURL.CLOUD TRUST-BASED AI DATASTREAM</div>
             
-            {''.join([f'''
-            <div class="frame" data-scroll="{frame['scroll_position']}" data-category="{frame['category']}" data-nodes="{','.join(frame.get('mind_map_nodes', []))}">
+            ''' + ''.join(['''
+            <div class="frame" data-scroll="''' + str(frame['scroll_position']) + '''" data-category="''' + frame['category'] + '''" data-nodes="''' + ','.join(frame.get('mind_map_nodes', [])) + '''">
                 <div class="frame-header">
-                    <span class="frame-id">{frame['id']}</span>
-                    <span class="frame-timestamp">{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(frame['timestamp']))}</span>
+                    <span class="frame-id">''' + frame['id'] + '''</span>
+                    <span class="frame-timestamp">''' + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(frame['timestamp'])) + '''</span>
                 </div>
-                <div class="frame-category">{frame['category'].replace('_', ' ').title()}</div>
-                <div class="frame-title">{frame['title']}</div>
-                <div class="frame-content">{frame['content']}</div>
+                <div class="frame-category">''' + frame['category'].replace('_', ' ').title() + '''</div>
+                <div class="frame-title">''' + frame['title'] + '''</div>
+                <div class="frame-content">''' + frame['content'] + '''</div>
                 <div class="visual-elements">
-                    {''.join([f'<span class="visual-element">{element.replace("_", " ").title()}</span>' for element in frame['visual_elements']])}
+                    ''' + ''.join(['<span class="visual-element">' + element.replace("_", " ").title() + '</span>' for element in frame['visual_elements']]) + '''
                 </div>
                 <div class="wiki-links">
-                    {''.join([f'<a href="{"/knowledge-hub" if link == "KNOWLEDGE_HUB.md" else f"/wiki/{link}"}" class="wiki-link" target="_blank">📚 {link.replace(".md", "").replace("_", " ").title()}</a>' for link in frame.get('wiki_links', [])])}
+                    ''' + ''.join(['<a href="' + ("/knowledge-hub" if link == "KNOWLEDGE_HUB.md" else "/wiki/" + link) + '" class="wiki-link" target="_blank">📚 ' + link.replace(".md", "").replace("_", " ").title() + '</a>' for link in frame.get('wiki_links', [])]) + '''
                 </div>
             </div>
-            ''' for frame in story_frames])}
+            ''' for frame in story_frames]) + '''
         </div>
         
         <div class="navigation">
@@ -1674,52 +1674,52 @@ def data_stream():
         
         <script>
             // Update scroll position indicator
-            window.addEventListener('scroll', function() {{
+            window.addEventListener('scroll', function() {
                 document.getElementById('scrollPos').textContent = Math.round(window.scrollY);
-            }});
+            });
             
             // Add hover effects to frames
-            document.querySelectorAll('.frame').forEach(frame => {{
-                frame.addEventListener('mouseenter', function() {{
+            document.querySelectorAll('.frame').forEach(frame => {
+                frame.addEventListener('mouseenter', function() {
                     this.style.background = 'rgba(0, 255, 0, 0.1)';
                     this.style.transform = 'scale(1.02)';
-                }});
+                });
                 
-                frame.addEventListener('mouseleave', function() {{
+                frame.addEventListener('mouseleave', function() {
                     this.style.background = 'rgba(0, 255, 0, 0.05)';
                     this.style.transform = 'scale(1)';
-                }});
-            }});
+                });
+            });
             
             // Mind map filtering
-            function filterByNode(node) {{
+            function filterByNode(node) {
                 const frames = document.querySelectorAll('.frame');
-                frames.forEach(frame => {{
+                frames.forEach(frame => {
                     const nodes = frame.dataset.nodes.split(',');
-                    if (nodes.includes(node)) {{
+                    if (nodes.includes(node)) {
                         frame.style.display = 'block';
                         frame.style.opacity = '1';
-                    }} else {{
+                    } else {
                         frame.style.opacity = '0.3';
-                    }}
-                }});
-            }}
+                    }
+                });
+            }
             
             // Auto-scroll animation
             let scrollSpeed = 0.5;
-            function autoScroll() {{
+            function autoScroll() {
                 window.scrollBy(0, scrollSpeed);
                 requestAnimationFrame(autoScroll);
-            }}
+            }
             
             // Start auto-scroll after 3 seconds
-            setTimeout(() => {{
+            setTimeout(() => {
                 autoScroll();
-            }}, 3000);
+            }, 3000);
             
             // Add keyboard navigation
-            document.addEventListener('keydown', function(e) {{
-                switch(e.key) {{
+            document.addEventListener('keydown', function(e) {
+                switch(e.key) {
                     case 'ArrowUp':
                         window.scrollBy(0, -100);
                         break;
@@ -1732,35 +1732,35 @@ def data_stream():
                     case 'End':
                         window.scrollTo(0, document.body.scrollHeight);
                         break;
-                }}
-            }});
+                }
+            });
             
             // Build testing checklist functionality
-            function updateChecklist(checkbox) {{
+            function updateChecklist(checkbox) {
                 const label = checkbox.nextElementSibling;
-                if (checkbox.checked) {{
+                if (checkbox.checked) {
                     label.parentElement.classList.add('completed');
                     // Auto-check next item after a short delay
-                    setTimeout(() => {{
+                    setTimeout(() => {
                         const nextCheckbox = checkbox.parentElement.nextElementSibling?.querySelector('input[type="checkbox"]');
-                        if (nextCheckbox && !nextCheckbox.checked) {{
+                        if (nextCheckbox && !nextCheckbox.checked) {
                             nextCheckbox.checked = true;
                             updateChecklist(nextCheckbox);
-                        }}
-                    }}, 500);
-                }} else {{
+                        }
+                    }, 500);
+                } else {
                     label.parentElement.classList.remove('completed');
-                }}
-            }}
+                }
+            }
             
             // Auto-check first item when page loads
-            window.addEventListener('load', function() {{
+            window.addEventListener('load', function() {
                 const firstCheckbox = document.getElementById('check1');
-                if (firstCheckbox) {{
+                if (firstCheckbox) {
                     firstCheckbox.checked = true;
                     updateChecklist(firstCheckbox);
-                }}
-            }});
+                }
+            });
         </script>
     </body>
     </html>
@@ -3307,16 +3307,16 @@ def knowledge_hub():
             }}
             
             // Initialize the mind map when page loads
-            document.addEventListener('DOMContentLoaded', function() {{
+            document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(initializeMindMap, 100); // Small delay to ensure container is rendered
-            }});
+            });
             
             // Handle window resize
-            window.addEventListener('resize', function() {{
+            window.addEventListener('resize', function() {
                 const mindMap = document.getElementById('mindMap');
                 mindMap.innerHTML = '';
                 setTimeout(initializeMindMap, 100);
-            }});
+            });
         </script>
     </body>
     </html>
