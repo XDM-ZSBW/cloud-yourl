@@ -15,14 +15,40 @@ Domain Mapping: Compatible
 
 import os
 import sys
-from app import app, CLOUD_RUN_CONFIG
 
-# Configure environment for Cloud Run domain mapping
+# Set environment variables for Cloud Run
 os.environ.setdefault('FLASK_ENV', 'production')
 os.environ.setdefault('PORT', '8080')
+os.environ.setdefault('FLASK_DEBUG', 'False')
 
-# Ensure the app is configured for Cloud Run
+# Import the Flask app after setting environment variables
+try:
+    from app_simple import app
+    print("✅ Successfully imported simplified Flask app")
+except Exception as e:
+    print(f"❌ Error importing simplified Flask app: {e}")
+    # Create a minimal fallback app if import fails
+    from flask import Flask
+    app = Flask(__name__)
+    
+    @app.route('/')
+    def fallback():
+        return {"error": "App import failed", "message": str(e)}, 500
+    
+    @app.route('/health')
+    def health():
+        return {"status": "degraded", "message": "Fallback app running"}, 200
+
+# Configure the app for Cloud Run
+if hasattr(app, 'config'):
+    app.config.update(
+        PREFERRED_URL_SCHEME='https',
+        USE_X_SENDFILE=False,
+        SERVER_NAME=None
+    )
+
 if __name__ == "__main__":
     # This allows running the WSGI file directly for testing
     port = int(os.environ.get('PORT', 8080))
+    print(f"🚀 Starting Flask app on port {port}")
     app.run(host='0.0.0.0', port=port, debug=False)

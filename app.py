@@ -207,22 +207,27 @@ def get_current_marketing_password():
         # Try database first (cost-effective)
         database_connection_string = os.environ.get('DATABASE_CONNECTION_STRING')
         if database_connection_string:
-            from scripts.database_client import DatabaseClient
-            db_client = DatabaseClient(database_connection_string)
-            current_code = db_client.get_current_marketing_code()
-            
-            if current_code:
+            try:
+                from scripts.database_client import DatabaseClient
+                db_client = DatabaseClient(database_connection_string)
+                current_code = db_client.get_current_marketing_code()
+                
+                if current_code:
+                    if not _current_code_printed:
+                        print(f"✅ Using database current code: {current_code}")
+                        _current_code_printed = True
+                    return current_code
+                else:
+                    if not _current_code_printed:
+                        print("⚠️ No current code found in database")
+                        _current_code_printed = True
+            except Exception as e:
                 if not _current_code_printed:
-                    print(f"✅ Using database current code: {current_code}")
-                    _current_code_printed = True
-                return current_code
-            else:
-                if not _current_code_printed:
-                    print("⚠️ No current code found in database")
+                    print(f"❌ Error accessing database: {e}")
                     _current_code_printed = True
     except Exception as e:
         if not _current_code_printed:
-            print(f"❌ Error accessing database: {e}")
+            print(f"❌ Error setting up database connection: {e}")
             _current_code_printed = True
     
     # Fallback to Secret Manager (if database not available)
@@ -272,22 +277,27 @@ def get_next_marketing_password():
         # Try database first (cost-effective)
         database_connection_string = os.environ.get('DATABASE_CONNECTION_STRING')
         if database_connection_string:
-            from scripts.database_client import DatabaseClient
-            db_client = DatabaseClient(database_connection_string)
-            next_code = db_client.get_next_marketing_code()
-            
-            if next_code:
+            try:
+                from scripts.database_client import DatabaseClient
+                db_client = DatabaseClient(database_connection_string)
+                next_code = db_client.get_next_marketing_code()
+                
+                if next_code:
+                    if not _next_code_printed:
+                        print(f"✅ Using database next code: {next_code}")
+                        _next_code_printed = True
+                    return next_code
+                else:
+                    if not _next_code_printed:
+                        print("⚠️ No next code found in database")
+                        _next_code_printed = True
+            except Exception as e:
                 if not _next_code_printed:
-                    print(f"✅ Using database next code: {next_code}")
-                    _next_code_printed = True
-                return next_code
-            else:
-                if not _next_code_printed:
-                    print("⚠️ No next code found in database")
+                    print(f"❌ Error accessing database: {e}")
                     _next_code_printed = True
     except Exception as e:
         if not _next_code_printed:
-            print(f"❌ Error accessing database: {e}")
+            print(f"❌ Error setting up database connection: {e}")
             _next_code_printed = True
     
     # Fallback to Secret Manager (if database not available)
