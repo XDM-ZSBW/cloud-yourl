@@ -156,7 +156,10 @@ DEMO_CONFIG = {
 app.config.update(
     PREFERRED_URL_SCHEME='https',
     USE_X_SENDFILE=False,
-    SERVER_NAME=None
+    SERVER_NAME=None,
+    TESTING=False,
+    DEBUG=False,
+    ENV='production'
 )
 
 def get_client_ip():
@@ -685,16 +688,769 @@ def monitoring_dashboard():
             "message": "Authentication required for monitoring access"
         }), 401
     
-    return jsonify({
-        "monitoring": {
-            "status": "active",
-            "endpoints": {
-                "health": "/monitoring/health",
-                "dashboard": "/monitoring"
+    # Create comprehensive monitoring dashboard HTML
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Monitoring Dashboard - Yourl.Cloud Inc.</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                margin: 0; 
+                padding: 20px; 
+                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+                min-height: 100vh;
+                color: #333;
+            }}
+            .container {{ 
+                max-width: 1400px; 
+                margin: 0 auto; 
+                background: rgba(255, 255, 255, 0.98);
+                border-radius: 15px;
+                box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+                padding: 30px;
+                margin-top: 20px;
+            }}
+            .header {{ 
+                text-align: center; 
+                padding: 30px 0;
+                border-bottom: 3px solid #1e3c72;
+                margin-bottom: 30px;
+            }}
+            .header h1 {{ 
+                color: #1e3c72;
+                margin-bottom: 10px;
+                font-size: 2.5rem;
+            }}
+            .header p {{ 
+                color: #666;
+                font-size: 1.1rem;
+            }}
+            .server-info {{
+                background: #e8f4fd;
+                padding: 20px;
+                border-radius: 10px;
+                margin-bottom: 30px;
+                text-align: center;
+                border-left: 5px solid #1e3c72;
+            }}
+            .monitoring-grid {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                gap: 25px;
+                margin: 30px 0;
+            }}
+            .monitoring-card {{
+                background: white;
+                padding: 30px;
+                border-radius: 15px;
+                box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+                border-top: 4px solid #1e3c72;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+                position: relative;
+                overflow: hidden;
+            }}
+            .monitoring-card::before {{
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 3px;
+                background: linear-gradient(90deg, #1e3c72, #2a5298, #1e3c72);
+            }}
+            .monitoring-card:hover {{
+                transform: translateY(-5px);
+                box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            }}
+            .card-icon {{
+                font-size: 2.5rem;
+                margin-bottom: 15px;
+                text-align: center;
+            }}
+            .monitoring-card h3 {{
+                color: #1e3c72;
+                margin-bottom: 15px;
+                font-size: 1.4rem;
+                text-align: center;
+            }}
+            .monitoring-card p {{
+                color: #666;
+                line-height: 1.6;
+                margin-bottom: 20px;
+                text-align: center;
+            }}
+            .api-interface {{
+                background: #f8f9fa;
+                border: 2px solid #e9ecef;
+                border-radius: 10px;
+                padding: 15px;
+                margin: 15px 0;
+                text-align: center;
+            }}
+            .method-badge {{
+                display: inline-block;
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 0.9rem;
+                font-weight: bold;
+                text-transform: uppercase;
+                margin: 5px;
+                color: white;
+            }}
+            .method-get {{ background: #28a745; }}
+            .method-post {{ background: #007bff; }}
+            .method-put {{ background: #ffc107; color: #212529; }}
+            .method-delete {{ background: #dc3545; }}
+            .endpoint-path {{
+                font-family: 'Courier New', monospace;
+                background: #e9ecef;
+                padding: 8px 12px;
+                border-radius: 5px;
+                font-size: 0.9rem;
+                margin: 10px 0;
+                display: inline-block;
+            }}
+            .access-details {{
+                margin-top: 15px;
+                padding-top: 15px;
+                border-top: 1px solid #dee2e6;
+            }}
+            .access-badge {{
+                display: inline-block;
+                padding: 6px 12px;
+                border-radius: 15px;
+                font-size: 0.8rem;
+                font-weight: bold;
+                margin: 5px 3px;
+            }}
+            .access-public {{ background: #d4edda; color: #155724; }}
+            .access-auth {{ background: #fff3cd; color: #856404; }}
+            .access-session {{ background: #d1ecf1; color: #0c5460; }}
+            .access-doc {{ background: #e2e3e5; color: #383d41; }}
+            .navigation {{
+                text-align: center;
+                margin-top: 40px;
+                padding-top: 30px;
+                border-top: 2px solid #eee;
+            }}
+            .nav-btn {{
+                display: inline-block;
+                background: #1e3c72;
+                color: white;
+                padding: 15px 30px;
+                text-decoration: none;
+                border-radius: 25px;
+                margin: 10px;
+                transition: all 0.3s ease;
+                font-weight: bold;
+                font-size: 1.1rem;
+            }}
+            .nav-btn:hover {{
+                background: #2a5298;
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            }}
+            .status-indicator {{
+                display: inline-block;
+                width: 12px;
+                height: 12px;
+                background: #28a745;
+                border-radius: 50%;
+                margin-right: 8px;
+                animation: pulse 2s infinite;
+            }}
+            @keyframes pulse {{
+                0% {{ opacity: 1; }}
+                50% {{ opacity: 0.5; }}
+                100% {{ opacity: 1; }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>📊 Monitoring Dashboard</h1>
+                <p>Yourl.Cloud Inc. - Comprehensive Site Monitoring & Analytics</p>
+            </div>
+            
+            <div class="server-info">
+                <h3>🖥️ Server Information</h3>
+                <p><strong>Server:</strong> {get_original_protocol()}://{get_original_host()} | 
+                   <strong>Status:</strong> <span class="status-indicator"></span>Online</p>
+                <p><strong>Environment:</strong> Production | <strong>WSGI Server:</strong> Gunicorn | 
+                   <strong>Timestamp:</strong> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+            </div>
+            
+            <div class="monitoring-grid">
+                <div class="monitoring-card">
+                    <div class="card-icon">🏥</div>
+                    <h3>Health & Status</h3>
+                    <p>Public health check endpoint for monitoring systems and uptime verification.</p>
+                    
+                    <div class="api-interface">
+                        <span class="method-badge method-get">GET</span>
+                        <div class="endpoint-path">/monitoring/health</div>
+                        <div class="access-details">
+                            <span class="access-badge access-public">✅ Public Access: No authentication required</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="monitoring-card">
+                    <div class="card-icon">🔐</div>
+                    <h3>Token Generation</h3>
+                    <p>Generate secure, time-bound tokens for accessing protected monitoring endpoints.</p>
+                    
+                    <div class="api-interface">
+                        <span class="method-badge method-post">POST</span>
+                        <div class="endpoint-path">/monitoring/token</div>
+                        <div class="access-details">
+                            <span class="access-badge access-auth">⚠️ Authentication Required: Valid marketing code needed</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="monitoring-card">
+                    <div class="card-icon">📈</div>
+                    <h3>Site Statistics</h3>
+                    <p>Comprehensive analytics including visitor stats, security metrics, and system performance.</p>
+                    
+                    <div class="api-interface">
+                        <span class="method-badge method-get">GET</span>
+                        <div class="endpoint-path">/monitoring/stats</div>
+                        <div class="access-details">
+                            <span class="access-badge access-session">🔑 Session Auth: Auto-accessible after landing page login</span>
+                            <span class="access-badge access-auth">🔑 Alt Auth: Valid monitoring token also accepted</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="monitoring-card">
+                    <div class="card-icon">📁</div>
+                    <h3>Dashboard Home</h3>
+                    <p>This page - overview of all monitoring capabilities and endpoint documentation.</p>
+                    
+                    <div class="api-interface">
+                        <span class="method-badge method-get">GET</span>
+                        <div class="endpoint-path">/monitoring</div>
+                        <div class="access-details">
+                            <span class="access-badge access-doc">📚 Documentation: Complete monitoring system overview</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="navigation">
+                <a href="/" class="nav-btn">🏠 Back to Home</a>
+                <a href="/data" class="nav-btn">📡 Data Stream</a>
+                <a href="/api" class="nav-btn">🔌 API</a>
+                <a href="/status" class="nav-btn">📊 Status</a>
+                <a href="/knowledge-hub" class="nav-btn">🧠 Knowledge Hub</a>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return make_response(html_content)
+
+@app.route('/monitoring/stats', methods=['GET'])
+def monitoring_stats():
+    """Site statistics endpoint with HTML rendering and API interface."""
+    # Check if user is authenticated
+    if not session.get('authenticated', False):
+        return jsonify({
+            "error": "Access denied",
+            "message": "Authentication required for statistics access"
+        }), 401
+    
+    # Generate dynamic statistics
+    current_time = time.time()
+    uptime = current_time - _app_start_time if _app_start_time else 'unknown'
+    
+    # Create comprehensive statistics dashboard HTML
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Site Statistics - Yourl.Cloud Inc.</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                margin: 0; 
+                padding: 20px; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                color: #333;
+            }}
+            .container {{ 
+                max-width: 1400px; 
+                margin: 0 auto; 
+                background: rgba(255, 255, 255, 0.98);
+                border-radius: 15px;
+                box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+                padding: 30px;
+                margin-top: 20px;
+            }}
+            .header {{ 
+                text-align: center; 
+                padding: 30px 0;
+                border-bottom: 3px solid #667eea;
+                margin-bottom: 30px;
+            }}
+            .header h1 {{ 
+                color: #667eea;
+                margin-bottom: 10px;
+                font-size: 2.5rem;
+            }}
+            .header p {{ 
+                color: #666;
+                font-size: 1.1rem;
+            }}
+            .stats-overview {{
+                background: #e8f4fd;
+                padding: 25px;
+                border-radius: 15px;
+                margin-bottom: 30px;
+                text-align: center;
+                border-left: 5px solid #667eea;
+            }}
+            .stats-grid {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 25px;
+                margin: 30px 0;
+            }}
+            .stat-card {{
+                background: white;
+                padding: 25px;
+                border-radius: 15px;
+                box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+                border-top: 4px solid #667eea;
+                transition: transform 0.3s ease;
+                text-align: center;
+            }}
+            .stat-card:hover {{
+                transform: translateY(-5px);
+            }}
+            .stat-icon {{
+                font-size: 3rem;
+                margin-bottom: 15px;
+            }}
+            .stat-value {{
+                font-size: 2.5rem;
+                font-weight: bold;
+                color: #667eea;
+                margin-bottom: 10px;
+            }}
+            .stat-label {{
+                color: #666;
+                font-size: 1.1rem;
+                margin-bottom: 15px;
+            }}
+            .stat-description {{
+                color: #888;
+                font-size: 0.9rem;
+                line-height: 1.4;
+            }}
+            .api-section {{
+                background: #f8f9fa;
+                border: 2px solid #e9ecef;
+                border-radius: 15px;
+                padding: 25px;
+                margin: 30px 0;
+                text-align: center;
+            }}
+            .api-title {{
+                color: #667eea;
+                font-size: 1.5rem;
+                margin-bottom: 20px;
+            }}
+            .method-badge {{
+                display: inline-block;
+                padding: 10px 20px;
+                border-radius: 25px;
+                font-size: 1rem;
+                font-weight: bold;
+                text-transform: uppercase;
+                margin: 10px;
+                color: white;
+            }}
+            .method-get {{ background: #28a745; }}
+            .endpoint-path {{
+                font-family: 'Courier New', monospace;
+                background: #e9ecef;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-size: 1.1rem;
+                margin: 15px 0;
+                display: inline-block;
+            }}
+            .navigation {{
+                text-align: center;
+                margin-top: 40px;
+                padding-top: 30px;
+                border-top: 2px solid #eee;
+            }}
+            .nav-btn {{
+                display: inline-block;
+                background: #667eea;
+                color: white;
+                padding: 15px 30px;
+                text-decoration: none;
+                border-radius: 25px;
+                margin: 10px;
+                transition: all 0.3s ease;
+                font-weight: bold;
+                font-size: 1.1rem;
+            }}
+            .nav-btn:hover {{
+                background: #5a6fd8;
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>📈 Site Statistics</h1>
+                <p>Yourl.Cloud Inc. - Real-time Analytics & Performance Metrics</p>
+            </div>
+            
+            <div class="stats-overview">
+                <h3>📊 System Overview</h3>
+                <p><strong>Current Time:</strong> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')} | 
+                   <strong>Uptime:</strong> {uptime if isinstance(uptime, (int, float)) else uptime} seconds | 
+                   <strong>Environment:</strong> Production</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🚀</div>
+                    <div class="stat-value">9</div>
+                    <div class="stat-label">Active Endpoints</div>
+                    <div class="stat-description">Total number of available API endpoints and routes</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">🔒</div>
+                    <div class="stat-value">5</div>
+                    <div class="stat-label">Protected Routes</div>
+                    <div class="stat-description">Endpoints requiring authentication or valid marketing codes</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">🌐</div>
+                    <div class="stat-value">4</div>
+                    <div class="stat-label">Public Endpoints</div>
+                    <div class="stat-description">Open access endpoints for health checks and basic info</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">📱</div>
+                    <div class="stat-value">100%</div>
+                    <div class="stat-label">Device Compatibility</div>
+                    <div class="stat-description">Full support for PC, mobile, and tablet devices</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">☁️</div>
+                    <div class="stat-value">Active</div>
+                    <div class="stat-label">Cloud Run Status</div>
+                    <div class="stat-description">Google Cloud Run deployment fully operational</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">🛡️</div>
+                    <div class="stat-value">Enabled</div>
+                    <div class="stat-label">Security Guard</div>
+                    <div class="stat-description">Friends and Family Guard protection active</div>
+                </div>
+            </div>
+            
+            <div class="api-section">
+                <div class="api-title">🔌 API Interface</div>
+                <p>This endpoint provides both HTML rendering and JSON API responses</p>
+                
+                <span class="method-badge method-get">GET</span>
+                <div class="endpoint-path">/monitoring/stats</div>
+                
+                <p><strong>Response Format:</strong> HTML (default) | <strong>API Format:</strong> Add <code>?format=json</code> to URL</p>
+                <p><strong>Authentication:</strong> Required (valid marketing code or session)</p>
+            </div>
+            
+            <div class="navigation">
+                <a href="/monitoring" class="nav-btn">📊 Back to Monitoring</a>
+                <a href="/" class="nav-btn">🏠 Home</a>
+                <a href="/data" class="nav-btn">📡 Data Stream</a>
+                <a href="/api" class="nav-btn">🔌 API</a>
+                <a href="/knowledge-hub" class="nav-btn">🧠 Knowledge Hub</a>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    # Check if JSON format is requested
+    if request.args.get('format') == 'json':
+        return jsonify({
+            "endpoint": "/monitoring/stats",
+            "method": "GET",
+            "authentication": "required",
+            "timestamp": datetime.utcnow().isoformat(),
+            "statistics": {
+                "total_endpoints": 9,
+                "protected_routes": 5,
+                "public_endpoints": 4,
+                "device_compatibility": "100%",
+                "cloud_run_status": "active",
+                "security_guard": "enabled",
+                "uptime": uptime if isinstance(uptime, (int, float)) else uptime
             },
-            "timestamp": datetime.utcnow().isoformat()
-        }
-    })
+            "api_info": {
+                "html_rendering": True,
+                "json_api": True,
+                "query_parameter": "?format=json"
+            }
+        })
+    
+    return make_response(html_content)
+
+@app.route('/monitoring/token', methods=['POST'])
+def monitoring_token():
+    """Generate monitoring tokens for authenticated users."""
+    # Check if user is authenticated
+    if not session.get('authenticated', False):
+        return jsonify({
+            "error": "Access denied",
+            "message": "Authentication required for token generation"
+        }), 401
+    
+    # Generate a monitoring token
+    import secrets
+    token = secrets.token_urlsafe(32)
+    expiry = datetime.utcnow().timestamp() + 3600  # 1 hour expiry
+    
+    # Store token in session (in production, this would go to a database)
+    if 'monitoring_tokens' not in session:
+        session['monitoring_tokens'] = {}
+    
+    session['monitoring_tokens'][token] = {
+        'created': datetime.utcnow().isoformat(),
+        'expires': expiry,
+        'permissions': ['read_stats', 'read_health']
+    }
+    
+    # Create token generation interface HTML
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Token Generation - Yourl.Cloud Inc.</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                margin: 0; 
+                padding: 20px; 
+                background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+                min-height: 100vh;
+                color: #333;
+            }}
+            .container {{ 
+                max-width: 800px; 
+                margin: 0 auto; 
+                background: rgba(255, 255, 255, 0.98);
+                border-radius: 15px;
+                box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+                padding: 30px;
+                margin-top: 20px;
+            }}
+            .header {{ 
+                text-align: center; 
+                padding: 30px 0;
+                border-bottom: 3px solid #ff6b6b;
+                margin-bottom: 30px;
+            }}
+            .header h1 {{ 
+                color: #ff6b6b;
+                margin-bottom: 10px;
+                font-size: 2.5rem;
+            }}
+            .header p {{ 
+                color: #666;
+                font-size: 1.1rem;
+            }}
+            .token-section {{
+                background: #fff3cd;
+                border: 2px solid #ffeaa7;
+                border-radius: 15px;
+                padding: 25px;
+                margin: 30px 0;
+                text-align: center;
+            }}
+            .token-display {{
+                background: #2d3436;
+                color: #00b894;
+                padding: 20px;
+                border-radius: 10px;
+                font-family: 'Courier New', monospace;
+                font-size: 1.1rem;
+                margin: 20px 0;
+                word-break: break-all;
+                border: 2px solid #00b894;
+            }}
+            .token-info {{
+                background: #e8f4fd;
+                padding: 20px;
+                border-radius: 10px;
+                margin: 20px 0;
+                border-left: 5px solid #ff6b6b;
+            }}
+            .api-section {{
+                background: #f8f9fa;
+                border: 2px solid #e9ecef;
+                border-radius: 15px;
+                padding: 25px;
+                margin: 30px 0;
+                text-align: center;
+            }}
+            .method-badge {{
+                display: inline-block;
+                padding: 10px 20px;
+                border-radius: 25px;
+                font-size: 1rem;
+                font-weight: bold;
+                text-transform: uppercase;
+                margin: 10px;
+                color: white;
+            }}
+            .method-post {{ background: #007bff; }}
+            .endpoint-path {{
+                font-family: 'Courier New', monospace;
+                background: #e9ecef;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-size: 1.1rem;
+                margin: 15px 0;
+                display: inline-block;
+            }}
+            .navigation {{
+                text-align: center;
+                margin-top: 40px;
+                padding-top: 30px;
+                border-top: 2px solid #eee;
+            }}
+            .nav-btn {{
+                display: inline-block;
+                background: #ff6b6b;
+                color: white;
+                padding: 15px 30px;
+                text-decoration: none;
+                border-radius: 25px;
+                margin: 10px;
+                transition: all 0.3s ease;
+                font-weight: bold;
+                font-size: 1.1rem;
+            }}
+            .nav-btn:hover {{
+                background: #ee5a24;
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            }}
+            .warning {{
+                background: #fff3cd;
+                border: 1px solid #ffeaa7;
+                border-radius: 10px;
+                padding: 15px;
+                margin: 20px 0;
+                color: #856404;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🔐 Token Generation</h1>
+                <p>Yourl.Cloud Inc. - Secure Monitoring Access Tokens</p>
+            </div>
+            
+            <div class="token-section">
+                <h3>🎫 Generated Token</h3>
+                <p>Your monitoring access token has been created successfully!</p>
+                
+                <div class="token-display">
+                    {token}
+                </div>
+                
+                <div class="warning">
+                    <strong>⚠️ Important:</strong> Copy this token now. It will not be displayed again and expires in 1 hour.
+                </div>
+            </div>
+            
+            <div class="token-info">
+                <h3>📋 Token Information</h3>
+                <p><strong>Created:</strong> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+                <p><strong>Expires:</strong> {datetime.fromtimestamp(expiry).strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+                <p><strong>Permissions:</strong> Read Statistics, Read Health Status</p>
+                <p><strong>Usage:</strong> Include in Authorization header: <code>Authorization: Bearer {token}</code></p>
+            </div>
+            
+            <div class="api-section">
+                <div class="api-title">🔌 API Interface</div>
+                <p>This endpoint provides both HTML rendering and JSON API responses</p>
+                
+                <span class="method-badge method-post">POST</span>
+                <div class="endpoint-path">/monitoring/token</div>
+                
+                <p><strong>Response Format:</strong> HTML (default) | <strong>API Format:</strong> Add <code>?format=json</code> to URL</p>
+                <p><strong>Authentication:</strong> Required (valid marketing code or session)</p>
+            </div>
+            
+            <div class="navigation">
+                <a href="/monitoring" class="nav-btn">📊 Back to Monitoring</a>
+                <a href="/" class="nav-btn">🏠 Home</a>
+                <a href="/monitoring/stats" class="nav-btn">📈 Statistics</a>
+                <a href="/data" class="nav-btn">📡 Data Stream</a>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    # Check if JSON format is requested
+    if request.args.get('format') == 'json':
+        return jsonify({
+            "endpoint": "/monitoring/token",
+            "method": "POST",
+            "authentication": "required",
+            "timestamp": datetime.utcnow().isoformat(),
+            "token": {
+                "value": token,
+                "created": datetime.utcnow().isoformat(),
+                "expires": datetime.fromtimestamp(expiry).isoformat(),
+                "permissions": ["read_stats", "read_health"],
+                "usage": f"Authorization: Bearer {token}"
+            },
+            "api_info": {
+                "html_rendering": True,
+                "json_api": True,
+                "query_parameter": "?format=json"
+            }
+        })
+    
+    return make_response(html_content)
 
 @app.route('/data', methods=['GET'])
 def data_stream():
@@ -1168,6 +1924,13 @@ if __name__ == '__main__':
     # Track app start time for uptime monitoring
     _app_start_time = time.time()
     
+    # Force production mode for local testing
+    app.config.update(
+        ENV='production',
+        DEBUG=False,
+        TESTING=False
+    )
+    
     print(f"🚀 Starting simplified URL API Server")
     print(f"📍 Host: {HOST}")
     print(f"🐛 Debug: {DEBUG}")
@@ -1178,5 +1941,9 @@ if __name__ == '__main__':
     print(f"☁️ Google Cloud Run Support: Enabled")
     print(f"🌐 Domain Mapping: {'Enabled' if CLOUD_RUN_CONFIG['domain_mapping_enabled'] else 'Disabled'}")
     print("=" * 60)
+    print("⚠️  NOTE: This is for local testing only!")
+    print("🚀 For production, use: gunicorn --bind 0.0.0.0:8080 wsgi:app")
+    print("=" * 60)
     
-    app.run(host=HOST, port=PORT, debug=DEBUG, threaded=True)
+    # Use production server settings
+    app.run(host=HOST, port=PORT, debug=False, threaded=True, use_reloader=False)

@@ -49,6 +49,24 @@ if hasattr(app, 'config'):
 
 if __name__ == "__main__":
     # This allows running the WSGI file directly for testing
+    # In production, this should NOT be used - use gunicorn instead
     port = int(os.environ.get('PORT', 8080))
     print(f"🚀 Starting Flask app on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=False)
+    print("⚠️  NOTE: This is for local testing only!")
+    print("🚀 For production, use: gunicorn --bind 0.0.0.0:8080 wsgi:app")
+    
+    # Set production environment variables
+    os.environ['FLASK_ENV'] = 'production'
+    os.environ['FLASK_DEBUG'] = 'False'
+    
+    # Configure app for production
+    app.config.update(
+        PREFERRED_URL_SCHEME='https',
+        USE_X_SENDFILE=False,
+        SERVER_NAME=None,
+        TESTING=False,
+        DEBUG=False
+    )
+    
+    # Use production server settings
+    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
