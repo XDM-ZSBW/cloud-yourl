@@ -27,9 +27,23 @@ def test_production_wsgi():
     env['PORT'] = '8080'
     
     print("✅ Environment configured for production")
-    print(f"📍 Port: {env['PORT']}")
+    print(f"📍 Production Port: {env['PORT']}")
     print(f"🏭 Flask Environment: {env['FLASK_ENV']}")
     print(f"🐛 Debug Mode: {env['FLASK_DEBUG']}")
+    print()
+    
+    # Test dynamic port allocation for local development
+    print("🔍 Testing dynamic port allocation...")
+    import socket
+    def find_free_port():
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('', 0))
+            s.listen(1)
+            port = s.getsockname()[1]
+        return port
+    
+    local_port = find_free_port()
+    print(f"📍 Local Test Port: {local_port} (random available)")
     print()
     
     try:

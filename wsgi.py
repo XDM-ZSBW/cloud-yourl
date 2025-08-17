@@ -50,7 +50,22 @@ if hasattr(app, 'config'):
 if __name__ == "__main__":
     # This allows running the WSGI file directly for testing
     # In production, this should NOT be used - use gunicorn instead
-    port = int(os.environ.get('PORT', 8080))
+    
+    # For local testing, use a random available port
+    import socket
+    def find_free_port():
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('', 0))
+            s.listen(1)
+            port = s.getsockname()[1]
+        return port
+    
+    # Use random port for local testing, 8080 for production
+    if os.environ.get('FLASK_ENV') == 'production':
+        port = int(os.environ.get('PORT', 8080))
+    else:
+        port = find_free_port()
+    
     print(f"🚀 Starting Flask app on port {port}")
     print("⚠️  NOTE: This is for local testing only!")
     print("🚀 For production, use: gunicorn --bind 0.0.0.0:8080 wsgi:app")

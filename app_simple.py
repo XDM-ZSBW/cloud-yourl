@@ -1931,8 +1931,21 @@ if __name__ == '__main__':
         TESTING=False
     )
     
+    # For local testing, use a random available port
+    import socket
+    def find_free_port():
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('', 0))
+            s.listen(1)
+            port = s.getsockname()[1]
+        return port
+    
+    # Use random port for local testing, configured PORT for production
+    local_port = find_free_port()
+    
     print(f"🚀 Starting simplified URL API Server")
     print(f"📍 Host: {HOST}")
+    print(f"📍 Port: {local_port}")
     print(f"🐛 Debug: {DEBUG}")
     print(f"🏭 Production: {PRODUCTION}")
     print(f"🆔 Session: {FRIENDS_FAMILY_GUARD['session_id']}")
@@ -1945,5 +1958,5 @@ if __name__ == '__main__':
     print("🚀 For production, use: gunicorn --bind 0.0.0.0:8080 wsgi:app")
     print("=" * 60)
     
-    # Use production server settings
-    app.run(host=HOST, port=PORT, debug=False, threaded=True, use_reloader=False)
+    # Use production server settings with dynamic local port
+    app.run(host=HOST, port=local_port, debug=False, threaded=True, use_reloader=False)
