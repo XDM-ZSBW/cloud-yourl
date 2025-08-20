@@ -184,6 +184,163 @@
             font-size: 1.3rem;
         }
 
+        /* Previous Codes Section */
+        .previous-codes {
+            background: var(--bg-secondary);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out 0.3s both;
+        }
+
+        .previous-codes h2 {
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+            font-size: 1.3rem;
+            text-align: center;
+        }
+
+        .codes-subtitle {
+            text-align: center;
+            opacity: 0.8;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .codes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .code-item {
+            background: var(--bg-tertiary);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .code-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 215, 0, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .code-item:active {
+            transform: translateY(0);
+        }
+
+        .code-item .code-text {
+            display: block;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        .code-item .code-hint {
+            display: block;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            color: var(--text-secondary);
+        }
+
+        .codes-info {
+            text-align: center;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        .no-codes {
+            text-align: center;
+            padding: 2rem 1rem;
+            opacity: 0.8;
+        }
+
+        .no-codes p {
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .no-codes-hint {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            font-style: italic;
+        }
+
+        /* Recent Activity Section */
+        .recent-activity {
+            background: var(--bg-secondary);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .recent-activity h2 {
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            text-align: center;
+        }
+
+        .activity-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 0.9rem;
+            opacity: 0.8;
+            color: var(--text-secondary);
+        }
+
+        .no-activity {
+            text-align: center;
+            padding: 2rem 1rem;
+            opacity: 0.8;
+        }
+
+        .no-activity p {
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .no-activity-hint {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            font-style: italic;
+        }
+
         .code-display {
             font-family: 'Courier New', monospace;
             font-size: clamp(1.2rem, 3vw, 1.8rem);
@@ -359,6 +516,14 @@
             .main-panel {
                 padding: 1.5rem;
             }
+            
+            .codes-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .activity-stats {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
 
         @media (max-width: 480px) {
@@ -373,6 +538,42 @@
             .code-display {
                 font-size: 1.2rem;
                 padding: 1rem;
+            }
+            
+            .codes-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            
+            .code-item {
+                padding: 0.75rem;
+            }
+            
+            .code-item .code-text {
+                font-size: 1rem;
+            }
+            
+            .activity-stats {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            
+            .stat-item {
+                padding: 0.75rem;
+            }
+            
+            .stat-number {
+                font-size: 1.5rem;
+            }
+            
+            .no-codes,
+            .no-activity {
+                padding: 1rem 0.5rem;
+            }
+            
+            .no-codes p,
+            .no-activity p {
+                font-size: 0.9rem;
             }
         }
 
@@ -559,12 +760,67 @@
 
             <!-- Marketing Code Display -->
             <div class="marketing-code">
-                <h2>🎯 Your Marketing Code</h2>
-                <div class="code-display" id="codeText" onclick="copyCode()" role="button" tabindex="0" aria-label="Click to copy marketing code">
+                <h2>🎯 Current Build Code</h2>
+                <div class="code-display" id="codeText" onclick="copyCode()" role="button" tabindex="0" aria-label="Click to copy current build code">
                     {{ current_password or "Loading..." }}
                 </div>
                 <div class="copy-feedback" id="copyFeedback">✅ Copied to clipboard!</div>
                 <div class="code-hint">💡 Click the code above to copy it to your clipboard</div>
+            </div>
+
+            <!-- Previous Codes Section -->
+            <div class="previous-codes">
+                <h2>📚 Your Previous Codes</h2>
+                {% if visitor_data and visitor_data.successful_codes %}
+                    <p class="codes-subtitle">Codes you've successfully used before:</p>
+                    <div class="codes-grid">
+                        {% for code in visitor_data.successful_codes %}
+                        <div class="code-item" 
+                             onclick="fillCodeInput('{{ code }}')" 
+                             onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); fillCodeInput('{{ code }}'); }"
+                             role="button" 
+                             tabindex="0"
+                             aria-label="Click to fill input with code: {{ code }}">
+                            <span class="code-text">{{ code }}</span>
+                            <span class="code-hint">Click to fill</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="codes-info">
+                        <small>💡 Click any code above to automatically fill it in the input box</small>
+                    </div>
+                {% else %}
+                    <div class="no-codes">
+                        <p>🎯 No previous codes yet - this will be your first time!</p>
+                        <p class="no-codes-hint">Successfully use the current build code above to start building your history.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Recent Activity Section -->
+            <div class="recent-activity">
+                <h2>📊 Your Activity</h2>
+                {% if visitor_data and visitor_data.total_attempts > 0 %}
+                    <div class="activity-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">{{ visitor_data.total_visits }}</span>
+                            <span class="stat-label">Total Visits</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">{{ visitor_data.total_successful_attempts or 0 }}</span>
+                            <span class="stat-label">Successful Logins</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">{{ visitor_data.total_attempts or 0 }}</span>
+                            <span class="stat-label">Total Attempts</span>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="no-activity">
+                        <p>🌟 Welcome! This is your first visit to Yourl.Cloud</p>
+                        <p class="no-activity-hint">Use the current build code above to start your journey!</p>
+                    </div>
+                {% endif %}
             </div>
 
             <!-- Visitor Information -->
@@ -997,6 +1253,27 @@
             window.closeEasterEgg = function() {
                 if (window.app) {
                     window.app.closeEasterEgg();
+                }
+            };
+
+            // Function to fill the input field with a selected code
+            window.fillCodeInput = function(code) {
+                const passwordInput = document.querySelector('input[name="password"]');
+                if (passwordInput) {
+                    passwordInput.value = code;
+                    passwordInput.focus();
+                    
+                    // Show feedback
+                    utils.showToast(`Code "${code}" filled in!`, 'success');
+                    
+                    // Highlight the input briefly
+                    passwordInput.style.borderColor = 'var(--accent-color)';
+                    passwordInput.style.boxShadow = '0 0 0 3px rgba(255, 215, 0, 0.3)';
+                    
+                    setTimeout(() => {
+                        passwordInput.style.borderColor = '';
+                        passwordInput.style.boxShadow = '';
+                    }, 2000);
                 }
             };
 

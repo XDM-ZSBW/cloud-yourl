@@ -1,0 +1,137 @@
+apiVersion: cloudcode.dev/v1
+kind: DevEnvironment
+metadata:
+  name: yourl-cloud-dev
+  description: "Yourl.Cloud Development Environment with Wiki Visualization"
+spec:
+  services:
+    - name: yourl-cloud
+      source: .
+      port: 8080
+      env:
+        - name: FLASK_ENV
+          value: "development"
+        - name: FLASK_DEBUG
+          value: "true"
+        - name: GOOGLE_CLOUD_PROJECT
+          value: "yourl-cloud"
+        - name: LOG_LEVEL
+          value: "DEBUG"
+        - name: PORT
+          value: "8080"
+      build:
+        dockerfile: Dockerfile
+        context: .
+        args:
+          - name: BUILD_ENV
+            value: "development"
+      run:
+        command: ["python", "app_simple.py"]
+        args: []
+        resources:
+          limits:
+            cpu: "1000m"
+            memory: "2Gi"
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+      testing:
+        unit:
+          command: ["python", "-m", "pytest", "tests/unit/"]
+          coverage: 80
+        integration:
+          command: ["python", "-m", "pytest", "tests/integration/"]
+        security:
+          command: ["bandit", "-r", "."]
+          severity: "HIGH"
+      monitoring:
+        logs: true
+        metrics: true
+        health: true
+      secrets:
+        - name: database-url
+          valueFrom:
+            secretKeyRef:
+              name: yourl-cloud-db
+              key: connection-string
+        - name: api-key
+          valueFrom:
+            secretKeyRef:
+              name: yourl-cloud-api
+              key: api-key
+  databases:
+    - name: postgresql-dev
+      type: postgresql
+      version: "13"
+      env:
+        - name: POSTGRES_DB
+          value: "yourl_cloud_dev"
+        - name: POSTGRES_USER
+          value: "dev_user"
+        - name: POSTGRES_PASSWORD
+          value: "dev_password"
+  storage:
+    - name: local-storage
+      type: local
+      mountPath: "/app/data"
+  networking:
+    portForwarding: true
+    loadBalancer: false
+    ingress: false
+  security:
+    scanning:
+      - type: "vulnerability"
+        severity: "HIGH"
+      - type: "secrets"
+        enabled: true
+      - type: "compliance"
+        standards: ["OWASP", "NIST"]
+    policies:
+      - name: "no-root-user"
+        type: "container-security"
+        rule: "no-root-user"
+      - name: "no-privileged"
+        type: "container-security"
+        rule: "no-privileged"
+  performance:
+    autoscaling:
+      minReplicas: 1
+      maxReplicas: 5
+      targetCPUUtilization: 70
+    resourceOptimization:
+      enabled: true
+      cpuOptimization: true
+      memoryOptimization: true
+  deployment:
+    strategy: "rolling"
+    healthCheck:
+      path: "/health"
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    rollback:
+      enabled: true
+      maxRevisions: 5
+  observability:
+    logging:
+      level: "DEBUG"
+      format: "json"
+      destination: "cloud-logging"
+    metrics:
+      enabled: true
+      customMetrics: true
+      prometheus: true
+    tracing:
+      enabled: true
+      sampling: 0.1
+      backend: "cloud-trace"
+  development:
+    hotReload: true
+    debugMode: true
+    breakpoints: true
+    variableInspection: true
+    stackTrace: true
+    gitIntegration: true
+    branchAware: true
+    commitHooks: true

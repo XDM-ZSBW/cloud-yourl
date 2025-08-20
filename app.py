@@ -608,6 +608,47 @@ def main_endpoint():
         # Get visitor information
         visitor_data = get_visitor_data()
         
+        # Enhance visitor data with access history if available
+        database_connection = os.environ.get('DATABASE_CONNECTION_STRING')
+        if visitor_data.get('visitor_id') and database_connection:
+            try:
+                from scripts.database_client import DatabaseClient
+                db_client = DatabaseClient(database_connection)
+                
+                # Try to get visitor access history
+                try:
+                    access_history = db_client.get_visitor_access_history(visitor_data['visitor_id'], limit=10)
+                    
+                    # Get unique successful codes from history
+                    successful_codes = list(set([h['access_code'] for h in access_history if h.get('success')]))
+                    recent_codes = [h['access_code'] for h in access_history[:5]]  # Last 5 attempts
+                    
+                    visitor_data.update({
+                        'access_history': access_history,
+                        'successful_codes': successful_codes,
+                        'recent_codes': recent_codes,
+                        'total_successful_attempts': len(successful_codes),
+                        'total_attempts': len(access_history)
+                    })
+                except AttributeError:
+                    # Method doesn't exist, use fallback
+                    visitor_data.update({
+                        'access_history': [],
+                        'successful_codes': [],
+                        'recent_codes': [],
+                        'total_successful_attempts': 0,
+                        'total_attempts': 0
+                    })
+            except Exception as e:
+                print(f"⚠️ Error getting visitor access history: {e}")
+                visitor_data.update({
+                    'access_history': [],
+                    'successful_codes': [],
+                    'recent_codes': [],
+                    'total_successful_attempts': 0,
+                    'total_attempts': 0
+                })
+        
         # Create response with no-cache headers to ensure fresh content
         if os.path.exists('templates/index.html'):
             response = make_response(render_template('index.html', 
@@ -1144,83 +1185,147 @@ def guard_status():
 @app.route('/data', methods=['GET'])
 def data_stream():
     """
-    Enhanced data stream endpoint providing vertical linear datastream with horizontally scrollable wiki stories.
-    Each frame represents a story interpretation of the vertical scroll area with mind map navigation.
-    Only accessible to authenticated users who have previously used a valid code.
+    Wiki Visualization Dashboard - Interactive exploration of Yourl.Cloud's purpose and architecture.
+    This endpoint provides a comprehensive visualization of the project's wiki content,
+    helping users understand the project's purpose through an interactive datastream interface.
     """
     # Get visitor data for personalization
     visitor_data = get_visitor_data()
     
-    # Check if visitor has authenticated (used a valid code previously)
-    if not visitor_data.get('has_used_code', False):
-        return make_response(f"""
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Access Denied - Data Stream</title>
-            <style>
-                body {{ 
-                    font-family: 'Courier New', monospace;
-                    background: #000;
-                    color: #ff0000;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    min-height: 100vh;
-                    margin: 0;
-                }}
-                .access-denied {{
-                    text-align: center;
-                    padding: 40px;
-                    border: 2px solid #ff0000;
-                    border-radius: 10px;
-                    background: rgba(255, 0, 0, 0.1);
-                }}
-                .error-code {{
-                    font-size: 3rem;
-                    margin-bottom: 20px;
-                    text-shadow: 0 0 20px #ff0000;
-                }}
-                .message {{
-                    font-size: 1.2rem;
-                    margin-bottom: 30px;
-                }}
-                .nav-btn {{
-                    display: inline-block;
-                    padding: 10px 20px;
-                    background: #ff0000;
-                    color: #000;
-                    text-decoration: none;
-                    border-radius: 5px;
-                    font-weight: bold;
-                    margin: 10px;
-                }}
-                .nav-btn:hover {{
-                    background: #cc0000;
-                    color: #fff;
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="access-denied">
-                <div class="error-code">🔒 ACCESS DENIED</div>
-                <div class="message">
-                    <p><strong>Data Stream Access Restricted</strong></p>
-                    <p>This endpoint is only accessible to authenticated users.</p>
-                    <p>You must first use a valid marketing code on the landing page.</p>
-                    <p>Visitor ID: {visitor_data.get('visitor_id', 'Unknown')}</p>
-                    <p>Authentication Status: Not Authenticated</p>
-                </div>
-                <div>
-                    <a href="/" class="nav-btn">🏠 Return to Landing Page</a>
-                    <a href="/status" class="nav-btn">📊 Service Status</a>
-                </div>
-            </div>
-        </body>
-        </html>
-        """, 403)
+    # Create comprehensive wiki sections that represent the project's purpose
+    wiki_sections = [
+        {
+            "id": "1",
+            "title": "Project Overview",
+            "description": "Core mission and vision of Yourl.Cloud",
+            "content": "Yourl.Cloud is a production-ready Python Flask API designed for trust-based AI systems. The platform provides advanced features including Cloud Run domain mapping compatibility, Friends and Family Guard security rulesets, visual inspection capabilities, and production WSGI server support.",
+            "category": "overview",
+            "status": "featured",
+            "lastUpdate": datetime.now() - timedelta(minutes=5),
+            "links": ["Architecture Overview", "Security Features", "Technology Stack"]
+        },
+        {
+            "id": "2",
+            "title": "Architecture Overview",
+            "description": "Complete system architecture and design",
+            "content": "The system is built with Python Flask 3.0.2, WSGI servers (Gunicorn/Waitress), Google Cloud Run deployment, and comprehensive security layers including authentication, authorization, encryption, and audit trails.",
+            "category": "architecture",
+            "status": "active",
+            "lastUpdate": datetime.now() - timedelta(minutes=3),
+            "links": ["Technology Stack", "Security Architecture", "Deployment Guide"]
+        },
+        {
+            "id": "3",
+            "title": "Security Features",
+            "description": "Friends and Family Guard security ruleset",
+            "content": "Implements comprehensive security with device-based access control, multi-factor authentication, role-based authorization, complete audit logging, and compliance with GDPR, SOC 2, and ISO 27001 standards.",
+            "category": "security",
+            "status": "active",
+            "lastUpdate": datetime.now() - timedelta(minutes=2),
+            "links": ["Security Checklist", "Access Control", "Audit & Compliance"]
+        },
+        {
+            "id": "4",
+            "title": "Development Workflow",
+            "description": "Development process and best practices",
+            "content": "Comprehensive development workflow including local development setup, testing procedures, code standards, CI/CD pipeline, and deployment processes with automated testing and security scanning.",
+            "category": "development",
+            "status": "active",
+            "lastUpdate": datetime.now() - timedelta(minutes=4),
+            "links": ["Technology Stack", "Deployment Guide", "Testing Procedures"]
+        },
+        {
+            "id": "5",
+            "title": "Cloud Run Deployment",
+            "description": "Production deployment on Google Cloud",
+            "content": "Full Cloud Run compatibility with automatic scaling, domain mapping, load balancing, health monitoring, and disaster recovery with 99.9% uptime target and cross-region failover capabilities.",
+            "category": "deployment",
+            "status": "active",
+            "lastUpdate": datetime.now() - timedelta(minutes=1),
+            "links": ["Architecture Overview", "Infrastructure Setup", "Performance Metrics"]
+        },
+        {
+            "id": "6",
+            "title": "Knowledge Hub",
+            "description": "Central documentation and learning center",
+            "content": "Comprehensive knowledge transfer hub serving as the central navigation point for all aspects of the solution, including interactive features, search capabilities, and continuous improvement processes.",
+            "category": "overview",
+            "status": "featured",
+            "lastUpdate": datetime.now() - timedelta(minutes=6),
+            "links": ["Wiki System", "Documentation", "Learning Paths"]
+        },
+        {
+            "id": "7",
+            "title": "Technology Stack",
+            "description": "Complete technology overview and resources",
+            "content": "Modern technology stack including Python 3.11+, Flask 3.0.2, Google Cloud Platform, PostgreSQL, Docker, and comprehensive monitoring and analytics tools.",
+            "category": "architecture",
+            "status": "active",
+            "lastUpdate": datetime.now() - timedelta(minutes=8),
+            "links": ["Architecture Overview", "Development Guide", "External Resources"]
+        },
+        {
+            "id": "8",
+            "title": "API Endpoints",
+            "description": "Available API endpoints and usage",
+            "content": "Core endpoints including landing page, authentication, data stream interface, health checks, status monitoring, and device-specific responses with security compliance.",
+            "category": "development",
+            "status": "active",
+            "lastUpdate": datetime.now() - timedelta(minutes=10),
+            "links": ["API Documentation", "Authentication", "Security Features"]
+        },
+        {
+            "id": "9",
+            "title": "Performance Metrics",
+            "description": "System performance and optimization",
+            "content": "Performance targets including <200ms response time, 99.9% uptime, 1000+ requests/second throughput, and comprehensive monitoring with real-time alerts and historical trends.",
+            "category": "architecture",
+            "status": "active",
+            "lastUpdate": datetime.now() - timedelta(minutes=12),
+            "links": ["Monitoring Guide", "Performance Tuning", "Scaling Strategy"]
+        },
+        {
+            "id": "10",
+            "title": "Data Architecture",
+            "description": "Database design and storage strategy",
+            "content": "Robust data architecture with Google Cloud SQL, automated backups, cross-region replication, audit trails, and comprehensive data protection with encryption and compliance.",
+            "category": "architecture",
+            "status": "active",
+            "lastUpdate": datetime.now() - timedelta(minutes=15),
+            "links": ["Database Management", "Backup Strategy", "Data Protection"]
+        },
+        {
+            "id": "11",
+            "title": "Monitoring & Alerting",
+            "description": "System monitoring and health checks",
+            "content": "Comprehensive monitoring including infrastructure metrics, application performance, business analytics, security monitoring, and automated alerting with PagerDump integration.",
+            "category": "deployment",
+            "status": "active",
+            "lastUpdate": datetime.now() - timedelta(minutes=18),
+            "links": ["Health Checks", "Performance Metrics", "Alerting System"]
+        },
+        {
+            "id": "12",
+            "title": "Future Roadmap",
+            "description": "Planned features and enhancements",
+            "content": "Future enhancements including microservices architecture, event-driven systems, AI/ML integration, blockchain identity, Kubernetes orchestration, and advanced collaboration tools.",
+            "category": "overview",
+            "status": "planned",
+            "lastUpdate": datetime.now() - timedelta(minutes=20),
+            "links": ["Architecture Evolution", "Technology Roadmap", "Innovation Strategy"]
+        }
+    ]
+    
+    def get_category_icon(category):
+        """Helper function to get category icons"""
+        icons = {
+            'overview': '🎯',
+            'architecture': '🏗️',
+            'security': '🔐',
+            'development': '🚀',
+            'deployment': '🌐'
+        }
+        return icons.get(category, '📚')
     
     # Generate dynamic story frames based on current time and visitor data
     import time
@@ -1338,13 +1443,7 @@ def data_stream():
         "mind_map_nodes": ["build", "testing", "validation", "quality"]
     })
     
-    # Create the enhanced HTML response with vertical datastream and mind map
-    # Generate mind map nodes HTML
-    mind_map_nodes_html = ""
-    for frame in story_frames:
-        for node in frame.get('mind_map_nodes', []):
-            node_display = node.replace("_", " ").title()
-            mind_map_nodes_html += f'<div class="mind-map-node" onclick="filterByNode(\'{node}\')">{node_display}</div>'
+    # Create the HTML response with wiki visualization
     
     html_content = f"""
     <!DOCTYPE html>
@@ -1684,9 +1783,9 @@ def data_stream():
         
         <script>
             // Update scroll position indicator
-            window.addEventListener('scroll', function() {
+            window.addEventListener('scroll', function() {{
                 document.getElementById('scrollPos').textContent = Math.round(window.scrollY);
-            });
+            }});
             
             // Add hover effects to frames
             document.querySelectorAll('.frame').forEach(frame => {

@@ -1,2830 +1,1095 @@
 #!/usr/bin/env python3
 """
-Simple API Server with Visual Inspection and Google Cloud Run Support
-===================================================================
+Simple Flask API Server with Wiki Visualization Dashboard
+========================================================
 
-A simplified Flask application for container deployment.
-Enhanced for Google Cloud Run deployment with basic functionality.
+A clean, working Flask application that provides a wiki visualization
+dashboard for Yourl.Cloud's purpose and architecture.
 
 Author: Yourl.Cloud Inc.
-Session: f1d78acb-de07-46e0-bfa7-f5b75e3c0c49
-Google Cloud Run: Supported
-WSGI Server: Production Ready
-Domain Mapping: Compatible
 """
 
-from flask import Flask, request, jsonify, render_template_string, make_response, session, render_template
+from flask import Flask, request, jsonify, make_response
+from datetime import datetime, timedelta
 import os
-import logging
-import platform
-import random
-import hashlib
-from datetime import datetime
-import time
-
-# Configure logging for production cloud environments
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# Set a secret key for Flask sessions (required for session management)
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'yourl-cloud-secret-key-2024')
-
-# Configuration - Google Cloud Run compatible with domain mapping support
-HOST = '0.0.0.0'  # Listen on all interfaces (required for Cloud Run)
+# Configuration
+HOST = '0.0.0.0'
 PORT = int(os.environ.get('PORT', 8080))
 
-DEBUG = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
-PRODUCTION = True  # Always production for all deployments
-
-# Cloud Run Domain Mapping Configuration
-CLOUD_RUN_CONFIG = {
-    "domain_mapping_enabled": True,
-    "region": "us-west1",
-    "trust_proxy": True,
-    "cors_enabled": True,
-    "health_check_path": "/health",
-    "readiness_check_path": "/health"
-}
-
-# Global password cache to ensure consistency
-_current_password = None
-_next_password = None
-
-# App start time for uptime monitoring
-_app_start_time = None
-
-def generate_simple_password():
-    """Generate a simple password for testing - cached for consistency"""
-    global _current_password
+@app.route('/')
+def home():
+    """Landing page with marketing code input and current build code display"""
     
-    if _current_password is not None:
-        return _current_password
+    # Generate a simple token code for demonstration
+    import hashlib
+    import time
+    import random
     
-    words = ["CLOUD", "FUTURE", "INNOVATE", "DREAM", "BUILD", "CREATE"]
-    symbols = ["!", "@", "#", "$", "%", "&"]
-    
-    # Use environment variable or generate from timestamp
-    fallback_id = os.environ.get('BUILD_ID', str(int(datetime.now().timestamp())))
-    hash_num = int(hashlib.md5(fallback_id.encode()).hexdigest()[:8], 16)
-    
-    random.seed(hash_num)
-    word = random.choice(words)
-    symbol = random.choice(symbols)
-    number = random.randint(10, 999)
-    
-    _current_password = f"{word}{number}{symbol}"
-    return _current_password
-
-def generate_next_password():
-    """Generate the next password for authenticated users"""
-    global _next_password
-    
-    if _next_password is not None:
-        return _next_password
-    
-    words = ["ROCKET", "STAR", "MOON", "SUN", "OCEAN", "MOUNTAIN"]
-    symbols = ["!", "@", "#", "$", "%", "&"]
-    
-    # Use a different seed for next password
-    fallback_id = os.environ.get('BUILD_ID', str(int(datetime.now().timestamp()))) + "_next"
-    hash_num = int(hashlib.md5(fallback_id.encode()).hexdigest()[:8], 16)
-    
-    random.seed(hash_num)
-    word = random.choice(words)
-    symbol = random.choice(symbols)
-    number = random.randint(10, 999)
-    
-    _next_password = f"{word}{number}{symbol}"
-    return _next_password
-
-# Friends and Family Guard Ruleset
-FRIENDS_FAMILY_GUARD = {
-    "enabled": True,
-    "visual_inspection": {
-        "pc_allowed": True,
-        "phone_allowed": True,
-        "watch_blocked": True,
-        "tablet_allowed": True
-    },
-    "session_id": "f1d78acb-de07-46e0-bfa7-f5b75e3c0c49",
-    "organization": "Yourl.Cloud Inc."
-}
-
-# Demo configuration for rapid prototyping
-DEMO_CONFIG = {
-    "password": generate_simple_password(),
-    "connections": [
-        {
-            "id": 1,
-            "name": "GitHub Repository",
-            "url": "https://github.com/XDM-ZSBW/yourl.cloud",
-            "description": "Source code and documentation"
-        },
-        {
-            "id": 2,
-            "name": "Google Cloud Run",
-            "url": "https://cloud.google.com/run",
-            "description": "Deploy and scale applications"
-        },
-        {
-            "id": 3,
-            "name": "Flask Framework",
-            "url": "https://flask.palletsprojects.com/",
-            "description": "Python web framework"
-        },
-        {
-            "id": 4,
-            "name": "Perplexity AI",
-            "url": "https://perplexity.ai",
-            "description": "AI-powered search and assistance"
-        },
-        {
-            "id": 5,
-            "name": "Cursor IDE",
-            "url": "https://cursor.sh",
-            "description": "AI-powered code editor"
-        }
+    # Simple, friendly words for token codes
+    friendly_words = [
+        "CLOUD", "DREAM", "BUILD", "CREATE", "LAUNCH", "SPARK", "SHINE", "RISE", 
+        "POWER", "MAGIC", "WONDER", "ROCKET", "STAR", "OCEAN", "MOUNTAIN", "FOREST",
+        "FRIEND", "FAMILY", "TEAM", "SQUAD", "CREW", "TRIBE", "CLAN", "SQUAD"
     ]
-}
-
-# Configure Flask for Cloud Run domain mapping compatibility
-app.config.update(
-    PREFERRED_URL_SCHEME='https',
-    USE_X_SENDFILE=False,
-    SERVER_NAME=None,
-    TESTING=False,
-    DEBUG=False,
-    ENV='production'
-)
-
-def get_client_ip():
-    """Get the real client IP address, handling Cloud Run's X-Forwarded headers."""
-    x_forwarded_for = request.headers.get('X-Forwarded-For')
-    if x_forwarded_for:
-        return x_forwarded_for.split(',')[0].strip()
-    return request.remote_addr
-
-def get_original_host():
-    """Get the original host from X-Forwarded-Host header."""
-    return request.headers.get('X-Forwarded-Host', request.host)
-
-def get_original_protocol():
-    """Get the original protocol from X-Forwarded-Proto header."""
-    return request.headers.get('X-Forwarded-Proto', 'https')
-
-def detect_device_type(user_agent):
-    """Detect device type based on User-Agent string."""
-    ua_lower = user_agent.lower()
     
-    if any(keyword in ua_lower for keyword in ['watch', 'wearable', 'smartwatch']):
-        return 'watch'
-    if any(keyword in ua_lower for keyword in ['mobile', 'android', 'iphone', 'phone']):
-        return 'phone'
-    if any(keyword in ua_lower for keyword in ['tablet', 'ipad']):
-        return 'tablet'
-    return 'pc'
+    # Special characters
+    special_chars = ["!", "@", "#", "$", "%", "&", "*", "+", "=", "?", "~", "^"]
+    
+    # Generate deterministic but friendly token code
+    current_time = int(time.time() // 3600)  # Change every hour
+    random.seed(current_time)  # Use time as seed for consistency
+    
+    word = random.choice(friendly_words)
+    number = random.randint(10, 99)  # Two digit number
+    special = random.choice(special_chars)
+    
+    token_code = f"{word}{number}{special}"
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Yourl.Cloud - AI-Friendly Service Hub</title>
+        <style>
+            :root {{
+                --primary-color: #667eea;
+                --secondary-color: #764ba2;
+                --accent-color: #ffd700;
+                --text-primary: #333;
+                --text-secondary: #666;
+                --bg-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+                --bg-secondary: rgba(255, 255, 255, 0.95);
+                --bg-tertiary: rgba(255, 255, 255, 0.9);
+                --border-radius: 20px;
+                --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }}
+            
+            * {{
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }}
+            
+            body {{ 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                background: var(--bg-primary);
+                color: var(--text-primary);
+                min-height: 100vh;
+                line-height: 1.6;
+            }}
+            
+            .container {{
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 2rem;
+            }}
+            
+            .header {{
+                text-align: center;
+                margin-bottom: 3rem;
+                animation: fadeInUp 0.8s ease-out;
+            }}
+            
+            .header h1 {{
+                font-size: clamp(2rem, 5vw, 3.5rem);
+                margin-bottom: 0.5rem;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+                background: linear-gradient(45deg, var(--accent-color), var(--primary-color));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }}
+            
+            .header p {{
+                font-size: clamp(1rem, 2.5vw, 1.3rem);
+                opacity: 0.9;
+                max-width: 600px;
+                margin: 0 auto;
+            }}
+            
+            .main-panel {{
+                background: var(--bg-secondary);
+                border-radius: var(--border-radius);
+                backdrop-filter: blur(10px);
+                box-shadow: var(--shadow);
+                padding: 2rem;
+                margin-bottom: 2rem;
+                animation: fadeInUp 0.8s ease-out 0.2s both;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }}
+            
+            .input-section {{
+                margin-bottom: 2rem;
+            }}
+            
+            .input-section h2 {{
+                margin-bottom: 1rem;
+                color: var(--primary-color);
+                font-size: 1.5rem;
+                text-align: center;
+            }}
+            
+            .input-group {{
+                display: flex;
+                gap: 1rem;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+            }}
+            
+            .input-group input {{
+                flex: 1;
+                min-width: 250px;
+                padding: 1rem;
+                border: 2px solid #ddd;
+                border-radius: 10px;
+                background: white;
+                color: var(--text-primary);
+                font-size: 1rem;
+                transition: var(--transition);
+                font-family: 'Courier New', monospace;
+                letter-spacing: 1px;
+                text-align: center;
+            }}
+            
+            .input-group input:focus {{
+                outline: none;
+                border-color: var(--accent-color);
+                box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
+            }}
+            
+            .input-group input:not(:placeholder-shown) {{
+                border-color: var(--primary-color);
+                background: rgba(255, 255, 255, 0.98);
+            }}
+            
+            .input-hint {{
+                text-align: center;
+                margin-top: 0.5rem;
+                opacity: 0.8;
+            }}
+            
+            .input-hint small {{
+                font-size: 0.9rem;
+                color: var(--text-secondary);
+            }}
+            
+            .submit-btn {{
+                background: var(--primary-color);
+                border: none;
+                color: white;
+                padding: 1rem 2rem;
+                border-radius: 10px;
+                cursor: pointer;
+                font-size: 1.1rem;
+                transition: var(--transition);
+                white-space: nowrap;
+            }}
+            
+            .submit-btn:hover {{
+                background: var(--secondary-color);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            }}
+            
+            .token-code-display {{
+                background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(236, 240, 241, 0.9) 100%);
+                border-radius: 15px;
+                padding: 1.5rem;
+                margin-bottom: 2rem;
+                text-align: center;
+                border: 2px solid #3498db;
+                box-shadow: 0 8px 25px rgba(52, 152, 219, 0.15);
+                backdrop-filter: blur(10px);
+            }}
+            
+            .token-code-display h2 {{
+                color: #2c3e50;
+                margin-bottom: 1rem;
+                font-size: 1.3rem;
+                font-weight: 600;
+            }}
+            
+            .code-display {{
+                font-family: 'Courier New', monospace;
+                font-size: clamp(1.2rem, 3vw, 1.8rem);
+                font-weight: bold;
+                color: #2c3e50;
+                background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+                padding: 1.5rem;
+                border-radius: 12px;
+                margin: 1rem 0;
+                cursor: pointer;
+                border: 3px solid #3498db;
+                transition: var(--transition);
+                text-align: center;
+                letter-spacing: 2px;
+                box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+                position: relative;
+                overflow: hidden;
+            }}
+            
+            .code-display:hover {{
+                background: linear-gradient(135deg, #d5dbdb 0%, #a4a4a4 100%);
+                border-color: #2980b9;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+            }}
+            
+            .code-display:active {{
+                transform: translateY(0);
+                box-shadow: 0 2px 10px rgba(52, 152, 219, 0.3);
+            }}
+            
+            .copy-feedback {{
+                display: none;
+                color: #27ae60;
+                font-weight: bold;
+                margin-top: 0.5rem;
+                animation: fadeIn 0.3s ease-in;
+                background: rgba(39, 174, 96, 0.1);
+                padding: 0.5rem 1rem;
+                border-radius: 8px;
+                border: 1px solid rgba(39, 174, 96, 0.3);
+            }}
+            
+            .code-hint {{
+                font-style: italic;
+                opacity: 0.9;
+                font-size: 0.9rem;
+                margin-top: 0.5rem;
+                color: #34495e;
+                background: rgba(52, 73, 94, 0.05);
+                padding: 0.5rem;
+                border-radius: 6px;
+                border-left: 3px solid #3498db;
+            }}
+            
+            .previous-codes {{
+                background: var(--bg-tertiary);
+                border-radius: 15px;
+                padding: 1.5rem;
+                margin-bottom: 2rem;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                animation: fadeInUp 0.8s ease-out 0.3s both;
+            }}
+            
+            .previous-codes h2 {{
+                color: var(--primary-color);
+                margin-bottom: 0.5rem;
+                font-size: 1.3rem;
+                text-align: center;
+            }}
+            
+            .no-codes {{
+                text-align: center;
+                padding: 2rem 1rem;
+                opacity: 0.8;
+            }}
+            
+            .no-codes p {{
+                margin-bottom: 0.5rem;
+                font-size: 1rem;
+            }}
+            
+            .no-codes-hint {{
+                font-size: 0.9rem;
+                opacity: 0.7;
+                font-style: italic;
+            }}
+            
+            .nav-links {{
+                margin-top: 2rem;
+                text-align: center;
+            }}
+            
+            .nav-links a {{
+                display: inline-block;
+                margin: 10px;
+                padding: 10px 20px;
+                background: var(--bg-tertiary);
+                color: var(--primary-color);
+                text-decoration: none;
+                border-radius: 8px;
+                transition: var(--transition);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }}
+            
+            .nav-links a:hover {{
+                background: rgba(255, 255, 255, 0.3);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            }}
+            
+            @keyframes fadeInUp {{
+                from {{
+                    opacity: 0;
+                    transform: translateY(30px);
+                }}
+                to {{
+                    opacity: 1;
+                    transform: translateY(0);
+                }}
+            }}
+            
 
-def is_visual_inspection_allowed(device_type):
-    """Check if visual inspection is allowed for the given device type."""
-    if not FRIENDS_FAMILY_GUARD["enabled"]:
-        return True
-    return FRIENDS_FAMILY_GUARD["visual_inspection"].get(f"{device_type}_allowed", False)
+            
+            @keyframes fadeIn {{
+                from {{ opacity: 0; }}
+                to {{ opacity: 1; }}
+            }}
+            
+            @media (max-width: 768px) {{
+                .container {{
+                    padding: 1rem;
+                }}
+                
+                .input-group {{
+                    flex-direction: column;
+                }}
+                
+                .input-group input {{
+                    min-width: auto;
+                }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <!-- Header Section -->
+            <header class="header">
+                <h1>Yourl.Cloud</h1>
+                <p>AI-Friendly Service Hub - Professional cloud solutions and AI services</p>
+            </header>
 
-@app.route('/', methods=['GET', 'POST'])
-def main_endpoint():
-    """Main endpoint that handles both GET (landing page) and POST (authentication)."""
-    if request.method == 'GET':
-        current_password = generate_simple_password()
-        
-        # Rich landing page content
-        html_content = f"""
+            <!-- Main Authentication Panel -->
+            <main class="main-panel">
+                <div class="input-section">
+                    <h2>🔐 Access Your Services</h2>
+                    <form method="POST" action="/">
+                        <div class="input-group">
+                            <input 
+                                type="text" 
+                                name="password" 
+                                placeholder="Enter your token code" 
+                                required
+                                aria-label="Token code"
+                                autocomplete="off"
+                            >
+                            <button type="submit" class="submit-btn">
+                                🚀 Launch
+                            </button>
+                        </div>
+                        <div class="input-hint">
+                            <small>💡 Token codes look like: WORD + two digits + special character (e.g., CLOUD42!, DREAM15@)</small>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Token Code Display -->
+                <div class="token-code-display">
+                    <h2>🎯 Current Token Code</h2>
+                    <div class="code-display" id="codeText" onclick="copyTokenCode()" role="button" tabindex="0" aria-label="Click to copy current token code">
+                        {token_code}
+                    </div>
+                    <div class="copy-feedback" id="copyFeedback">✅ Token code copied to clipboard!</div>
+                    <div class="code-hint">💡 Click the token code above to copy it to your clipboard</div>
+                </div>
+
+                <!-- Previous Codes Section -->
+                <div class="previous-codes">
+                                    <h2>📚 Your Previous Token Codes</h2>
+                <div class="no-codes">
+                    <p>🎯 No previous token codes yet - this will be your first time!</p>
+                    <p class="no-codes-hint">Successfully use the current token code above to start building your history.</p>
+                </div>
+                </div>
+            </main>
+
+            <div class="nav-links">
+                <a href="/data">📊 Data Dashboard</a>
+                <a href="/status">📈 Status</a>
+                <a href="/health">❤️ Health</a>
+            </div>
+        </div>
+
+        <script>
+            // Copy token code functionality
+            function copyTokenCode() {{
+                const codeText = document.getElementById('codeText');
+                const copyFeedback = document.getElementById('copyFeedback');
+                
+                if (navigator.clipboard && window.isSecureContext) {{
+                    // Use modern clipboard API
+                    navigator.clipboard.writeText(codeText.textContent.trim()).then(() => {{
+                        showCopyFeedback();
+                    }}).catch(err => {{
+                        console.error('Failed to copy: ', err);
+                        fallbackCopy();
+                    }});
+                }} else {{
+                    // Fallback for older browsers
+                    fallbackCopy();
+                }}
+            }}
+            
+            function fallbackCopy() {{
+                const codeText = document.getElementById('codeText');
+                const textArea = document.createElement('textarea');
+                textArea.value = codeText.textContent.trim();
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                try {{
+                    const successful = document.execCommand('copy');
+                    if (successful) {{
+                        showCopyFeedback();
+                    }}
+                }} catch (err) {{
+                    console.error('Fallback copy failed: ', err);
+                }}
+                
+                document.body.removeChild(textArea);
+            }}
+            
+            function showCopyFeedback() {{
+                const copyFeedback = document.getElementById('copyFeedback');
+                copyFeedback.style.display = 'block';
+                
+                setTimeout(() => {{
+                    copyFeedback.style.display = 'none';
+                }}, 2000);
+            }}
+            
+            // Add keyboard navigation for token code display
+            document.getElementById('codeText').addEventListener('keydown', function(e) {{
+                if (e.key === 'Enter' || e.key === ' ') {{
+                    e.preventDefault();
+                    copyTokenCode();
+                }}
+            }});
+            
+            // Add real-time input feedback
+            const passwordInput = document.querySelector('input[name="password"]');
+            if (passwordInput) {{
+                passwordInput.addEventListener('input', function() {{
+                    const value = this.value.trim();
+                    if (value.length > 0) {{
+                        this.style.borderColor = value.length >= 8 ? 'var(--accent-color)' : 'var(--primary-color)';
+                    }} else {{
+                        this.style.borderColor = '#ddd';
+                    }}
+                }});
+                
+                // Show entered text clearly
+                passwordInput.addEventListener('focus', function() {{
+                    this.style.fontSize = '1.1rem';
+                    this.style.fontWeight = 'bold';
+                }});
+                
+                passwordInput.addEventListener('blur', function() {{
+                    this.style.fontSize = '1rem';
+                    this.style.fontWeight = 'normal';
+                }});
+            }}
+        </script>
+    </body>
+    </html>
+    """
+    return make_response(html_content)
+
+@app.route('/', methods=['POST'])
+def authenticate():
+    """Handle authentication and redirect to data dashboard"""
+    password = request.form.get('password', '')
+    
+    # Generate the same token code that was shown on the landing page
+    import hashlib
+    import time
+    import random
+    
+    # Simple, friendly words for token codes
+    friendly_words = [
+        "CLOUD", "DREAM", "BUILD", "CREATE", "LAUNCH", "SPARK", "SHINE", "RISE", 
+        "POWER", "MAGIC", "WONDER", "ROCKET", "STAR", "OCEAN", "MOUNTAIN", "FOREST",
+        "FRIEND", "FAMILY", "TEAM", "SQUAD", "CREW", "TRIBE", "CLAN", "SQUAD"
+    ]
+    
+    # Special characters
+    special_chars = ["!", "@", "#", "$", "%", "&", "*", "+", "=", "?", "~", "^"]
+    
+    # Generate deterministic but friendly token code
+    current_time = int(time.time() // 3600)  # Change every hour
+    random.seed(current_time)  # Use time as seed for consistency
+    
+    word = random.choice(friendly_words)
+    number = random.randint(10, 99)  # Two digit number
+    special = random.choice(special_chars)
+    
+    current_token_code = f"{word}{number}{special}"
+    
+    # Check against the current token code
+    if password.strip() == current_token_code:
+        return make_response("""
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Yourl.Cloud - URL API Server</title>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>
-                body {{ 
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-                    margin: 0; 
-                    padding: 0; 
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    min-height: 100vh;
-                    color: #333;
-                }}
-                .container {{ 
-                    max-width: 1200px; 
-                    margin: 0 auto; 
-                    padding: 20px;
-                    background: rgba(255, 255, 255, 0.95);
-                    border-radius: 15px;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-                    margin-top: 20px;
-                    margin-bottom: 20px;
-                }}
-                .header {{ 
-                    text-align: center; 
-                    padding: 40px 0;
-                    border-bottom: 3px solid #667eea;
-                    margin-bottom: 30px;
-                }}
-                .logo {{ 
-                    font-size: 3rem; 
-                    font-weight: bold; 
-                    color: #667eea;
-                    margin-bottom: 10px;
-                }}
-                .tagline {{ 
-                    font-size: 1.2rem; 
-                    color: #666;
-                    margin-bottom: 20px;
-                }}
-                .form-section {{
-                    background: #f8f9fa;
-                    padding: 30px;
-                    border-radius: 10px;
-                    margin: 30px 0;
-                    text-align: center;
-                }}
-                .form-group {{ margin: 20px 0; }}
-                label {{ 
-                    display: block; 
-                    margin-bottom: 10px; 
-                    font-weight: bold; 
-                    font-size: 1.1rem;
-                    color: #333;
-                }}
-                input[type="text"], input[type="password"] {{ 
-                    width: 100%; 
-                    max-width: 400px;
-                    padding: 15px; 
-                    border: 2px solid #ddd; 
-                    border-radius: 10px; 
-                    font-size: 16px; 
-                    text-align: center;
-                    transition: border-color 0.3s ease;
-                }}
-                input[type="text"]:focus, input[type="password"]:focus {{ 
-                    border-color: #667eea;
-                    outline: none;
-                }}
-                button {{ 
-                    background: linear-gradient(45deg, #667eea, #764ba2);
-                    color: white; 
-                    padding: 15px 40px; 
-                    border: none; 
-                    border-radius: 25px; 
-                    cursor: pointer; 
-                    font-size: 18px; 
-                    font-weight: bold;
-                    transition: transform 0.3s ease, box-shadow 0.3s ease;
-                }}
-                button:hover {{ 
-                    transform: translateY(-2px);
-                    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                }}
-                .password-display {{ 
-                    background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-                    color: white;
-                    padding: 20px; 
-                    border-radius: 15px; 
-                    margin: 30px 0; 
-                    text-align: center; 
-                    font-weight: bold;
-                    font-size: 1.2rem;
-                    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-                }}
-                .info {{ 
-                    background: #e7f3ff; 
-                    padding: 20px; 
-                    border-radius: 10px; 
-                    margin: 20px 0; 
-                    border-left: 5px solid #667eea;
-                }}
-                .connections-grid {{
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                    gap: 20px;
-                    margin: 30px 0;
-                }}
-                .connection-card {{
-                    background: white;
-                    padding: 25px;
-                    border-radius: 10px;
-                    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-                    border-top: 4px solid #667eea;
-                    transition: transform 0.3s ease;
-                }}
-                .connection-card:hover {{
-                    transform: translateY(-5px);
-                }}
-                .connection-card h3 {{
-                    color: #667eea;
-                    margin-bottom: 15px;
-                    font-size: 1.3rem;
-                }}
-                .connection-card a {{
-                    color: #667eea;
-                    text-decoration: none;
-                    font-weight: bold;
-                }}
-                .connection-card a:hover {{
-                    text-decoration: underline;
-                }}
-                                 .footer {{
-                     text-align: center;
-                     padding: 30px 0;
-                     color: #666;
-                     border-top: 2px solid #eee;
-                     margin-top: 30px;
-                 }}
-                 .footer-nav {{
-                     margin-bottom: 20px;
-                 }}
-                 .footer-nav h4 {{
-                     color: #667eea;
-                     margin-bottom: 15px;
-                     font-size: 1.2rem;
-                 }}
-                 .nav-links {{
-                     display: flex;
-                     justify-content: center;
-                     flex-wrap: wrap;
-                     gap: 15px;
-                     margin-bottom: 20px;
-                 }}
-                 .nav-link {{
-                     display: inline-block;
-                     padding: 8px 16px;
-                     background: linear-gradient(45deg, #667eea, #764ba2);
-                     color: white;
-                     text-decoration: none;
-                     border-radius: 20px;
-                     font-size: 0.9rem;
-                     font-weight: bold;
-                     transition: all 0.3s ease;
-                 }}
-                 .nav-link:hover {{
-                     transform: translateY(-2px);
-                     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                     background: linear-gradient(45deg, #5a6fd8, #6a4c93);
-                 }}
-                 .footer-info {{
-                     border-top: 1px solid #eee;
-                     padding-top: 20px;
-                 }}
-                .status-badge {{
-                    display: inline-block;
-                    padding: 5px 15px;
-                    border-radius: 20px;
-                    font-size: 0.9rem;
-                    font-weight: bold;
-                    text-transform: uppercase;
-                    margin: 5px;
-                }}
-                .status-success {{ background: #d4edda; color: #155724; }}
-                .status-info {{ background: #d1ecf1; color: #0c5460; }}
-            </style>
+            <meta http-equiv="refresh" content="0; url=/data">
+            <title>Redirecting...</title>
         </head>
         <body>
-            <div class="container">
-                <!-- Header with Company Identity -->
-                <div class="header">
-                    <div class="logo">Yourl.Cloud Inc.</div>
-                    <div class="tagline">Secure Cloud Infrastructure & API Services</div>
-                    <p>United States • Global Operations • Enterprise Solutions</p>
-                </div>
-
-                <!-- Authentication Form Section -->
-                <div class="form-section">
-                    <h2>🚀 Launch Your Experience</h2>
-                    <p>Enter the marketing password to access enhanced services and visual inspection capabilities.</p>
-                    
-                    <form method="POST">
-                        <div class="form-group">
-                            <label for="password">🎯 Marketing Password:</label>
-                            <input type="text" id="password" name="password" placeholder="Enter the fun marketing password" value="" required>
-                        </div>
-                        <button type="submit">🚀 Launch Experience</button>
-                    </form>
-                    
-                    <div class="password-display">
-                        <strong>🎪 Current Marketing Password:</strong> {current_password}
-                    </div>
-                    
-                    <div class="info">
-                        <strong>🔒 Security Note:</strong> This password changes with each deployment to ensure security.<br>
-                        <strong>🌐 Health Check:</strong> <a href="/health">/health</a> | 
-                        <strong>📊 Status:</strong> <a href="/status">/status</a> |
-                        <strong>🔌 API:</strong> <a href="/api">/api</a>
-                    </div>
-                </div>
-
-                <!-- Company Information Section -->
-                <div class="info">
-                    <h3>🏢 About Yourl.Cloud Inc.</h3>
-                    <p>Yourl.Cloud Inc. is a leading technology company specializing in cloud infrastructure, API services, and digital solutions. Based in the United States, we serve clients globally with secure, scalable, and innovative technology solutions.</p>
-                    <p><strong>Founded:</strong> 2024 | <strong>Headquarters:</strong> United States | <strong>Industry:</strong> Cloud Computing, API Services, Digital Infrastructure</p>
-                </div>
-
-                <!-- Connections Grid -->
-                <div class="connections-grid">
-                    {''.join([f'''
-                    <div class="connection-card">
-                        <h3>{conn['name']}</h3>
-                        <p>{conn['description']}</p>
-                        <a href="{conn['url']}" target="_blank">🔗 Visit {conn['name']}</a>
-                    </div>
-                    ''' for conn in DEMO_CONFIG['connections']])}
-                </div>
-
-                                 <!-- Footer Navigation -->
-                 <div class="footer">
-                     <div class="footer-nav">
-                         <h4>🔗 Quick Navigation</h4>
-                         <div class="nav-links">
-                             <a href="/" class="nav-link">🏠 Home</a>
-                             <a href="/health" class="nav-link">🏥 Health</a>
-                             <a href="/status" class="nav-link">📊 Status</a>
-                             <a href="/api" class="nav-link">🔌 API</a>
-                             <a href="/monitoring" class="nav-link">📈 Monitoring</a>
-                             <a href="/data" class="nav-link">📡 Data Stream</a>
-                             <a href="/knowledge-hub" class="nav-link">🧠 Knowledge Hub</a>
-                         </div>
-                     </div>
-                     <div class="footer-info">
-                         <p>&copy; 2024 Yourl.Cloud Inc. All rights reserved. | United States | Global Operations</p>
-                         <p>Built with ❤️ for secure, scalable cloud solutions</p>
-                     </div>
-                 </div>
-            </div>
+            <p>Authentication successful! Redirecting to dashboard...</p>
+            <script>window.location.href = '/data';</script>
         </body>
         </html>
-        """
-        
-        response = make_response(html_content)
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
-        return response
-    
-    elif request.method == 'POST':
-        password = request.form.get('password', '')
-        current_password = generate_simple_password()
-        next_password = generate_next_password()
-        
-        if password == current_password:
-            session['authenticated'] = True
-            session['last_access_code'] = current_password
-            
-            # Get current build version/commit hash
-            try:
-                import subprocess
-                build_version = subprocess.check_output(['git', 'rev-parse', 'HEAD'], 
-                                                     text=True, stderr=subprocess.DEVNULL).strip()[:8]
-            except:
-                build_version = "unknown"
-            
-            # Check if JSON format is requested
-            if request.args.get('format') == 'json':
-                # Create JSON response with actual URL and personalized data
-                json_response = {
-                    "status": "authenticated",
-                    "message": "🎉 Welcome to Yourl.Cloud!",
-                    "experience_level": "authenticated_user",
-                    "current_marketing_password": current_password,
-                    "next_marketing_password": next_password,
-                    "ownership": {
-                        "perplexity": "current_marketing_password",
-                        "cursor": "next_marketing_password"
-                    },
-                    "navigation": {
-                        "back_to_landing": f"{get_original_protocol()}://{get_original_host()}/",
-                        "api_endpoint": f"{get_original_protocol()}://{get_original_host()}/api",
-                        "status_page": f"{get_original_protocol()}://{get_original_host()}/status"
-                    },
-                    "timestamp": datetime.utcnow().isoformat(),
-                    "organization": FRIENDS_FAMILY_GUARD["organization"],
-                    "build_version": build_version
-                }
-                
-                return jsonify(json_response)
-            else:
-                # Render HTML success page
-                return render_template('success.html', 
-                                    current_password=current_password,
-                                    next_password=next_password,
-                                    build_version=build_version,
-                                    experience_level="authenticated_user",
-                                    organization=FRIENDS_FAMILY_GUARD["organization"],
-                                    timestamp=datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
-                                    status="authenticated",
-                                    session_id=FRIENDS_FAMILY_GUARD["session_id"])
-        else:
-            # Check if JSON format is requested for failed authentication
-            if request.args.get('format') == 'json':
-                return jsonify({
-                    "status": "failed",
-                    "message": "Invalid password. Please try again.",
-                    "current_marketing_password": current_password
-                }), 401
-            else:
-                # Render HTML error page with retry instructions
-                error_html = f"""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Authentication Failed - Yourl.Cloud</title>
-                    <meta charset="utf-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1">
-                    <style>
-                        body {{ 
-                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-                            margin: 0; 
-                            padding: 0; 
-                            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-                            min-height: 100vh;
-                            color: #333;
-                        }}
-                        .container {{ 
-                            max-width: 800px; 
-                            margin: 0 auto; 
-                            padding: 20px;
-                            background: rgba(255, 255, 255, 0.95);
-                            border-radius: 15px;
-                            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-                            margin-top: 20px;
-                            margin-bottom: 20px;
-                        }}
-                        .header {{ 
-                            text-align: center; 
-                            padding: 40px 0;
-                            border-bottom: 3px solid #ef4444;
-                            margin-bottom: 30px;
-                        }}
-                        .error-icon {{ 
-                            font-size: 4rem; 
-                            margin-bottom: 20px;
-                        }}
-                        .error-title {{ 
-                            font-size: 2.5rem; 
-                            color: #ef4444;
-                            margin-bottom: 10px;
-                        }}
-                        .error-message {{ 
-                            font-size: 1.2rem; 
-                            color: #666;
-                            margin-bottom: 20px;
-                        }}
-                        .retry-section {{
-                            background: #fef2f2;
-                            padding: 30px;
-                            border-radius: 10px;
-                            margin: 30px 0;
-                            text-align: center;
-                            border: 2px solid #fecaca;
-                        }}
-                        .password-display {{ 
-                            background: linear-gradient(45deg, #f59e0b, #d97706);
-                            color: white;
-                            padding: 20px; 
-                            border-radius: 15px; 
-                            margin: 20px 0; 
-                            text-align: center; 
-                            font-weight: bold;
-                            font-size: 1.2rem;
-                            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-                        }}
-                        .form-section {{
-                            background: #f8f9fa;
-                            padding: 30px;
-                            border-radius: 10px;
-                            margin: 30px 0;
-                            text-align: center;
-                        }}
-                        .form-group {{ margin: 20px 0; }}
-                        label {{ 
-                            display: block; 
-                            margin-bottom: 10px; 
-                            font-weight: bold; 
-                            font-size: 1.1rem;
-                            color: #333;
-                        }}
-                        input[type="text"], input[type="password"] {{ 
-                            width: 100%; 
-                            max-width: 400px;
-                            padding: 15px; 
-                            border: 2px solid #ddd; 
-                            border-radius: 10px; 
-                            font-size: 16px; 
-                            text-align: center;
-                            transition: border-color 0.3s ease;
-                        }}
-                        input[type="text"]:focus, input[type="password"]:focus {{ 
-                            border-color: #ef4444;
-                            outline: none;
-                        }}
-                        button {{ 
-                            background: linear-gradient(45deg, #ef4444, #dc2626);
-                            color: white; 
-                            padding: 15px 40px; 
-                            border: none; 
-                            border-radius: 25px; 
-                            cursor: pointer; 
-                            font-size: 18px; 
-                            font-weight: bold;
-                            transition: transform 0.3s ease, box-shadow 0.3s ease;
-                        }}
-                        button:hover {{ 
-                            transform: translateY(-2px);
-                            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                        }}
-                        .back-link {{
-                            text-align: center;
-                            margin-top: 30px;
-                        }}
-                        .back-link a {{
-                            color: #ef4444;
-                            text-decoration: none;
-                            font-weight: bold;
-                            font-size: 1.1rem;
-                        }}
-                        .back-link a:hover {{
-                            text-decoration: underline;
-                        }}
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="header">
-                            <div class="error-icon">❌</div>
-                            <div class="error-title">Authentication Failed</div>
-                            <div class="error-message">The password you entered is incorrect. Please try again.</div>
-                        </div>
-
-                        <div class="retry-section">
-                            <h2>🔄 Try Again</h2>
-                            <p>Please enter the correct marketing password to access Yourl.Cloud services.</p>
-                            
-                            <div class="password-display">
-                                <strong>🎪 Current Marketing Password:</strong> {current_password}
-                            </div>
-                            
-                            <form method="POST">
-                                <div class="form-group">
-                                    <label for="password">🎯 Marketing Password:</label>
-                                    <input type="text" id="password" name="password" placeholder="Enter the correct password" value="" required>
-                                </div>
-                                <button type="submit">🚀 Try Again</button>
-                            </form>
-                        </div>
-
-                        <div class="back-link">
-                            <a href="/">🏠 Back to Landing Page</a>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                """
-                
-                response = make_response(error_html)
-                response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-                response.headers['Pragma'] = 'no-cache'
-                response.headers['Expires'] = '0'
-                return response, 401
-    
+        """)
     else:
-        return jsonify({"error": "Method not allowed"}), 405
-
-@app.route('/api', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'])
-def get_request_url():
-    """API endpoint that returns the request URL and metadata."""
-    url = request.url
-    method = request.method
-    headers = dict(request.headers)
-    user_agent = headers.get('User-Agent', 'Unknown')
-    device_type = detect_device_type(user_agent)
-    
-    client_ip = get_client_ip()
-    original_host = get_original_host()
-    original_protocol = get_original_protocol()
-    
-    if is_visual_inspection_allowed(device_type):
-        html_content = f"""
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Yourl.Cloud - Visual Inspection</title>
-            <style>
-                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: #333; }}
-                .container {{ max-width: 800px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }}
-                .header {{ background: linear-gradient(135deg, #007bff, #0056b3); color: white; padding: 30px; text-align: center; }}
-                .header h1 {{ margin: 0; font-size: 2.5em; font-weight: 300; }}
-                .content {{ padding: 30px; }}
-                .url-display {{ background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 10px; padding: 20px; margin: 20px 0; word-break: break-all; font-family: 'Courier New', monospace; font-size: 14px; }}
-                .info-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 30px 0; }}
-                .info-card {{ background: #f8f9fa; border-radius: 10px; padding: 20px; border-left: 4px solid #007bff; }}
-                .info-card h3 {{ margin: 0 0 10px 0; color: #007bff; }}
-                .status-badge {{ display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }}
-                .status-success {{ background: #d4edda; color: #155724; }}
-                .status-info {{ background: #d1ecf1; color: #0c5460; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>🔍 Visual Inspection</h1>
-                    <p>Yourl.Cloud URL API Server - Real-time Monitoring</p>
-                </div>
-                
-                <div class="content">
-                    <div class="url-display">
-                        <strong>Request URL:</strong><br>
-                        {url}
-                    </div>
-                    
-                    <div class="info-grid">
-                        <div class="info-card">
-                            <h3>📱 Device Information</h3>
-                            <p><strong>Type:</strong> {device_type.title()}</p>
-                            <p><strong>Status:</strong> <span class="status-badge status-success">Allowed</span></p>
-                        </div>
-                        
-                        <div class="info-card">
-                            <h3>🛡️ Security Status</h3>
-                            <p><strong>Guard:</strong> <span class="status-badge status-success">Enabled</span></p>
-                            <p><strong>Inspection:</strong> <span class="status-badge status-info">Active</span></p>
-                        </div>
-                        
-                        <div class="info-card">
-                            <h3>⏰ Timestamp</h3>
-                            <p><strong>Time:</strong> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
-                            <p><strong>Session:</strong> {FRIENDS_FAMILY_GUARD['session_id'][:8]}...</p>
-                        </div>
-                        
-                        <div class="info-card">
-                            <h3>🏢 Organization</h3>
-                            <p><strong>Company:</strong> {FRIENDS_FAMILY_GUARD['organization']}</p>
-                            <p><strong>Environment:</strong> <span class="status-badge status-success">Production</span></p>
-                        </div>
-                        
-                        <div class="info-card">
-                            <h3>☁️ Cloud Run Info</h3>
-                            <p><strong>Domain:</strong> {original_host}</p>
-                            <p><strong>Protocol:</strong> {original_protocol}</p>
-                            <p><strong>Mapping:</strong> <span class="status-badge status-success">Enabled</span></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        return html_content
-    else:
-        return jsonify({
-            "url": url,
-            "method": method,
-            "device_type": device_type,
-            "visual_inspection": "blocked",
-            "timestamp": datetime.utcnow().isoformat(),
-            "friends_family_guard": FRIENDS_FAMILY_GUARD["enabled"],
-            "organization": FRIENDS_FAMILY_GUARD["organization"],
-            "cloud_run": {
-                "client_ip": client_ip,
-                "original_host": original_host,
-                "original_protocol": original_protocol,
-                "domain_mapping_enabled": CLOUD_RUN_CONFIG["domain_mapping_enabled"]
-            }
-        })
-
-@app.route('/health', methods=['GET'])
-def health_check():
-    """Health check endpoint for Cloud Run domain mapping compatibility."""
-    # Check if HTML format is requested
-    if request.args.get('format') == 'json':
-        return jsonify({
-            "status": "healthy",
-            "timestamp": datetime.utcnow().isoformat(),
-            "service": "url-api",
-            "version": "1.0.0",
-            "friends_family_guard": FRIENDS_FAMILY_GUARD["enabled"],
-            "cloud_run_support": True,
-            "domain_mapping": {
-                "enabled": CLOUD_RUN_CONFIG["domain_mapping_enabled"],
-                "region": CLOUD_RUN_CONFIG["region"],
-                "health_check_path": CLOUD_RUN_CONFIG["health_check_path"]
-            },
-            "wsgi_server": "gunicorn",
-            "production_mode": True,
-            "deployment_model": "all_instances_production",
-            "port": PORT,
-            "host": get_original_host(),
-            "protocol": get_original_protocol()
-        })
-    
-    # Create rich HTML health check page
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Health Check - Yourl.Cloud Inc.</title>
-        <style>
-            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{ 
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-                margin: 0; 
-                padding: 20px; 
-                background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-                min-height: 100vh;
-                color: #333;
-            }}
-            .container {{ 
-                max-width: 1000px; 
-                margin: 0 auto; 
-                background: rgba(255, 255, 255, 0.98);
-                border-radius: 15px;
-                box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-                padding: 30px;
-                margin-top: 20px;
-            }}
-            .header {{ 
-                text-align: center; 
-                padding: 30px 0;
-                border-bottom: 3px solid #28a745;
-                margin-bottom: 30px;
-            }}
-            .header h1 {{ 
-                color: #28a745;
-                margin-bottom: 10px;
-                font-size: 2.5rem;
-            }}
-            .header p {{ 
-                color: #666;
-                font-size: 1.1rem;
-            }}
-            .health-status {{
-                background: #d4edda;
-                border: 2px solid #c3e6cb;
-                border-radius: 15px;
-                padding: 25px;
-                margin: 30px 0;
-                text-align: center;
-            }}
-            .status-indicator {{
-                display: inline-block;
-                width: 20px;
-                height: 20px;
-                background: #28a745;
-                border-radius: 50%;
-                margin-right: 10px;
-                animation: pulse 2s infinite;
-            }}
-            @keyframes pulse {{
-                0% {{ opacity: 1; }}
-                50% {{ opacity: 0.5; }}
-                100% {{ opacity: 1; }}
-            }}
-            .health-grid {{
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 20px;
-                margin: 30px 0;
-            }}
-            .health-card {{
-                background: white;
-                padding: 25px;
-                border-radius: 15px;
-                box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-                border-top: 4px solid #28a745;
-                transition: transform 0.3s ease;
-            }}
-            .health-card:hover {{
-                transform: translateY(-5px);
-            }}
-            .health-card h3 {{
-                color: #28a745;
-                margin-bottom: 15px;
-                font-size: 1.3rem;
-            }}
-            .health-card p {{
-                color: #666;
-                line-height: 1.6;
-                margin-bottom: 10px;
-            }}
-            .footer {{
-                text-align: center;
-                padding: 30px 0;
-                color: #666;
-                border-top: 2px solid #eee;
-                margin-top: 30px;
-            }}
-            .footer-nav {{
-                margin-bottom: 20px;
-            }}
-            .footer-nav h4 {{
-                color: #28a745;
-                margin-bottom: 15px;
-                font-size: 1.2rem;
-            }}
-            .nav-links {{
-                display: flex;
-                justify-content: center;
-                flex-wrap: wrap;
-                gap: 15px;
-                margin-bottom: 20px;
-            }}
-            .nav-link {{
-                display: inline-block;
-                padding: 8px 16px;
-                background: linear-gradient(45deg, #28a745, #20c997);
-                color: white;
-                text-decoration: none;
-                border-radius: 20px;
-                font-size: 0.9rem;
-                font-weight: bold;
-                transition: all 0.3s ease;
-            }}
-            .nav-link:hover {{
-                transform: translateY(-2px);
-                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                background: linear-gradient(45deg, #218838, #1ea085);
-            }}
-            .footer-info {{
-                border-top: 1px solid #eee;
-                padding-top: 20px;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>🏥 Health Check</h1>
-                <p>Yourl.Cloud Inc. - System Health & Status Monitoring</p>
-            </div>
-            
-            <div class="health-status">
-                <h2><span class="status-indicator"></span>System Status: HEALTHY</h2>
-                <p><strong>Service:</strong> URL API Server | <strong>Version:</strong> 1.0.0 | <strong>Environment:</strong> Production</p>
-                <p><strong>Timestamp:</strong> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
-            </div>
-            
-            <div class="health-grid">
-                <div class="health-card">
-                    <h3>🛡️ Security Status</h3>
-                    <p><strong>Friends & Family Guard:</strong> {'Enabled' if FRIENDS_FAMILY_GUARD['enabled'] else 'Disabled'}</p>
-                    <p><strong>Organization:</strong> {FRIENDS_FAMILY_GUARD['organization']}</p>
-                    <p><strong>Session ID:</strong> {FRIENDS_FAMILY_GUARD['session_id'][:8]}...</p>
-                </div>
-                
-                <div class="health-card">
-                    <h3>☁️ Cloud Run Status</h3>
-                    <p><strong>Support:</strong> Enabled</p>
-                    <p><strong>Domain Mapping:</strong> {'Enabled' if CLOUD_RUN_CONFIG['domain_mapping_enabled'] else 'Disabled'}</p>
-                    <p><strong>Region:</strong> {CLOUD_RUN_CONFIG['region']}</p>
-                </div>
-                
-                <div class="health-card">
-                    <h3>🚀 Server Information</h3>
-                    <p><strong>WSGI Server:</strong> Gunicorn</p>
-                    <p><strong>Production Mode:</strong> Active</p>
-                    <p><strong>Port:</strong> {PORT}</p>
-                </div>
-                
-                <div class="health-card">
-                    <h3>🌐 Network Status</h3>
-                    <p><strong>Host:</strong> {get_original_host()}</p>
-                    <p><strong>Protocol:</strong> {get_original_protocol()}</p>
-                    <p><strong>Status:</strong> Online</p>
-                </div>
-            </div>
-            
-            <!-- Footer Navigation -->
-            <div class="footer">
-                <div class="footer-nav">
-                    <h4>🔗 Quick Navigation</h4>
-                    <div class="nav-links">
-                        <a href="/" class="nav-link">🏠 Home</a>
-                        <a href="/health" class="nav-link">🏥 Health</a>
-                        <a href="/status" class="nav-link">📊 Status</a>
-                        <a href="/api" class="nav-link">🔌 API</a>
-                        <a href="/monitoring" class="nav-link">📈 Monitoring</a>
-                        <a href="/data" class="nav-link">📡 Data Stream</a>
-                        <a href="/knowledge-hub" class="nav-link">🧠 Knowledge Hub</a>
-                    </div>
-                </div>
-                <div class="footer-info">
-                    <p>&copy; 2024 Yourl.Cloud Inc. All rights reserved. | United States | Global Operations</p>
-                    <p>Built with ❤️ for secure, scalable cloud solutions</p>
-                </div>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    
-    return make_response(html_content)
-
-@app.route('/status', methods=['GET'])
-def status():
-    """Status endpoint with service information."""
-    # Check if JSON format is requested
-    if request.args.get('format') == 'json':
-        return jsonify({
-            "service": "URL API with Visual Inspection",
-            "version": "1.0.0",
-            "status": "running",
-            "port": PORT,
-            "host": get_original_host(),
-            "timestamp": datetime.utcnow().isoformat(),
-            "session_id": FRIENDS_FAMILY_GUARD["session_id"],
-            "organization": FRIENDS_FAMILY_GUARD["organization"],
-            "friends_family_guard": FRIENDS_FAMILY_GUARD["enabled"],
-            "visual_inspection": FRIENDS_FAMILY_GUARD["visual_inspection"],
-            "cloud_run_support": True,
-            "demo_mode": True,
-            "wsgi_server": "gunicorn",
-            "production_mode": True,
-            "deployment_model": "all_instances_production",
-            "domain_mapping": {
-                "enabled": CLOUD_RUN_CONFIG["domain_mapping_enabled"],
-                "region": CLOUD_RUN_CONFIG["region"],
-                "original_host": get_original_host(),
-                "original_protocol": get_original_protocol(),
-                "client_ip": get_client_ip()
-            }
-        })
-    
-    # Create rich HTML status page
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Service Status - Yourl.Cloud Inc.</title>
-        <style>
-            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{ 
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-                margin: 0; 
-                padding: 20px; 
-                background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-                min-height: 100vh;
-                color: #333;
-            }}
-            .container {{ 
-                max-width: 1200px; 
-                margin: 0 auto; 
-                background: rgba(255, 255, 255, 0.98);
-                border-radius: 15px;
-                box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-                padding: 30px;
-                margin-top: 20px;
-            }}
-            .header {{ 
-                text-align: center; 
-                padding: 30px 0;
-                border-bottom: 3px solid #17a2b8;
-                margin-bottom: 30px;
-            }}
-            .header h1 {{ 
-                color: #17a2b8;
-                margin-bottom: 10px;
-                font-size: 2.5rem;
-            }}
-            .header p {{ 
-                color: #666;
-                font-size: 1.1rem;
-            }}
-            .status-overview {{
-                background: #d1ecf1;
-                border: 2px solid #bee5eb;
-                border-radius: 15px;
-                padding: 25px;
-                margin: 30px 0;
-                text-align: center;
-            }}
-            .status-indicator {{
-                display: inline-block;
-                width: 20px;
-                height: 20px;
-                background: #28a745;
-                border-radius: 50%;
-                margin-right: 10px;
-                animation: pulse 2s infinite;
-            }}
-            @keyframes pulse {{
-                0% {{ opacity: 1; }}
-                50% {{ opacity: 0.5; }}
-                100% {{ opacity: 1; }}
-            }}
-            .status-grid {{
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-                gap: 25px;
-                margin: 30px 0;
-            }}
-            .status-card {{
-                background: white;
-                padding: 25px;
-                border-radius: 15px;
-                box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-                border-top: 4px solid #17a2b8;
-                transition: transform 0.3s ease;
-            }}
-            .status-card:hover {{
-                transform: translateY(-5px);
-            }}
-            .status-card h3 {{
-                color: #17a2b8;
-                margin-bottom: 15px;
-                font-size: 1.3rem;
-            }}
-            .status-card p {{
-                color: #666;
-                line-height: 1.6;
-                margin-bottom: 10px;
-            }}
-            .footer {{
-                text-align: center;
-                padding: 30px 0;
-                color: #666;
-                border-top: 2px solid #eee;
-                margin-top: 30px;
-            }}
-            .footer-nav {{
-                margin-bottom: 20px;
-            }}
-            .footer-nav h4 {{
-                color: #17a2b8;
-                margin-bottom: 15px;
-                font-size: 1.2rem;
-            }}
-            .nav-links {{
-                display: flex;
-                justify-content: center;
-                flex-wrap: wrap;
-                gap: 15px;
-                margin-bottom: 20px;
-            }}
-            .nav-link {{
-                display: inline-block;
-                padding: 8px 16px;
-                background: linear-gradient(45deg, #17a2b8, #138496);
-                color: white;
-                text-decoration: none;
-                border-radius: 20px;
-                font-size: 0.9rem;
-                font-weight: bold;
-                transition: all 0.3s ease;
-            }}
-            .nav-link:hover {{
-                transform: translateY(-2px);
-                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                background: linear-gradient(45deg, #138496, #117a8b);
-            }}
-            .footer-info {{
-                border-top: 1px solid #eee;
-                padding-top: 20px;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>📊 Service Status</h1>
-                <p>Yourl.Cloud Inc. - Real-time Service Information & Monitoring</p>
-            </div>
-            
-            <div class="status-overview">
-                <h2><span class="status-indicator"></span>Service Status: RUNNING</h2>
-                <p><strong>Service:</strong> URL API with Visual Inspection | <strong>Version:</strong> 1.0.0 | <strong>Environment:</strong> Production</p>
-                <p><strong>Timestamp:</strong> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
-            </div>
-            
-            <div class="status-grid">
-                <div class="status-card">
-                    <h3>🛡️ Security Configuration</h3>
-                    <p><strong>Friends & Family Guard:</strong> {'Enabled' if FRIENDS_FAMILY_GUARD['enabled'] else 'Disabled'}</p>
-                    <p><strong>Organization:</strong> {FRIENDS_FAMILY_GUARD['organization']}</p>
-                    <p><strong>Session ID:</strong> {FRIENDS_FAMILY_GUARD['session_id'][:8]}...</p>
-                    <p><strong>Visual Inspection:</strong> {'Enabled' if FRIENDS_FAMILY_GUARD['visual_inspection']['pc_allowed'] else 'Disabled'}</p>
-                </div>
-                
-                <div class="status-card">
-                    <h3>☁️ Cloud Run Status</h3>
-                    <p><strong>Support:</strong> Enabled</p>
-                    <p><strong>Domain Mapping:</strong> {'Enabled' if CLOUD_RUN_CONFIG['domain_mapping_enabled'] else 'Disabled'}</p>
-                    <p><strong>Region:</strong> {CLOUD_RUN_CONFIG['region']}</p>
-                    <p><strong>Deployment Model:</strong> All Instances Production</p>
-                </div>
-                
-                <div class="status-card">
-                    <h3>🚀 Server Information</h3>
-                    <p><strong>WSGI Server:</strong> Gunicorn</p>
-                    <p><strong>Production Mode:</strong> Active</p>
-                    <p><strong>Port:</strong> {PORT}</p>
-                    <p><strong>Demo Mode:</strong> {'Enabled' if True else 'Disabled'}</p>
-                </div>
-                
-                <div class="status-card">
-                    <h3>🌐 Network Status</h3>
-                    <p><strong>Host:</strong> {get_original_host()}</p>
-                    <p><strong>Protocol:</strong> {get_original_protocol()}</p>
-                    <p><strong>Client IP:</strong> {get_client_ip()}</p>
-                    <p><strong>Status:</strong> Online</p>
-                </div>
-            </div>
-            
-            <!-- Footer Navigation -->
-            <div class="footer">
-                <div class="footer-nav">
-                    <h4>🔗 Quick Navigation</h4>
-                    <div class="nav-links">
-                        <a href="/" class="nav-link">🏠 Home</a>
-                        <a href="/health" class="nav-link">🏥 Health</a>
-                        <a href="/status" class="nav-link">📊 Status</a>
-                        <a href="/api" class="nav-link">🔌 API</a>
-                        <a href="/monitoring" class="nav-link">📈 Monitoring</a>
-                        <a href="/data" class="nav-link">📡 Data Stream</a>
-                        <a href="/knowledge-hub" class="nav-link">🧠 Knowledge Hub</a>
-                    </div>
-                </div>
-                <div class="footer-info">
-                    <p>&copy; 2024 Yourl.Cloud Inc. All rights reserved. | United States | Global Operations</p>
-                    <p>Built with ❤️ for secure, scalable cloud solutions</p>
-                </div>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    
-    return make_response(html_content)
-
-@app.route('/monitoring/health', methods=['GET'])
-def monitoring_health():
-    """Public health check endpoint for monitoring systems."""
-    try:
-        # Basic health checks
-        global _app_start_time
-        uptime = 'unknown'
-        if _app_start_time:
-            uptime = time.time() - _app_start_time
-        
-        health_status = {
-            'timestamp': datetime.now().isoformat(),
-            'status': 'healthy',
-            'uptime': uptime,
-            'version': 'yourl-cloud-2024',
-            'environment': 'production' if PRODUCTION else 'development'
-        }
-        
-        # Database health check
-        database_connection = os.environ.get('DATABASE_CONNECTION_STRING')
-        if database_connection:
-            try:
-                from scripts.database_client import DatabaseClient
-                db_client = DatabaseClient(database_connection)
-                # Simple ping test
-                conn = db_client._get_connection()
-                if conn:
-                    conn.close()
-                    health_status['database'] = 'connected'
-                else:
-                    health_status['database'] = 'disconnected'
-                    health_status['status'] = 'degraded'
-            except Exception as e:
-                health_status['database'] = f'error: {str(e)}'
-                health_status['status'] = 'degraded'
-        else:
-            health_status['database'] = 'not_configured'
-        
-        status_code = 200 if health_status['status'] == 'healthy' else 503
-        
-        # Check if JSON format is requested
-        if request.args.get('format') == 'json':
-            return jsonify(health_status), status_code
-        
-        # Create rich HTML health check page
-        html_content = f"""
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Monitoring Health - Yourl.Cloud Inc.</title>
-            <style>
-                * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-                body {{ 
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-                    margin: 0; 
-                    padding: 20px; 
-                    background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
-                    min-height: 100vh;
-                    color: #333;
-                }}
-                .container {{ 
-                    max-width: 1000px; 
-                    margin: 0 auto; 
-                    background: rgba(255, 255, 255, 0.98);
-                    border-radius: 15px;
-                    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-                    padding: 30px;
-                    margin-top: 20px;
-                }}
-                .header {{ 
-                    text-align: center; 
-                    padding: 30px 0;
-                    border-bottom: 3px solid #6f42c1;
-                    margin-bottom: 30px;
-                }}
-                .header h1 {{ 
-                    color: #6f42c1;
-                    margin-bottom: 10px;
-                    font-size: 2.5rem;
-                }}
-                .header p {{ 
-                    color: #666;
-                    font-size: 1.1rem;
-                }}
-                .health-status {{
-                    background: #d4edda;
-                    border: 2px solid #c3e6cb;
-                    border-radius: 15px;
-                    padding: 25px;
-                    margin: 30px 0;
-                    text-align: center;
-                }}
-                .status-indicator {{
-                    display: inline-block;
-                    width: 20px;
-                    height: 20px;
-                    background: #28a745;
-                    border-radius: 50%;
-                    margin-right: 10px;
-                    animation: pulse 2s infinite;
-                }}
-                @keyframes pulse {{
-                    0% {{ opacity: 1; }}
-                    50% {{ opacity: 0.5; }}
-                    100% {{ opacity: 1; }}
-                }}
-                .health-grid {{
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                    gap: 20px;
-                    margin: 30px 0;
-                }}
-                .health-card {{
-                    background: white;
-                    padding: 25px;
-                    border-radius: 15px;
-                    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-                    border-top: 4px solid #6f42c1;
-                    transition: transform 0.3s ease;
-                }}
-                .health-card:hover {{
-                    transform: translateY(-5px);
-                }}
-                .health-card h3 {{
-                    color: #6f42c1;
-                    margin-bottom: 15px;
-                    font-size: 1.3rem;
-                }}
-                .health-card p {{
-                    color: #666;
-                    line-height: 1.6;
-                    margin-bottom: 10px;
-                }}
-                .footer {{
-                    text-align: center;
-                    padding: 30px 0;
-                    color: #666;
-                    border-top: 2px solid #eee;
-                    margin-top: 30px;
-                }}
-                .footer-nav {{
-                    margin-bottom: 20px;
-                }}
-                .footer-nav h4 {{
-                    color: #6f42c1;
-                    margin-bottom: 15px;
-                    font-size: 1.2rem;
-                }}
-                .nav-links {{
-                    display: flex;
-                    justify-content: center;
-                    flex-wrap: wrap;
-                    gap: 15px;
-                    margin-bottom: 20px;
-                }}
-                .nav-link {{
-                    display: inline-block;
-                    padding: 8px 16px;
-                    background: linear-gradient(45deg, #6f42c1, #e83e8c);
-                    color: white;
-                    text-decoration: none;
-                    border-radius: 20px;
-                    font-size: 0.9rem;
-                    font-weight: bold;
-                    transition: all 0.3s ease;
-                }}
-                .nav-link:hover {{
-                    transform: translateY(-2px);
-                    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                    background: linear-gradient(45deg, #5a32a3, #d63384);
-                }}
-                .footer-info {{
-                    border-top: 1px solid #eee;
-                    padding-top: 20px;
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>🏥 Monitoring Health</h1>
-                    <p>Yourl.Cloud Inc. - Advanced Health Monitoring & System Status</p>
-                </div>
-                
-                <div class="health-status">
-                    <h2><span class="status-indicator"></span>System Status: {health_status['status'].upper()}</h2>
-                    <p><strong>Version:</strong> {health_status['version']} | <strong>Environment:</strong> {health_status['environment'].title()}</p>
-                    <p><strong>Timestamp:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
-                </div>
-                
-                <div class="health-grid">
-                    <div class="health-card">
-                        <h3>⏰ System Uptime</h3>
-                        <p><strong>Uptime:</strong> {uptime if isinstance(uptime, (int, float)) else uptime} seconds</p>
-                        <p><strong>Start Time:</strong> {'Tracked' if _app_start_time else 'Not tracked'}</p>
-                        <p><strong>Status:</strong> {'Active' if _app_start_time else 'Unknown'}</p>
-                    </div>
-                    
-                    <div class="health-card">
-                        <h3>🗄️ Database Status</h3>
-                        <p><strong>Connection:</strong> {health_status['database']}</p>
-                        <p><strong>Status:</strong> {'Connected' if health_status['database'] == 'connected' else 'Disconnected'}</p>
-                        <p><strong>Health:</strong> {'Good' if health_status['database'] == 'connected' else 'Needs attention'}</p>
-                    </div>
-                    
-                    <div class="health-card">
-                        <h3>🔧 System Health</h3>
-                        <p><strong>Overall Status:</strong> {health_status['status'].title()}</p>
-                        <p><strong>Response Code:</strong> {status_code}</p>
-                        <p><strong>Environment:</strong> {health_status['environment'].title()}</p>
-                    </div>
-                    
-                    <div class="health-card">
-                        <h3>📊 Monitoring Info</h3>
-                        <p><strong>Endpoint:</strong> /monitoring/health</p>
-                        <p><strong>Access:</strong> Public</p>
-                        <p><strong>Format:</strong> HTML/JSON</p>
-                    </div>
-                </div>
-                
-                <!-- Footer Navigation -->
-                <div class="footer">
-                    <div class="footer-nav">
-                        <h4>🔗 Quick Navigation</h4>
-                        <div class="nav-links">
-                            <a href="/" class="nav-link">🏠 Home</a>
-                            <a href="/health" class="nav-link">🏥 Health</a>
-                            <a href="/status" class="nav-link">📊 Status</a>
-                            <a href="/api" class="nav-link">🔌 API</a>
-                            <a href="/monitoring" class="nav-link">📈 Monitoring</a>
-                            <a href="/data" class="nav-link">📡 Data Stream</a>
-                            <a href="/knowledge-hub" class="nav-link">🧠 Knowledge Hub</a>
-                        </div>
-                    </div>
-                    <div class="footer-info">
-                        <p>&copy; 2024 Yourl.Cloud Inc. All rights reserved. | United States | Global Operations</p>
-                        <p>Built with ❤️ for secure, scalable cloud solutions</p>
-                    </div>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        
-        return make_response(html_content), status_code
-        
-    except Exception as e:
-        error_response = {
-            'timestamp': datetime.now().isoformat(),
-            'status': 'unhealthy',
-            'error': str(e)
-        }
-        
-        # Check if JSON format is requested
-        if request.args.get('format') == 'json':
-            return jsonify(error_response), 500
-        
-        # Return HTML error page
-        html_content = f"""
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Health Error - Yourl.Cloud Inc.</title>
-            <style>
-                body {{ 
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-                    margin: 0; 
-                    padding: 20px; 
-                    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-                    min-height: 100vh;
-                    color: #333;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }}
-                .error-container {{ 
-                    background: rgba(255, 255, 255, 0.98);
-                    border-radius: 15px;
-                    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-                    padding: 40px;
-                    text-align: center;
-                    max-width: 600px;
-                }}
-                .error-icon {{ font-size: 4rem; margin-bottom: 20px; }}
-                .error-title {{ color: #dc3545; margin-bottom: 15px; font-size: 2rem; }}
-                .error-message {{ color: #666; margin-bottom: 30px; }}
-                .footer {{
-                    text-align: center;
-                    padding: 30px 0;
-                    color: #666;
-                    border-top: 2px solid #eee;
-                    margin-top: 30px;
-                }}
-                .nav-links {{
-                    display: flex;
-                    justify-content: center;
-                    flex-wrap: wrap;
-                    gap: 15px;
-                    margin-bottom: 20px;
-                }}
-                .nav-link {{
-                    display: inline-block;
-                    padding: 8px 16px;
-                    background: linear-gradient(45deg, #dc3545, #c82333);
-                    color: white;
-                    text-decoration: none;
-                    border-radius: 20px;
-                    font-size: 0.9rem;
-                    font-weight: bold;
-                    transition: all 0.3s ease;
-                }}
-                .nav-link:hover {{
-                    transform: translateY(-2px);
-                    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="error-container">
-                <div class="error-icon">❌</div>
-                <div class="error-title">Health Check Failed</div>
-                <div class="error-message">An error occurred while checking system health: {str(e)}</div>
-                
-                <div class="footer">
-                    <div class="nav-links">
-                        <a href="/" class="nav-link">🏠 Home</a>
-                        <a href="/health" class="nav-link">🏥 Health</a>
-                        <a href="/status" class="nav-link">📊 Status</a>
-                    </div>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        
-        return make_response(html_content), 500
-
-@app.route('/monitoring', methods=['GET'])
-def monitoring_dashboard():
-    """Monitoring dashboard endpoint with rich HTML and API support."""
-    # Check if JSON format is requested
-    if request.args.get('format') == 'json':
-        return jsonify({
-            "status": "success",
-            "message": "Monitoring dashboard data",
-            "data": {
-                "uptime": "99.9%",
-                "response_time": "45ms",
-                "active_users": "127",
-                "memory_usage": "68%",
-                "requests_per_min": "1.2k"
-            },
-            "timestamp": datetime.utcnow().isoformat(),
-            "friends_family_guard": FRIENDS_FAMILY_GUARD["enabled"]
-        })
-    
-    # Render the monitoring template
-    return render_template('monitoring.html', 
-                         current_time=datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
-
-@app.route('/data', methods=['GET'])
-def data_analytics():
-    """Data analytics endpoint with rich HTML and API support."""
-    # Check if JSON format is requested
-    if request.args.get('format') == 'json':
-        return jsonify({
-            "status": "success",
-            "message": "Data analytics information",
-            "data": {
-                "total_requests": "1.2M",
-                "avg_response_time": "45ms",
-                "success_rate": "99.8%",
-                "unique_users": "45.2K",
-                "data_processed": "2.1TB",
-                "error_rate": "0.2%"
-            },
-            "timestamp": datetime.utcnow().isoformat(),
-            "friends_family_guard": FRIENDS_FAMILY_GUARD["enabled"]
-        })
-    
-    # Render the data analytics template
-    return render_template('data.html', 
-                         current_time=datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
-
-@app.route('/knowledge-hub', methods=['GET'])
-def knowledge_hub():
-    """Knowledge hub endpoint with rich HTML and API support."""
-    # Check if JSON format is requested
-    if request.args.get('format') == 'json':
-        return jsonify({
-            "status": "success",
-            "message": "Knowledge hub information",
-            "data": {
-                "categories": ["getting-started", "api-docs", "deployment", "troubleshooting", "advanced", "community"],
-                "total_resources": 24,
-                "last_updated": datetime.utcnow().isoformat()
-            },
-            "timestamp": datetime.utcnow().isoformat(),
-            "friends_family_guard": FRIENDS_FAMILY_GUARD["enabled"]
-        })
-    
-    # Render the knowledge hub template
-    return render_template('knowledge-hub.html')
-
-@app.route('/status', methods=['GET'])
-def service_status():
-    """Service status endpoint with rich HTML and API support."""
-    # Check if JSON format is requested
-    if request.args.get('format') == 'json':
-        return jsonify({
-            "status": "success",
-            "message": "Service status information",
-            "data": {
-                "overall_status": "operational",
-                "services": {
-                    "api_gateway": {"status": "online", "uptime": "99.9%", "response_time": "45ms"},
-                    "authentication": {"status": "online", "uptime": "99.8%", "response_time": "32ms"},
-                    "database": {"status": "online", "uptime": "99.7%", "response_time": "67ms"},
-                    "monitoring": {"status": "online", "uptime": "100%", "response_time": "28ms"}
-                }
-            },
-            "timestamp": datetime.utcnow().isoformat(),
-            "friends_family_guard": FRIENDS_FAMILY_GUARD["enabled"]
-        })
-    
-    # Render the status template
-    return render_template('status.html', 
-                         current_time=datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
-
-@app.route('/monitoring/stats', methods=['GET'])
-def monitoring_stats():
-    """Site statistics endpoint with HTML rendering and API interface."""
-    # Check if user is authenticated
-    if not session.get('authenticated', False):
-        return jsonify({
-            "error": "Access denied",
-            "message": "Authentication required for statistics access"
-        }), 401
-    
-    # Generate dynamic statistics
-    current_time = time.time()
-    uptime = current_time - _app_start_time if _app_start_time else 'unknown'
-    
-    # Create comprehensive statistics dashboard HTML
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Site Statistics - Yourl.Cloud Inc.</title>
-        <style>
-            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{ 
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-                margin: 0; 
-                padding: 20px; 
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh;
-                color: #333;
-            }}
-            .container {{ 
-                max-width: 1400px; 
-                margin: 0 auto; 
-                background: rgba(255, 255, 255, 0.98);
-                border-radius: 15px;
-                box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-                padding: 30px;
-                margin-top: 20px;
-            }}
-            .header {{ 
-                text-align: center; 
-                padding: 30px 0;
-                border-bottom: 3px solid #667eea;
-                margin-bottom: 30px;
-            }}
-            .header h1 {{ 
-                color: #667eea;
-                margin-bottom: 10px;
-                font-size: 2.5rem;
-            }}
-            .header p {{ 
-                color: #666;
-                font-size: 1.1rem;
-            }}
-            .stats-overview {{
-                background: #e8f4fd;
-                padding: 25px;
-                border-radius: 15px;
-                margin-bottom: 30px;
-                text-align: center;
-                border-left: 5px solid #667eea;
-            }}
-            .stats-grid {{
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 25px;
-                margin: 30px 0;
-            }}
-            .stat-card {{
-                background: white;
-                padding: 25px;
-                border-radius: 15px;
-                box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-                border-top: 4px solid #667eea;
-                transition: transform 0.3s ease;
-                text-align: center;
-            }}
-            .stat-card:hover {{
-                transform: translateY(-5px);
-            }}
-            .stat-icon {{
-                font-size: 3rem;
-                margin-bottom: 15px;
-            }}
-            .stat-value {{
-                font-size: 2.5rem;
-                font-weight: bold;
-                color: #667eea;
-                margin-bottom: 10px;
-            }}
-            .stat-label {{
-                color: #666;
-                font-size: 1.1rem;
-                margin-bottom: 15px;
-            }}
-            .stat-description {{
-                color: #888;
-                font-size: 0.9rem;
-                line-height: 1.4;
-            }}
-            .api-section {{
-                background: #f8f9fa;
-                border: 2px solid #e9ecef;
-                border-radius: 15px;
-                padding: 25px;
-                margin: 30px 0;
-                text-align: center;
-            }}
-            .api-title {{
-                color: #667eea;
-                font-size: 1.5rem;
-                margin-bottom: 20px;
-            }}
-            .method-badge {{
-                display: inline-block;
-                padding: 10px 20px;
-                border-radius: 25px;
-                font-size: 1rem;
-                font-weight: bold;
-                text-transform: uppercase;
-                margin: 10px;
-                color: white;
-            }}
-            .method-get {{ background: #28a745; }}
-            .endpoint-path {{
-                font-family: 'Courier New', monospace;
-                background: #e9ecef;
-                padding: 12px 20px;
-                border-radius: 8px;
-                font-size: 1.1rem;
-                margin: 15px 0;
-                display: inline-block;
-            }}
-            .navigation {{
-                text-align: center;
-                margin-top: 40px;
-                padding-top: 30px;
-                border-top: 2px solid #eee;
-            }}
-            .nav-btn {{
-                display: inline-block;
-                background: #667eea;
-                color: white;
-                padding: 15px 30px;
-                text-decoration: none;
-                border-radius: 25px;
-                margin: 10px;
-                transition: all 0.3s ease;
-                font-weight: bold;
-                font-size: 1.1rem;
-            }}
-            .nav-btn:hover {{
-                background: #5a6fd8;
-                transform: translateY(-2px);
-                box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>📈 Site Statistics</h1>
-                <p>Yourl.Cloud Inc. - Real-time Analytics & Performance Metrics</p>
-            </div>
-            
-            <div class="stats-overview">
-                <h3>📊 System Overview</h3>
-                <p><strong>Current Time:</strong> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')} | 
-                   <strong>Uptime:</strong> {uptime if isinstance(uptime, (int, float)) else uptime} seconds | 
-                   <strong>Environment:</strong> Production</p>
-            </div>
-            
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">🚀</div>
-                    <div class="stat-value">9</div>
-                    <div class="stat-label">Active Endpoints</div>
-                    <div class="stat-description">Total number of available API endpoints and routes</div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">🔒</div>
-                    <div class="stat-value">5</div>
-                    <div class="stat-label">Protected Routes</div>
-                    <div class="stat-description">Endpoints requiring authentication or valid marketing codes</div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">🌐</div>
-                    <div class="stat-value">4</div>
-                    <div class="stat-label">Public Endpoints</div>
-                    <div class="stat-description">Open access endpoints for health checks and basic info</div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">📱</div>
-                    <div class="stat-value">100%</div>
-                    <div class="stat-label">Device Compatibility</div>
-                    <div class="stat-description">Full support for PC, mobile, and tablet devices</div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">☁️</div>
-                    <div class="stat-value">Active</div>
-                    <div class="stat-label">Cloud Run Status</div>
-                    <div class="stat-description">Google Cloud Run deployment fully operational</div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">🛡️</div>
-                    <div class="stat-value">Enabled</div>
-                    <div class="stat-label">Security Guard</div>
-                    <div class="stat-description">Friends and Family Guard protection active</div>
-                </div>
-            </div>
-            
-            <div class="api-section">
-                <div class="api-title">🔌 API Interface</div>
-                <p>This endpoint provides both HTML rendering and JSON API responses</p>
-                
-                <span class="method-badge method-get">GET</span>
-                <div class="endpoint-path">/monitoring/stats</div>
-                
-                <p><strong>Response Format:</strong> HTML (default) | <strong>API Format:</strong> Add <code>?format=json</code> to URL</p>
-                <p><strong>Authentication:</strong> Required (valid marketing code or session)</p>
-            </div>
-            
-            <div class="navigation">
-                <a href="/monitoring" class="nav-btn">📊 Back to Monitoring</a>
-                <a href="/" class="nav-btn">🏠 Home</a>
-                <a href="/data" class="nav-btn">📡 Data Stream</a>
-                <a href="/api" class="nav-btn">🔌 API</a>
-                <a href="/knowledge-hub" class="nav-btn">🧠 Knowledge Hub</a>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    
-    # Check if JSON format is requested
-    if request.args.get('format') == 'json':
-        return jsonify({
-            "endpoint": "/monitoring/stats",
-            "method": "GET",
-            "authentication": "required",
-            "timestamp": datetime.utcnow().isoformat(),
-            "statistics": {
-                "total_endpoints": 9,
-                "protected_routes": 5,
-                "public_endpoints": 4,
-                "device_compatibility": "100%",
-                "cloud_run_status": "active",
-                "security_guard": "enabled",
-                "uptime": uptime if isinstance(uptime, (int, float)) else uptime
-            },
-            "api_info": {
-                "html_rendering": True,
-                "json_api": True,
-                "query_parameter": "?format=json"
-            }
-        })
-    
-    return make_response(html_content)
-
-@app.route('/monitoring/token', methods=['POST'])
-def monitoring_token():
-    """Generate monitoring tokens for authenticated users."""
-    # Check if user is authenticated
-    if not session.get('authenticated', False):
-        return jsonify({
-            "error": "Access denied",
-            "message": "Authentication required for token generation"
-        }), 401
-    
-    # Generate a monitoring token
-    import secrets
-    token = secrets.token_urlsafe(32)
-    expiry = datetime.utcnow().timestamp() + 3600  # 1 hour expiry
-    
-    # Store token in session (in production, this would go to a database)
-    if 'monitoring_tokens' not in session:
-        session['monitoring_tokens'] = {}
-    
-    session['monitoring_tokens'][token] = {
-        'created': datetime.utcnow().isoformat(),
-        'expires': expiry,
-        'permissions': ['read_stats', 'read_health']
-    }
-    
-    # Create token generation interface HTML
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Token Generation - Yourl.Cloud Inc.</title>
-        <style>
-            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{ 
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-                margin: 0; 
-                padding: 20px; 
-                background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-                min-height: 100vh;
-                color: #333;
-            }}
-            .container {{ 
-                max-width: 800px; 
-                margin: 0 auto; 
-                background: rgba(255, 255, 255, 0.98);
-                border-radius: 15px;
-                box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-                padding: 30px;
-                margin-top: 20px;
-            }}
-            .header {{ 
-                text-align: center; 
-                padding: 30px 0;
-                border-bottom: 3px solid #ff6b6b;
-                margin-bottom: 30px;
-            }}
-            .header h1 {{ 
-                color: #ff6b6b;
-                margin-bottom: 10px;
-                font-size: 2.5rem;
-            }}
-            .header p {{ 
-                color: #666;
-                font-size: 1.1rem;
-            }}
-            .token-section {{
-                background: #fff3cd;
-                border: 2px solid #ffeaa7;
-                border-radius: 15px;
-                padding: 25px;
-                margin: 30px 0;
-                text-align: center;
-            }}
-            .token-display {{
-                background: #2d3436;
-                color: #00b894;
-                padding: 20px;
-                border-radius: 10px;
-                font-family: 'Courier New', monospace;
-                font-size: 1.1rem;
-                margin: 20px 0;
-                word-break: break-all;
-                border: 2px solid #00b894;
-            }}
-            .token-info {{
-                background: #e8f4fd;
-                padding: 20px;
-                border-radius: 10px;
-                margin: 20px 0;
-                border-left: 5px solid #ff6b6b;
-            }}
-            .api-section {{
-                background: #f8f9fa;
-                border: 2px solid #e9ecef;
-                border-radius: 15px;
-                padding: 25px;
-                margin: 30px 0;
-                text-align: center;
-            }}
-            .method-badge {{
-                display: inline-block;
-                padding: 10px 20px;
-                border-radius: 25px;
-                font-size: 1rem;
-                font-weight: bold;
-                text-transform: uppercase;
-                margin: 10px;
-                color: white;
-            }}
-            .method-post {{ background: #007bff; }}
-            .endpoint-path {{
-                font-family: 'Courier New', monospace;
-                background: #e9ecef;
-                padding: 12px 20px;
-                border-radius: 8px;
-                font-size: 1.1rem;
-                margin: 15px 0;
-                display: inline-block;
-            }}
-            .navigation {{
-                text-align: center;
-                margin-top: 40px;
-                padding-top: 30px;
-                border-top: 2px solid #eee;
-            }}
-            .nav-btn {{
-                display: inline-block;
-                background: #ff6b6b;
-                color: white;
-                padding: 15px 30px;
-                text-decoration: none;
-                border-radius: 25px;
-                margin: 10px;
-                transition: all 0.3s ease;
-                font-weight: bold;
-                font-size: 1.1rem;
-            }}
-            .nav-btn:hover {{
-                background: #ee5a24;
-                transform: translateY(-2px);
-                box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-            }}
-            .warning {{
-                background: #fff3cd;
-                border: 1px solid #ffeaa7;
-                border-radius: 10px;
-                padding: 15px;
-                margin: 20px 0;
-                color: #856404;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>🔐 Token Generation</h1>
-                <p>Yourl.Cloud Inc. - Secure Monitoring Access Tokens</p>
-            </div>
-            
-            <div class="token-section">
-                <h3>🎫 Generated Token</h3>
-                <p>Your monitoring access token has been created successfully!</p>
-                
-                <div class="token-display">
-                    {token}
-                </div>
-                
-                <div class="warning">
-                    <strong>⚠️ Important:</strong> Copy this token now. It will not be displayed again and expires in 1 hour.
-                </div>
-            </div>
-            
-            <div class="token-info">
-                <h3>📋 Token Information</h3>
-                <p><strong>Created:</strong> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
-                <p><strong>Expires:</strong> {datetime.fromtimestamp(expiry).strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
-                <p><strong>Permissions:</strong> Read Statistics, Read Health Status</p>
-                <p><strong>Usage:</strong> Include in Authorization header: <code>Authorization: Bearer {token}</code></p>
-            </div>
-            
-            <div class="api-section">
-                <div class="api-title">🔌 API Interface</div>
-                <p>This endpoint provides both HTML rendering and JSON API responses</p>
-                
-                <span class="method-badge method-post">POST</span>
-                <div class="endpoint-path">/monitoring/token</div>
-                
-                <p><strong>Response Format:</strong> HTML (default) | <strong>API Format:</strong> Add <code>?format=json</code> to URL</p>
-                <p><strong>Authentication:</strong> Required (valid marketing code or session)</p>
-            </div>
-            
-            <div class="navigation">
-                <a href="/monitoring" class="nav-btn">📊 Back to Monitoring</a>
-                <a href="/" class="nav-btn">🏠 Home</a>
-                <a href="/monitoring/stats" class="nav-btn">📈 Statistics</a>
-                <a href="/data" class="nav-btn">📡 Data Stream</a>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    
-    # Check if JSON format is requested
-    if request.args.get('format') == 'json':
-        return jsonify({
-            "endpoint": "/monitoring/token",
-            "method": "POST",
-            "authentication": "required",
-            "timestamp": datetime.utcnow().isoformat(),
-            "token": {
-                "value": token,
-                "created": datetime.utcnow().isoformat(),
-                "expires": datetime.fromtimestamp(expiry).isoformat(),
-                "permissions": ["read_stats", "read_health"],
-                "usage": f"Authorization: Bearer {token}"
-            },
-            "api_info": {
-                "html_rendering": True,
-                "json_api": True,
-                "query_parameter": "?format=json"
-            }
-        })
-    
-    return make_response(html_content)
-
-@app.route('/data', methods=['GET'])
-def data_stream():
-    """Enhanced data stream endpoint providing vertical linear datastream with horizontally scrollable wiki stories."""
-    # Check if visitor has authenticated (used a valid code previously)
-    if not session.get('authenticated', False):
         return make_response(f"""
         <!DOCTYPE html>
-        <html lang="en">
+        <html>
         <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Access Denied - Data Stream</title>
-            <style>
-                body {{ 
-                    font-family: 'Courier New', monospace;
-                    background: #000;
-                    color: #ff0000;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    min-height: 100vh;
-                    margin: 0;
-                }}
-                .access-denied {{
-                    text-align: center;
-                    padding: 40px;
-                    border: 2px solid #ff0000;
-                    border-radius: 10px;
-                    background: rgba(255, 0, 0, 0.1);
-                }}
-                .error-code {{
-                    font-size: 3rem;
-                    margin-bottom: 20px;
-                    text-shadow: 0 0 20px #ff0000;
-                }}
-                .message {{
-                    font-size: 1.2rem;
-                    margin-bottom: 30px;
-                }}
-                .nav-btn {{
-                    display: inline-block;
-                    padding: 10px 20px;
-                    background: #ff0000;
-                    color: #000;
-                    text-decoration: none;
-                    border-radius: 5px;
-                    font-weight: bold;
-                    margin: 10px;
-                }}
-                .nav-btn:hover {{
-                    background: #cc0000;
-                    color: #fff;
-                }}
-            </style>
+            <meta http-equiv="refresh" content="3; url=/">
+            <title>Access Denied</title>
         </head>
         <body>
-            <div class="access-denied">
-                <div class="error-code">🔒 ACCESS DENIED</div>
-                <div class="message">
-                    <p><strong>Data Stream Access Restricted</strong></p>
-                    <p>This endpoint is only accessible to authenticated users.</p>
-                    <p>You must first use a valid marketing code on the landing page.</p>
-                </div>
-                <div>
-                    <a href="/" class="nav-btn">🏠 Return to Landing Page</a>
-                    <a href="/status" class="nav-btn">📊 Service Status</a>
-                </div>
-            </div>
+            <p>Invalid code: "{password}"</p>
+            <p>Expected: "{current_token_code}"</p>
+            <p>Redirecting back to login...</p>
+            <script>setTimeout(() => window.location.href = '/', 3000);</script>
         </body>
         </html>
-        """, 403)
+        """)
+
+@app.route('/data')
+def data_stream():
+    """Wiki Visualization Dashboard - Interactive exploration of Yourl.Cloud's purpose and architecture"""
     
-    # Generate dynamic story frames
-    import time
-    current_time = time.time()
-    
-    story_frames = [
+    # Create comprehensive wiki sections that represent the project's purpose
+    wiki_sections = [
         {
-            "id": "frame_001",
-            "timestamp": current_time - 3600,
-            "title": "The Trust-Based AI Revolution",
-            "content": "Yourl.Cloud Inc. stands at the forefront of a new era - the Trust-Based AI Revolution. We're not just building technology; we're creating a foundation of trust that enables AI to serve families across locations with integrity and reliability.",
-            "category": "vision_future",
-            "visual_elements": ["ai_trust", "family_bridge", "location_spanning"],
-            "scroll_position": 0,
-            "wiki_links": ["ARCHITECTURE_OVERVIEW.md", "BUSINESS_NAME_UPDATE.md"],
-            "mind_map_nodes": ["trust", "ai", "family", "innovation"]
+            "id": "1",
+            "title": "Project Overview",
+            "description": "Core mission and vision of Yourl.Cloud",
+            "content": "Yourl.Cloud is a production-ready Python Flask API designed for trust-based AI systems. The platform provides advanced features including Cloud Run domain mapping compatibility, Friends and Family Guard security rulesets, visual inspection capabilities, and production WSGI server support.",
+            "category": "overview",
+            "status": "featured",
+            "lastUpdate": datetime.now() - timedelta(minutes=5),
+            "links": ["Architecture Overview", "Security Features", "Technology Stack"]
         },
         {
-            "id": "frame_002", 
-            "timestamp": current_time - 1800,
-            "title": "The Clipboard Bridge Phenomenon",
-            "content": "At cb.yourl.cloud, we've created something extraordinary - a clipboard bridge that transcends physical boundaries. AI assistants can now share context seamlessly across family locations, creating a unified experience that feels like magic.",
-            "category": "breakthrough_technology",
-            "visual_elements": ["clipboard_bridge", "context_sharing", "seamless_experience"],
-            "scroll_position": 100,
-            "wiki_links": ["CLIPBOARD_BRIDGE_DEPLOYMENT.md", "ZAIDO_CLIPBOARD_RECOVERY_GUIDE.md"],
-            "mind_map_nodes": ["clipboard", "bridge", "context", "unified"]
+            "id": "2",
+            "title": "Architecture Overview",
+            "description": "Complete system architecture and design",
+            "content": "The system is built with Python Flask 3.0.2, WSGI servers (Gunicorn/Waitress), Google Cloud Run deployment, and comprehensive security layers including authentication, authorization, encryption, and audit trails.",
+            "category": "architecture",
+            "status": "active",
+            "lastUpdate": datetime.now() - timedelta(minutes=3),
+            "links": ["Technology Stack", "Security Architecture", "Deployment Guide"]
+        },
+        {
+            "id": "3",
+            "title": "Security Features",
+            "description": "Friends and Family Guard security ruleset",
+            "content": "Implements comprehensive security with device-based access control, multi-factor authentication, role-based authorization, complete audit logging, and compliance with GDPR, SOC 2, and ISO 27001 standards.",
+            "category": "security",
+            "status": "active",
+            "lastUpdate": datetime.now() - timedelta(minutes=2),
+            "links": ["Security Checklist", "Access Control", "Audit & Compliance"]
+        },
+        {
+            "id": "4",
+            "title": "Development Workflow",
+            "description": "Development process and best practices",
+            "content": "Comprehensive development workflow including local development setup, testing procedures, code standards, CI/CD pipeline, and deployment processes with automated testing and security scanning.",
+            "category": "development",
+            "status": "active",
+            "lastUpdate": datetime.now() - timedelta(minutes=4),
+            "links": ["Technology Stack", "Deployment Guide", "Testing Procedures"]
+        },
+        {
+            "id": "5",
+            "title": "Cloud Run Deployment",
+            "description": "Production deployment on Google Cloud",
+            "content": "Full Cloud Run compatibility with automatic scaling, domain mapping, load balancing, health monitoring, and disaster recovery with 99.9% uptime target and cross-region failover capabilities.",
+            "category": "deployment",
+            "status": "active",
+            "lastUpdate": datetime.now() - timedelta(minutes=1),
+            "links": ["Architecture Overview", "Infrastructure Setup", "Performance Metrics"]
+        },
+        {
+            "id": "6",
+            "title": "Knowledge Hub",
+            "description": "Central documentation and learning center",
+            "content": "Comprehensive knowledge transfer hub serving as the central navigation point for all aspects of the solution, including interactive features, search capabilities, and continuous improvement processes.",
+            "category": "overview",
+            "status": "featured",
+            "lastUpdate": datetime.now() - timedelta(minutes=6),
+            "links": ["Wiki System", "Documentation", "Learning Paths"]
         }
     ]
     
-    # Create the enhanced HTML response with vertical datastream
+    def get_category_icon(category):
+        """Helper function to get category icons"""
+        icons = {
+            'overview': '🎯',
+            'architecture': '🏗️',
+            'security': '🔐',
+            'development': '🚀',
+            'deployment': '🌐'
+        }
+        return icons.get(category, '📚')
+    
+    # Create the HTML response with wiki visualization
     html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Data Stream - Yourl.Cloud Inc.</title>
+        <title>Wiki Visualization Dashboard - Yourl.Cloud Inc.</title>
         <style>
             * {{ margin: 0; padding: 0; box-sizing: border-box; }}
             body {{ 
-                font-family: 'Courier New', monospace;
-                background: #000;
-                color: #00ff00;
-                overflow-x: auto;
-                overflow-y: hidden;
-            }}
-            .datastream-container {{
-                display: flex;
-                flex-direction: column;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: #333;
                 min-height: 100vh;
-                width: max-content;
+            }}
+            .container {{
+                max-width: 1400px;
+                margin: 0 auto;
                 padding: 20px;
             }}
-            .frame {{
-                width: 800px;
-                min-height: 300px;
-                margin: 20px 0;
+            .header {{
+                text-align: center;
+                background: rgba(255, 255, 255, 0.95);
+                padding: 40px;
+                border-radius: 20px;
+                margin-bottom: 30px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            }}
+            .header h1 {{
+                font-size: 3rem;
+                color: #667eea;
+                margin-bottom: 20px;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            }}
+            .header p {{
+                font-size: 1.3rem;
+                color: #666;
+                margin-bottom: 30px;
+            }}
+            .project-info {{
+                background: linear-gradient(135deg, #667eea, #764ba2);
+                color: white;
                 padding: 30px;
-                background: rgba(0, 255, 0, 0.05);
-                border: 1px solid #00ff00;
-                border-radius: 10px;
-                position: relative;
-                overflow: hidden;
+                border-radius: 15px;
+                text-align: center;
+            }}
+            .project-info h2 {{
+                font-size: 2rem;
+                margin-bottom: 15px;
+            }}
+            .metrics {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 20px;
+                margin-bottom: 30px;
+            }}
+            .metric-card {{
+                background: rgba(255, 255, 255, 0.95);
+                padding: 25px;
+                border-radius: 15px;
+                text-align: center;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+                transition: transform 0.3s ease;
+            }}
+            .metric-card:hover {{
+                transform: translateY(-5px);
+            }}
+            .metric-number {{
+                font-size: 2.5rem;
+                font-weight: bold;
+                margin-bottom: 10px;
+            }}
+            .metric-label {{
+                color: #666;
+                font-size: 0.9rem;
+            }}
+            .category-filters {{
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                margin-bottom: 30px;
+                flex-wrap: wrap;
+            }}
+            .filter-btn {{
+                padding: 12px 24px;
+                border: none;
+                border-radius: 25px;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
                 transition: all 0.3s ease;
+                background: rgba(255, 255, 255, 0.9);
+                color: #667eea;
             }}
-            .frame::before {{
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                height: 2px;
-                background: linear-gradient(90deg, #00ff00, #00aa00, #00ff00);
-                animation: pulse 2s infinite;
+            .filter-btn.active {{
+                background: #667eea;
+                color: white;
+                transform: scale(1.05);
             }}
-            @keyframes pulse {{
-                0% {{ opacity: 0.5; }}
-                50% {{ opacity: 1; }}
-                100% {{ opacity: 0.5; }}
+            .filter-btn:hover {{
+                transform: scale(1.05);
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
             }}
-            .frame:hover {{
-                background: rgba(0, 255, 0, 0.1);
-                transform: scale(1.02);
-                box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            .wiki-grid {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+                gap: 25px;
+                margin-bottom: 30px;
             }}
-            .frame-header {{
+            .wiki-card {{
+                background: rgba(255, 255, 255, 0.95);
+                border-radius: 15px;
+                padding: 25px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+                transition: all 0.3s ease;
+                cursor: pointer;
+                border-left: 5px solid #667eea;
+            }}
+            .wiki-card:hover {{
+                transform: translateY(-5px);
+                box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            }}
+            .card-header {{
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
                 margin-bottom: 15px;
-                padding-bottom: 10px;
-                border-bottom: 1px solid rgba(0, 255, 0, 0.3);
             }}
-            .frame-id {{
+            .card-title {{
+                font-size: 1.3rem;
                 font-weight: bold;
-                color: #00aa00;
-            }}
-            .frame-timestamp {{
-                font-size: 0.9rem;
-                color: #00aa00;
-            }}
-            .frame-category {{
-                display: inline-block;
-                padding: 5px 10px;
-                background: rgba(0, 255, 0, 0.2);
-                border: 1px solid #00ff00;
-                border-radius: 5px;
-                font-size: 0.8rem;
+                color: #333;
                 margin-bottom: 10px;
             }}
-            .frame-title {{
-                font-size: 1.5rem;
-                font-weight: bold;
-                margin-bottom: 15px;
-                color: #00ff00;
-            }}
-            .frame-content {{
+            .card-description {{
+                color: #666;
                 line-height: 1.6;
-                margin-bottom: 20px;
-            }}
-            .visual-elements {{
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
                 margin-bottom: 15px;
             }}
-            .visual-element {{
-                padding: 5px 10px;
-                background: rgba(0, 255, 0, 0.2);
-                border: 1px solid #00ff00;
-                border-radius: 5px;
-                font-size: 0.8rem;
+            .card-content {{
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 10px;
+                margin-bottom: 15px;
+                display: none;
             }}
-            .wiki-links {{
+            .card-content.show {{
+                display: block;
+            }}
+            .card-links {{
                 display: flex;
                 flex-wrap: wrap;
-                gap: 10px;
-                margin-top: 15px;
-                padding-top: 15px;
-                border-top: 1px solid rgba(0, 255, 0, 0.3);
+                gap: 8px;
             }}
-            .wiki-link {{
+            .link-tag {{
+                background: #e3f2fd;
+                color: #1976d2;
                 padding: 5px 10px;
-                background: rgba(0, 255, 0, 0.1);
-                border: 1px solid #00ff00;
-                border-radius: 5px;
+                border-radius: 15px;
                 font-size: 0.8rem;
-                text-decoration: none;
-                color: #00ff00;
-                transition: all 0.3s ease;
+                font-weight: 500;
             }}
-            .wiki-link:hover {{
-                background: rgba(0, 255, 0, 0.3);
-                transform: scale(1.05);
+            .status-badge {{
+                padding: 6px 12px;
+                border-radius: 20px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                text-transform: capitalize;
             }}
-            .navigation {{
-                position: fixed;
-                bottom: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                display: flex;
-                gap: 10px;
+            .status-featured {{ background: #e8f5e8; color: #2e7d32; }}
+            .status-active {{ background: #e3f2fd; color: #1976d2; }}
+            .status-updated {{ background: #fff3e0; color: #f57c00; }}
+            .status-planned {{ background: #fce4ec; color: #c2185b; }}
+            .category-icon {{
+                font-size: 1.5rem;
+                margin-right: 10px;
             }}
-            .nav-btn {{
-                padding: 10px 20px;
-                background: #00ff00;
-                color: #000;
-                text-decoration: none;
-                border-radius: 5px;
-                font-weight: bold;
-                transition: all 0.3s ease;
-            }}
-            .nav-btn:hover {{
-                background: #00aa00;
-                color: #fff;
-                transform: scale(1.05);
-            }}
-            .data-stream-title {{
+            .knowledge-flow {{
+                background: rgba(255, 255, 255, 0.95);
+                padding: 40px;
+                border-radius: 20px;
                 text-align: center;
-                font-size: 2rem;
                 margin-bottom: 30px;
-                color: #00ff00;
-                text-shadow: 0 0 20px #00ff00;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             }}
+            .flow-steps {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 20px;
+                margin-top: 30px;
+            }}
+            .flow-step {{
+                background: white;
+                padding: 20px;
+                border-radius: 15px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            }}
+            .flow-icon {{
+                font-size: 2.5rem;
+                margin-bottom: 15px;
+            }}
+            .purpose-summary {{
+                background: rgba(255, 255, 255, 0.95);
+                padding: 40px;
+                border-radius: 20px;
+                margin-bottom: 30px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            }}
+            .purpose-grid {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 25px;
+                margin-top: 30px;
+            }}
+            .purpose-card {{
+                background: white;
+                padding: 25px;
+                border-radius: 15px;
+                text-align: center;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+                border-top: 5px solid #667eea;
+            }}
+            .purpose-icon {{
+                font-size: 3rem;
+                margin-bottom: 15px;
+            }}
+            .footer {{
+                text-align: center;
+                background: rgba(255, 255, 255, 0.95);
+                padding: 30px;
+                border-radius: 20px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            }}
+            .status-badges {{
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                flex-wrap: wrap;
+                margin: 20px 0;
+            }}
+            .status-badge-large {{
+                padding: 12px 24px;
+                border-radius: 25px;
+                font-size: 1rem;
+                font-weight: 600;
+                text-transform: uppercase;
+            }}
+            .status-success {{ background: #e8f5e8; color: #2e7d32; }}
+            .status-info {{ background: #e3f2fd; color: #1976d2; }}
+            .status-warning {{ background: #fff3e0; color: #f57c00; }}
         </style>
     </head>
     <body>
-        <div class="datastream-container">
-            <div class="data-stream-title">🚀 YOURL.CLOUD TRUST-BASED AI DATASTREAM</div>
-            
-            {''.join([f'''
-            <div class="frame" data-scroll="{frame['scroll_position']}" data-category="{frame['category']}" data-nodes="{','.join(frame.get('mind_map_nodes', []))}">
-                <div class="frame-header">
-                    <span class="frame-id">{frame['id']}</span>
-                    <span class="frame-timestamp">{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(frame['timestamp']))}</span>
-                </div>
-                <div class="frame-category">{frame['category'].replace('_', ' ').title()}</div>
-                <div class="frame-title">{frame['title']}</div>
-                <div class="frame-content">{frame['content']}</div>
-                <div class="visual-elements">
-                    {''.join(['<span class="visual-element">' + element.replace("_", " ").title() + '</span>' for element in frame['visual_elements']])}
-                </div>
-                <div class="wiki-links">
-                    {''.join(['<a href="/knowledge-hub" class="wiki-link" target="_blank">📚 ' + link.replace(".md", "").replace("_", " ").title() + '</a>' for link in frame.get('wiki_links', [])])}
+        <div class="container">
+            <div class="header">
+                <h1>📚 Wiki Visualization Dashboard</h1>
+                <p>Interactive exploration of Yourl.Cloud's purpose and architecture</p>
+                <div class="project-info">
+                    <h2>Yourl.Cloud</h2>
+                    <p>Trust-Based AI Platform for Families Worldwide</p>
                 </div>
             </div>
-            ''' for frame in story_frames])}
+
+            <div class="metrics">
+                <div class="metric-card">
+                    <div class="metric-number">{len(wiki_sections)}</div>
+                    <div class="metric-label">Wiki Sections</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-number">{len([s for s in wiki_sections if s['status'] == 'active'])}</div>
+                    <div class="metric-label">Active Sections</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-number">{len([s for s in wiki_sections if s['status'] == 'featured'])}</div>
+                    <div class="metric-label">Featured Content</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-number">{len([s for s in wiki_sections if s['status'] == 'planned'])}</div>
+                    <div class="metric-label">Future Features</div>
+                </div>
+            </div>
+
+            <div class="category-filters">
+                <button class="filter-btn active" onclick="filterByCategory('all')">🌟 All Categories</button>
+                <button class="filter-btn" onclick="filterByCategory('overview')">🎯 Overview</button>
+                <button class="filter-btn" onclick="filterByCategory('architecture')">🏗️ Architecture</button>
+                <button class="filter-btn" onclick="filterByCategory('security')">🔐 Security</button>
+                <button class="filter-btn" onclick="filterByCategory('development')">🚀 Development</button>
+                <button class="filter-btn" onclick="filterByCategory('deployment')">🌐 Deployment</button>
+            </div>
+
+            <div class="wiki-grid">
+                {''.join([f'''
+                <div class="wiki-card" data-category="{section['category']}" onclick="toggleContent(this)">
+                    <div class="card-header">
+                        <div>
+                            <span class="category-icon">{get_category_icon(section['category'])}</span>
+                            <div class="card-title">{section['title']}</div>
+                        </div>
+                        <span class="status-badge status-{section['status']}">{section['status']}</span>
+                    </div>
+                    <div class="card-description">{section['description']}</div>
+                    <div class="card-content" id="content-{section['id']}">
+                        <p><strong>Content:</strong></p>
+                        <p>{section['content']}</p>
+                        <p><strong>Related Links:</strong></p>
+                        <div class="card-links">
+                            {''.join([f'<span class="link-tag">{link}</span>' for link in section['links']])}
+                        </div>
+                    </div>
+                    <div class="card-links">
+                        {''.join([f'<span class="link-tag">{link}</span>' for link in section['links']])}
+                    </div>
+                    <div style="margin-top: 15px; font-size: 0.8rem; color: #999;">
+                        Last updated: {section['lastUpdate'].strftime('%H:%M:%S')} | Category: {section['category']}
+                    </div>
+                </div>
+                ''' for section in wiki_sections])}
+            </div>
+
+            <div class="knowledge-flow">
+                <h2>🧠 Knowledge Flow Architecture</h2>
+                <p>This visualization represents how Yourl.Cloud's wiki system flows from raw information to actionable knowledge</p>
+                <div class="flow-steps">
+                    <div class="flow-step">
+                        <div class="flow-icon">📚</div>
+                        <h4>Documentation</h4>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-icon">🔍</div>
+                        <h4>Discovery</h4>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-icon">💡</div>
+                        <h4>Insights</h4>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-icon">🚀</div>
+                        <h4>Action</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="purpose-summary">
+                <h2>🎯 Project Purpose & Mission</h2>
+                <div class="purpose-grid">
+                    <div class="purpose-card">
+                        <div class="purpose-icon">🤝</div>
+                        <h4>Trust-Based AI</h4>
+                        <p>Building AI systems that families can trust and rely on</p>
+                    </div>
+                    <div class="purpose-card">
+                        <div class="purpose-icon">🌍</div>
+                        <h4>Global Family Platform</h4>
+                        <p>Serving families worldwide with secure, reliable technology</p>
+                    </div>
+                    <div class="purpose-card">
+                        <div class="purpose-icon">🔒</div>
+                        <h4>Security First</h4>
+                        <p>Implementing enterprise-grade security for family protection</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <h3>📊 Wiki Status</h3>
+                <div class="status-badges">
+                    <span class="status-badge-large status-success">Knowledge Stream Active</span>
+                    <span class="status-badge-large status-info">Interactive Learning</span>
+                    <span class="status-badge-large status-warning">Continuous Updates</span>
+                </div>
+                <p style="margin-top: 20px; color: #666;">
+                    Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+                </p>
+            </div>
         </div>
-        
-        <div class="navigation">
-            <a href="/" class="nav-btn">🏠 Home</a>
-            <a href="/api" class="nav-btn">🔌 API</a>
-            <a href="/status" class="nav-btn">📊 Status</a>
-            <a href="/data" class="nav-btn">📡 Data Stream</a>
-            <a href="/knowledge-hub" class="nav-btn">🧠 Knowledge Hub</a>
-        </div>
+
+        <script>
+            function filterByCategory(category) {{
+                // Update active filter button
+                document.querySelectorAll('.filter-btn').forEach(btn => {{
+                    btn.classList.remove('active');
+                }});
+                event.target.classList.add('active');
+                
+                // Filter wiki cards
+                const cards = document.querySelectorAll('.wiki-card');
+                cards.forEach(card => {{
+                    if (category === 'all' || card.dataset.category === category) {{
+                        card.style.display = 'block';
+                    }} else {{
+                        card.style.display = 'none';
+                    }}
+                }});
+            }}
+            
+            function toggleContent(card) {{
+                const contentId = card.querySelector('.card-content').id;
+                const content = document.getElementById(contentId);
+                content.classList.toggle('show');
+            }}
+            
+            // Add some interactive effects
+            document.querySelectorAll('.wiki-card').forEach(card => {{
+                card.addEventListener('mouseenter', function() {{
+                    this.style.transform = 'translateY(-5px)';
+                }});
+                
+                card.addEventListener('mouseleave', function() {{
+                    this.style.transform = 'translateY(0)';
+                }});
+            }});
+        </script>
     </body>
     </html>
     """
     
     return make_response(html_content)
 
+@app.route('/status')
+def status():
+    """Service status endpoint"""
+    return jsonify({
+        "status": "healthy",
+        "service": "Yourl.Cloud Wiki Visualization",
+        "timestamp": datetime.now().isoformat(),
+        "version": "1.0.0"
+    })
 
-
-@app.errorhandler(404)
-def not_found(error):
-    """Handle 404 errors with rich HTML and footer navigation."""
-    # Check if JSON format is requested
-    if request.args.get('format') == 'json':
-        return jsonify({
-            "error": "Not Found",
-            "url": request.url,
-            "message": "The requested resource was not found, but here's your request URL",
-            "timestamp": datetime.utcnow().isoformat(),
-            "friends_family_guard": FRIENDS_FAMILY_GUARD["enabled"],
-            "cloud_run": {
-                "original_host": get_original_host(),
-                "original_protocol": get_original_protocol()
-            }
-        }), 404
-    
-    # Create rich HTML 404 page
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Page Not Found - Yourl.Cloud Inc.</title>
-        <style>
-            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{ 
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-                margin: 0; 
-                padding: 20px; 
-                background: linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%);
-                min-height: 100vh;
-                color: #333;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }}
-            .error-container {{ 
-                background: rgba(255, 255, 255, 0.98);
-                border-radius: 15px;
-                box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-                padding: 40px;
-                text-align: center;
-                max-width: 700px;
-            }}
-            .error-code {{ 
-                font-size: 6rem; 
-                margin-bottom: 20px; 
-                color: #fd7e14;
-                font-weight: bold;
-            }}
-            .error-title {{ 
-                color: #fd7e14; 
-                margin-bottom: 15px; 
-                font-size: 2rem; 
-            }}
-            .error-message {{ 
-                color: #666; 
-                margin-bottom: 20px; 
-                line-height: 1.6;
-            }}
-            .url-display {{
-                background: #f8f9fa;
-                border: 2px solid #e9ecef;
-                border-radius: 10px;
-                padding: 20px;
-                margin: 20px 0;
-                font-family: 'Courier New', monospace;
-                font-size: 14px;
-                word-break: break-all;
-            }}
-            .footer {{
-                text-align: center;
-                padding: 30px 0;
-                color: #666;
-                border-top: 2px solid #eee;
-                margin-top: 30px;
-            }}
-            .footer-nav {{
-                margin-bottom: 20px;
-            }}
-            .footer-nav h4 {{
-                color: #fd7e14;
-                margin-bottom: 15px;
-                font-size: 1.2rem;
-            }}
-            .nav-links {{
-                display: flex;
-                justify-content: center;
-                flex-wrap: wrap;
-                gap: 15px;
-                margin-bottom: 20px;
-            }}
-            .nav-link {{
-                display: inline-block;
-                padding: 8px 16px;
-                background: linear-gradient(45deg, #fd7e14, #e83e8c);
-                color: white;
-                text-decoration: none;
-                border-radius: 20px;
-                font-size: 0.9rem;
-                font-weight: bold;
-                transition: all 0.3s ease;
-            }}
-            .nav-link:hover {{
-                transform: translateY(-2px);
-                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                background: linear-gradient(45deg, #e8690b, #d63384);
-            }}
-            .footer-info {{
-                border-top: 1px solid #eee;
-                padding-top: 20px;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="error-container">
-            <div class="error-code">404</div>
-            <div class="error-title">Page Not Found</div>
-            <div class="error-message">
-                The requested resource was not found, but here's your request URL for reference.
-            </div>
-            
-            <div class="url-display">
-                <strong>Requested URL:</strong><br>
-                {request.url}
-            </div>
-            
-            <!-- Footer Navigation -->
-            <div class="footer">
-                <div class="footer-nav">
-                    <h4>🔗 Quick Navigation</h4>
-                    <div class="nav-links">
-                        <a href="/" class="nav-link">🏠 Home</a>
-                        <a href="/health" class="nav-link">🏥 Health</a>
-                        <a href="/status" class="nav-link">📊 Status</a>
-                        <a href="/api" class="nav-link">🔌 API</a>
-                        <a href="/monitoring" class="nav-link">📈 Monitoring</a>
-                        <a href="/data" class="nav-link">📡 Data Stream</a>
-                        <a href="/knowledge-hub" class="nav-link">🧠 Knowledge Hub</a>
-                    </div>
-                </div>
-                <div class="footer-info">
-                    <p>&copy; 2024 Yourl.Cloud Inc. All rights reserved. | United States | Global Operations</p>
-                    <p>Built with ❤️ for secure, scalable cloud solutions</p>
-                </div>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    
-    return make_response(html_content), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    """Handle 500 errors with rich HTML and footer navigation."""
-    logger.error(f"Internal server error: {str(error)}")
-    
-    # Check if JSON format is requested
-    if request.args.get('format') == 'json':
-        return jsonify({
-            "error": "Internal Server Error",
-            "url": request.url,
-            "message": "An internal server error occurred",
-            "timestamp": datetime.utcnow().isoformat(),
-            "friends_family_guard": FRIENDS_FAMILY_GUARD["enabled"]
-        }), 500
-    
-    # Create rich HTML 500 error page
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Server Error - Yourl.Cloud Inc.</title>
-        <style>
-            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{ 
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-                margin: 0; 
-                padding: 20px; 
-                background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-                min-height: 100vh;
-                color: #333;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }}
-            .error-container {{ 
-                background: rgba(255, 255, 255, 0.98);
-                border-radius: 15px;
-                box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-                padding: 40px;
-                text-align: center;
-                max-width: 700px;
-            }}
-            .error-code {{ 
-                font-size: 6rem; 
-                margin-bottom: 20px; 
-                color: #dc3545;
-                font-weight: bold;
-            }}
-            .error-title {{ 
-                color: #dc3545; 
-                margin-bottom: 15px; 
-                font-size: 2rem; 
-            }}
-            .error-message {{ 
-                color: #666; 
-                margin-bottom: 20px; 
-                line-height: 1.6;
-            }}
-            .footer {{
-                text-align: center;
-                padding: 30px 0;
-                color: #666;
-                border-top: 2px solid #eee;
-                margin-top: 30px;
-            }}
-            .footer-nav {{
-                margin-bottom: 20px;
-            }}
-            .footer-nav h4 {{
-                color: #dc3545;
-                margin-bottom: 15px;
-                font-size: 1.2rem;
-            }}
-            .nav-links {{
-                display: flex;
-                justify-content: center;
-                flex-wrap: wrap;
-                gap: 15px;
-                margin-bottom: 20px;
-            }}
-            .nav-link {{
-                display: inline-block;
-                padding: 8px 16px;
-                background: linear-gradient(45deg, #dc3545, #c82333);
-                color: white;
-                text-decoration: none;
-                border-radius: 20px;
-                font-size: 0.9rem;
-                font-weight: bold;
-                transition: all 0.3s ease;
-            }}
-            .nav-link:hover {{
-                transform: translateY(-2px);
-                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                background: linear-gradient(45deg, #c82333, #bd2130);
-            }}
-            .footer-info {{
-                border-top: 1px solid #eee;
-                padding-top: 20px;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="error-container">
-            <div class="error-code">500</div>
-            <div class="error-title">Internal Server Error</div>
-            <div class="error-message">
-                An internal server error occurred. Our team has been notified and is working to resolve this issue.
-            </div>
-            
-            <!-- Footer Navigation -->
-            <div class="footer">
-                <div class="footer-nav">
-                    <h4>🔗 Quick Navigation</h4>
-                    <div class="nav-links">
-                        <a href="/" class="nav-link">🏠 Home</a>
-                        <a href="/health" class="nav-link">🏥 Health</a>
-                        <a href="/status" class="nav-link">📊 Status</a>
-                        <a href="/api" class="nav-link">🔌 API</a>
-                        <a href="/monitoring" class="nav-link">📈 Monitoring</a>
-                        <a href="/data" class="nav-link">📡 Data Stream</a>
-                        <a href="/knowledge-hub" class="nav-link">🧠 Knowledge Hub</a>
-                    </div>
-                </div>
-                <div class="footer-info">
-                    <p>&copy; 2024 Yourl.Cloud Inc. All rights reserved. | United States | Global Operations</p>
-                    <p>Built with ❤️ for secure, scalable cloud solutions</p>
-                </div>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    
-    return make_response(html_content), 500
+@app.route('/health')
+def health():
+    """Health check endpoint"""
+    return jsonify({
+        "status": "healthy",
+        "uptime": "running",
+        "timestamp": datetime.now().isoformat()
+    })
 
 if __name__ == '__main__':
-    # Track app start time for uptime monitoring
-    _app_start_time = time.time()
-    
-    # Force production mode for local testing
-    app.config.update(
-        ENV='production',
-        DEBUG=False,
-        TESTING=False
-    )
-    
-    # For local testing, use a random available port
-    import socket
-    def find_free_port():
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(('', 0))
-            s.listen(1)
-            port = s.getsockname()[1]
-        return port
-    
-    # Use random port for local testing, configured PORT for production
-    local_port = find_free_port()
-    
-    print(f"🚀 Starting simplified URL API Server")
-    print(f"📍 Host: {HOST}")
-    print(f"📍 Port: {local_port}")
-    print(f"🐛 Debug: {DEBUG}")
-    print(f"🏭 Production: {PRODUCTION}")
-    print(f"🆔 Session: {FRIENDS_FAMILY_GUARD['session_id']}")
-    print(f"🏢 Organization: {FRIENDS_FAMILY_GUARD['organization']}")
-    print(f"🛡️ Friends and Family Guard: {'Enabled' if FRIENDS_FAMILY_GUARD['enabled'] else 'Disabled'}")
-    print(f"☁️ Google Cloud Run Support: Enabled")
-    print(f"🌐 Domain Mapping: {'Enabled' if CLOUD_RUN_CONFIG['domain_mapping_enabled'] else 'Disabled'}")
-    print("=" * 60)
-    print("⚠️  NOTE: This is for local testing only!")
-    print("🚀 For production, use: gunicorn --bind 0.0.0.0:8080 wsgi:app")
-    print("=" * 60)
-    
-    # Use production server settings with dynamic local port
-    app.run(host=HOST, port=local_port, debug=False, threaded=True, use_reloader=False)
+    print(f"🚀 Starting Yourl.Cloud Wiki Visualization Server...")
+    print(f"🌐 Server will be available at: http://localhost:{PORT}")
+    print(f"📊 Wiki Dashboard: http://localhost:{PORT}/data")
+    print(f"🏠 Landing Page: http://localhost:{PORT}/")
+    app.run(host=HOST, port=PORT, debug=True)

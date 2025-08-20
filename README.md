@@ -32,6 +32,8 @@ When running locally, the application automatically assigns a random available p
 **Use the port shown in your console output** for all local testing and development.
 
 ### **Local Development**
+
+#### **Option 1: Traditional Local Development**
 ```bash
 # Clone the repository
 git clone https://github.com/XDM-ZSBW/cloud-yourl.git
@@ -45,6 +47,28 @@ python app.py
 ```
 
 The application will start on a dynamically assigned port. Check the console output for the exact localhost URL.
+
+#### **Option 2: Modern Cloud Code Development (Recommended)** 🆕
+```bash
+# Clone the repository
+git clone https://github.com/XDM-ZSBW/cloud-yourl.git
+cd cloud-yourl
+
+# Set up Cloud Code development environment
+.\scripts\cloud_code_dev_setup.ps1 -ProjectId "yourl-cloud" -Environment "dev"
+
+# Start development environment
+gcloud beta code dev up --config .cloudcode\dev.yaml
+```
+
+**Benefits of Cloud Code Development:**
+- 🚀 **Real-time code synchronization** with Cloud Run
+- 🧪 **Automated build testing** and validation
+- 🔍 **Live debugging** in production-like environment
+- 📊 **Performance monitoring** and optimization
+- 🔒 **Security scanning** and compliance checks
+
+**📚 [Full Cloud Code Development Guide](docs/GCLOUD_CODE_DEV_GUIDE.md)**
 
 ### **Cloud Run Deployment**
 ```bash

@@ -13,6 +13,7 @@ This directory contains development, testing, and build documentation for the Yo
 
 ### **Development & Build**
 - [Development Setup](LOCAL_DEVELOPMENT_SETUP.md)
+- [**Cloud Code Dev Guide**](GCLOUD_CODE_DEV_GUIDE.md) 🆕
 - [Build Status](BUILD_COMPLETE.md)
 - [Architecture Overview](ARCHITECTURE_OVERVIEW.md)
 - [Deployment Guide](DEPLOYMENT_SUMMARY.md)
