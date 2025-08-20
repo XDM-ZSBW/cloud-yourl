@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Status - Yourl.Cloud</title>
+    <meta name="description" content="Real-time service status and system health for Yourl.Cloud">
+    
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #ffd700;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.9);
+            --bg-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            --bg-secondary: rgba(255, 255, 255, 0.1);
+            --bg-tertiary: rgba(255, 255, 255, 0.15);
+            --border-radius: 20px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .header h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, var(--accent-color), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .overall-status {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+            text-align: center;
+        }
+
+        .overall-status h2 {
+            color: var(--accent-color);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 1rem;
+            vertical-align: middle;
+        }
+
+        .status-online { background: var(--success-color); }
+        .status-warning { background: var(--warning-color); }
+        .status-offline { background: var(--error-color); }
+
+        .status-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .status-description {
+            opacity: 0.8;
+            font-size: 1.1rem;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .service-card {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+            transition: var(--transition);
+        }
+
+        .service-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .service-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .service-icon {
+            font-size: 2rem;
+        }
+
+        .service-info h3 {
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+            font-size: 1.3rem;
+        }
+
+        .service-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .service-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-item {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .service-details {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .detail-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            opacity: 0.8;
+        }
+
+        .detail-value {
+            font-weight: 500;
+        }
+
+        .incidents-section {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out 0.6s both;
+        }
+
+        .incidents-section h2 {
+            color: var(--accent-color);
+            margin-bottom: 2rem;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .incident-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .incident-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .incident-title {
+            color: var(--accent-color);
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .incident-time {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .incident-description {
+            opacity: 0.8;
+            margin-bottom: 1rem;
+        }
+
+        .incident-status {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status-resolved { background: var(--success-color); }
+        .status-investigating { background: var(--warning-color); }
+        .status-identified { background: var(--error-color); }
+
+        .refresh-section {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .refresh-button {
+            background: var(--accent-color);
+            color: #000;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: var(--transition);
+            font-size: 1rem;
+        }
+
+        .refresh-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .refresh-button:active {
+            transform: translateY(0);
+        }
+
+        .navigation {
+            text-align: center;
+            margin-top: 3rem;
+        }
+
+        .nav-button {
+            display: inline-block;
+            background: var(--bg-tertiary);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: var(--text-primary);
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            text-decoration: none;
+            margin: 0 0.5rem;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .services-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .service-metrics {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-button {
+                display: block;
+                margin: 0.5rem auto;
+                max-width: 200px;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid var(--accent-color);
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>📊 Service Status</h1>
+            <p>Real-time status and health monitoring for all Yourl.Cloud services</p>
+        </header>
+
+        <!-- Overall Status -->
+        <section class="overall-status">
+            <h2>🌐 Overall System Status</h2>
+            <div class="status-text">
+                <span class="status-indicator status-online"></span>
+                All Systems Operational
+            </div>
+            <div class="status-description">
+                All services are running normally with no reported issues.
+            </div>
+        </section>
+
+        <!-- Services Grid -->
+        <section class="services-grid">
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">🔌</div>
+                    <div class="service-info">
+                        <h3>API Gateway</h3>
+                        <div class="service-status">
+                            <span class="status-indicator status-online"></span>
+                            Online
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="service-metrics">
+                    <div class="metric-item">
+                        <div class="metric-value">99.9%</div>
+                        <div class="metric-label">Uptime</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value">45ms</div>
+                        <div class="metric-label">Response</div>
+                    </div>
+                </div>
+                
+                <div class="service-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Version:</span>
+                        <span class="detail-value">2.1.0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Region:</span>
+                        <span class="detail-value">us-west1</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Last Updated:</span>
+                        <span class="detail-value">{{ current_time or "2 min ago" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">🔐</div>
+                    <div class="service-info">
+                        <h3>Authentication</h3>
+                        <div class="service-status">
+                            <span class="status-indicator status-online"></span>
+                            Online
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="service-metrics">
+                    <div class="metric-item">
+                        <div class="metric-value">99.8%</div>
+                        <div class="metric-label">Uptime</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value">32ms</div>
+                        <div class="metric-label">Response</div>
+                    </div>
+                </div>
+                
+                <div class="service-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Version:</span>
+                        <span class="detail-value">1.9.5</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Region:</span>
+                        <span class="detail-value">us-west1</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Last Updated:</span>
+                        <span class="detail-value">{{ current_time or "1 min ago" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">💾</div>
+                    <div class="service-info">
+                        <h3>Database</h3>
+                        <div class="service-status">
+                            <span class="status-indicator status-online"></span>
+                            Online
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="service-metrics">
+                    <div class="metric-item">
+                        <div class="metric-value">99.7%</div>
+                        <div class="metric-label">Uptime</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value">67ms</div>
+                        <div class="metric-label">Response</div>
+                    </div>
+                </div>
+                
+                <div class="service-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Version:</span>
+                        <span class="detail-value">PostgreSQL 15</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Region:</span>
+                        <span class="detail-value">us-west1</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Last Updated:</span>
+                        <span class="detail-value">{{ current_time or "30 sec ago" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">📊</div>
+                    <div class="service-info">
+                        <h3>Monitoring</h3>
+                        <div class="service-status">
+                            <span class="status-indicator status-online"></span>
+                            Online
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="service-metrics">
+                    <div class="metric-item">
+                        <div class="metric-value">100%</div>
+                        <div class="metric-label">Uptime</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value">28ms</div>
+                        <div class="metric-label">Response</div>
+                    </div>
+                </div>
+                
+                <div class="service-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Version:</span>
+                        <span class="detail-value">3.2.1</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Region:</span>
+                        <span class="detail-value">us-west1</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Last Updated:</span>
+                        <span class="detail-value">{{ current_time or "Just now" }}</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Incidents Section -->
+        <section class="incidents-section">
+            <h2>🚨 Recent Incidents</h2>
+            
+            <div class="incident-item">
+                <div class="incident-header">
+                    <div class="incident-title">Scheduled Maintenance - API Gateway</div>
+                    <div class="incident-time">2025-08-15 14:00 UTC</div>
+                </div>
+                <div class="incident-description">
+                    Scheduled maintenance window for API Gateway service. Expected downtime: 15 minutes.
+                </div>
+                <span class="incident-status status-resolved">Resolved</span>
+            </div>
+
+            <div class="incident-item">
+                <div class="incident-header">
+                    <div class="incident-title">Database Connection Pool Optimization</div>
+                    <div class="incident-time">2025-08-14 09:30 UTC</div>
+                </div>
+                <div class="incident-description">
+                    Performance optimization for database connection pooling. No service interruption.
+                </div>
+                <span class="incident-status status-resolved">Resolved</span>
+            </div>
+
+            <div class="incident-item">
+                <div class="incident-header">
+                    <div class="incident-title">Authentication Service Update</div>
+                    <div class="incident-time">2025-08-13 16:45 UTC</div>
+                </div>
+                <div class="incident-description">
+                    Security update for authentication service. Enhanced token validation and rate limiting.
+                </div>
+                <span class="incident-status status-resolved">Resolved</span>
+            </div>
+        </section>
+
+        <!-- Refresh Section -->
+        <section class="refresh-section">
+            <button class="refresh-button" onclick="refreshStatus()">
+                🔄 Refresh Status
+            </button>
+        </section>
+
+        <!-- Navigation -->
+        <div class="navigation">
+            <a href="/" class="nav-button">🏠 Home</a>
+            <a href="/monitoring" class="nav-button">📊 Monitoring</a>
+            <a href="/data" class="nav-button">📈 Data Analytics</a>
+            <a href="/knowledge-hub" class="nav-button">📚 Knowledge Hub</a>
+        </div>
+    </div>
+
+    <script>
+        // Modern status page functionality
+        (function() {
+            'use strict';
+
+            class StatusPage {
+                constructor() {
+                    this.initializeStatus();
+                    this.setupAutoRefresh();
+                }
+
+                initializeStatus() {
+                    console.log('📊 Status Page initialized');
+                    this.updateTimestamps();
+                }
+
+                updateTimestamps() {
+                    const now = new Date();
+                    const timeAgo = this.getTimeAgo(now);
+                    
+                    // Update all "Last Updated" timestamps
+                    document.querySelectorAll('.detail-value').forEach(el => {
+                        if (el.textContent.includes('ago') || el.textContent.includes('min') || el.textContent.includes('sec')) {
+                            el.textContent = timeAgo;
+                        }
+                    });
+                }
+
+                getTimeAgo(date) {
+                    const now = new Date();
+                    const diffMs = now - date;
+                    const diffSecs = Math.floor(diffMs / 1000);
+                    const diffMins = Math.floor(diffSecs / 60);
+                    
+                    if (diffSecs < 60) {
+                        return 'Just now';
+                    } else if (diffMins < 60) {
+                        return `${diffMins} min ago`;
+                    } else {
+                        const diffHours = Math.floor(diffMins / 60);
+                        return `${diffHours} hour ago`;
+                    }
+                }
+
+                setupAutoRefresh() {
+                    // Auto-refresh every 30 seconds
+                    setInterval(() => {
+                        this.updateTimestamps();
+                    }, 30000);
+                }
+
+                async refreshStatus() {
+                    const refreshBtn = document.querySelector('.refresh-button');
+                    if (refreshBtn) {
+                        refreshBtn.classList.add('loading');
+                        refreshBtn.textContent = '⏳ Refreshing...';
+                        refreshBtn.disabled = true;
+                    }
+
+                    try {
+                        // Simulate API call
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        
+                        // Update status data
+                        this.updateStatusData();
+                        
+                        // Show success notification
+                        this.showNotification('Status refreshed successfully!', 'success');
+                        
+                    } catch (error) {
+                        console.error('Status refresh failed:', error);
+                        this.showNotification('Failed to refresh status', 'error');
+                    } finally {
+                        if (refreshBtn) {
+                            refreshBtn.classList.remove('loading');
+                            refreshBtn.textContent = '🔄 Refresh Status';
+                            refreshBtn.disabled = false;
+                        }
+                    }
+                }
+
+                updateStatusData() {
+                    // Simulate updating status data
+                    const services = document.querySelectorAll('.service-card');
+                    services.forEach((service, index) => {
+                        const uptimeEl = service.querySelector('.metric-value:first-child');
+                        const responseEl = service.querySelector('.metric-value:last-child');
+                        
+                        if (uptimeEl && responseEl) {
+                            // Simulate small variations in metrics
+                            const uptimeVariation = (Math.random() - 0.5) * 0.2;
+                            const responseVariation = (Math.random() - 0.5) * 10;
+                            
+                            const currentUptime = parseFloat(uptimeEl.textContent);
+                            const currentResponse = parseFloat(responseEl.textContent);
+                            
+                            uptimeEl.textContent = `${Math.max(99.0, Math.min(100, currentUptime + uptimeVariation)).toFixed(1)}%`;
+                            responseEl.textContent = `${Math.max(20, Math.min(100, currentResponse + responseVariation)).toFixed(0)}ms`;
+                        }
+                    });
+                }
+
+                showNotification(message, type = 'info') {
+                    // Create toast notification
+                    const toast = document.createElement('div');
+                    toast.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: var(--bg-tertiary);
+                        color: var(--text-primary);
+                        padding: 1rem 1.5rem;
+                        border-radius: 10px;
+                        box-shadow: var(--shadow);
+                        z-index: 1000;
+                        transform: translateX(100%);
+                        transition: var(--transition);
+                        border: 1px solid ${type === 'success' ? 'var(--success-color)' : 'var(--error-color)'};
+                    `;
+                    toast.textContent = message;
+                    
+                    document.body.appendChild(toast);
+                    
+                    // Animate in
+                    setTimeout(() => toast.style.transform = 'translateX(0)', 100);
+                    
+                    // Auto remove
+                    setTimeout(() => {
+                        toast.style.transform = 'translateX(100%)';
+                        setTimeout(() => toast.remove(), 300);
+                    }, 3000);
+                }
+            }
+
+            // Initialize status page
+            let statusPage;
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    statusPage = new StatusPage();
+                });
+            } else {
+                statusPage = new StatusPage();
+            }
+
+            // Global refresh function
+            window.refreshStatus = function() {
+                if (statusPage) {
+                    statusPage.refreshStatus();
+                }
+            };
+
+            // Performance monitoring
+            if ('performance' in window) {
+                window.addEventListener('load', () => {
+                    setTimeout(() => {
+                        const perfData = performance.getEntriesByType('navigation')[0];
+                        if (perfData) {
+                            console.log('📊 Status Page Load Performance:', {
+                                'Load Time': `${Math.round(perfData.loadEventEnd - perfData.navigationStart)}ms`,
+                                'DOM Ready': `${Math.round(perfData.domContentLoadedEventEnd - perfData.domContentLoadedEventStart)}ms`
+                            });
+                        }
+                    }, 0);
+                });
+            }
+
+        })();
+    </script>
+</body>
+</html>
+

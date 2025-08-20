@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Hub - Yourl.Cloud</title>
+    <meta name="description" content="Comprehensive documentation and resources for Yourl.Cloud services">
+    
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #ffd700;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.9);
+            --bg-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            --bg-secondary: rgba(255, 255, 255, 0.1);
+            --bg-tertiary: rgba(255, 255, 255, 0.15);
+            --border-radius: 20px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .header h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, var(--accent-color), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-section {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .search-section h2 {
+            color: var(--accent-color);
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .search-button {
+            background: var(--accent-color);
+            color: #000;
+            border: none;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .search-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .categories-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .category-card {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+            background: var(--bg-tertiary);
+        }
+
+        .category-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .category-card h3 {
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            text-align: center;
+        }
+
+        .category-card p {
+            opacity: 0.8;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .category-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .category-link {
+            color: var(--text-primary);
+            text-decoration: none;
+            padding: 0.5rem;
+            border-radius: 5px;
+            transition: var(--transition);
+            border: 1px solid transparent;
+        }
+
+        .category-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .quick-start-section {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out 0.6s both;
+        }
+
+        .quick-start-section h2 {
+            color: var(--accent-color);
+            margin-bottom: 2rem;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .quick-start-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .step-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .step-number {
+            background: var(--accent-color);
+            color: #000;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin: 0 auto 1rem;
+        }
+
+        .step-card h4 {
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .step-card p {
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        .resources-section {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out 0.8s both;
+        }
+
+        .resources-section h2 {
+            color: var(--accent-color);
+            margin-bottom: 2rem;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .resources-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .resource-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: var(--transition);
+        }
+
+        .resource-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .resource-item h4 {
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .resource-item p {
+            opacity: 0.8;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .resource-link {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .resource-link:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+
+        .navigation {
+            text-align: center;
+            margin-top: 3rem;
+        }
+
+        .nav-button {
+            display: inline-block;
+            background: var(--bg-tertiary);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: var(--text-primary);
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            text-decoration: none;
+            margin: 0 0.5rem;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .search-results {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: none;
+        }
+
+        .search-results h3 {
+            color: var(--accent-color);
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+        }
+
+        .search-result-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .search-result-item h4 {
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .search-result-item p {
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .search-container {
+                flex-direction: column;
+            }
+            
+            .categories-section {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .quick-start-steps {
+                grid-template-columns: 1fr;
+            }
+            
+            .resources-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-button {
+                display: block;
+                margin: 0.5rem auto;
+                max-width: 200px;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid var(--accent-color);
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>📚 Knowledge Hub</h1>
+            <p>Comprehensive documentation, guides, and resources for Yourl.Cloud services</p>
+        </header>
+
+        <!-- Search Section -->
+        <section class="search-section">
+            <h2>🔍 Search Knowledge Base</h2>
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    id="searchInput"
+                    placeholder="Search for documentation, guides, or resources..."
+                >
+                <button class="search-button" onclick="performSearch()">
+                    🔍 Search
+                </button>
+            </div>
+        </section>
+
+        <!-- Search Results (Hidden by default) -->
+        <section class="search-results" id="searchResults">
+            <h3>🔍 Search Results</h3>
+            <div id="searchResultsContent">
+                <!-- Search results will be populated here -->
+            </div>
+        </section>
+
+        <!-- Categories Section -->
+        <section class="categories-section">
+            <div class="category-card" onclick="showCategory('getting-started')">
+                <div class="category-icon">🚀</div>
+                <h3>Getting Started</h3>
+                <p>Essential guides and tutorials for new users</p>
+                <div class="category-links">
+                    <a href="#" class="category-link">📖 Quick Start Guide</a>
+                    <a href="#" class="category-link">🎯 First Steps</a>
+                    <a href="#" class="category-link">⚙️ Configuration</a>
+                </div>
+            </div>
+
+            <div class="category-card" onclick="showCategory('api-docs')">
+                <div class="category-icon">🔌</div>
+                <h3>API Documentation</h3>
+                <p>Complete API reference and integration guides</p>
+                <div class="category-links">
+                    <a href="#" class="category-link">📚 API Reference</a>
+                    <a href="#" class="category-link">🔐 Authentication</a>
+                    <a href="#" class="category-link">📡 Webhooks</a>
+                </div>
+            </div>
+
+            <div class="category-card" onclick="showCategory('deployment')">
+                <div class="category-icon">☁️</div>
+                <h3>Deployment</h3>
+                <p>Deployment guides and best practices</p>
+                <div class="category-links">
+                    <a href="#" class="category-link">🚀 Cloud Run Setup</a>
+                    <a href="#" class="category-link">🐳 Docker Guide</a>
+                    <a href="#" class="category-link">🔧 CI/CD Pipeline</a>
+                </div>
+            </div>
+
+            <div class="category-card" onclick="showCategory('troubleshooting')">
+                <div class="category-icon">🔧</div>
+                <h3>Troubleshooting</h3>
+                <p>Common issues and solutions</p>
+                <div class="category-links">
+                    <a href="#" class="category-link">❌ Error Codes</a>
+                    <a href="#" class="category-link">🐛 Debug Guide</a>
+                    <a href="#" class="category-link">📞 Support</a>
+                </div>
+            </div>
+
+            <div class="category-card" onclick="showCategory('advanced')">
+                <div class="category-icon">⚡</div>
+                <h3>Advanced Topics</h3>
+                <p>Advanced features and optimization</p>
+                <div class="category-links">
+                    <a href="#" class="category-link">🚀 Performance</a>
+                    <a href="#" class="category-link">🔒 Security</a>
+                    <a href="#" class="category-link">📊 Monitoring</a>
+                </div>
+            </div>
+
+            <div class="category-card" onclick="showCategory('community')">
+                <div class="category-icon">👥</div>
+                <h3>Community</h3>
+                <p>Community resources and contributions</p>
+                <div class="category-links">
+                    <a href="#" class="category-link">💬 Discussions</a>
+                    <a href="#" class="category-link">📝 Blog</a>
+                    <a href="#" class="category-link">🎥 Videos</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Start Section -->
+        <section class="quick-start-section">
+            <h2>⚡ Quick Start Guide</h2>
+            <div class="quick-start-steps">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h4>Setup Environment</h4>
+                    <p>Install required tools and configure your development environment</p>
+                </div>
+                
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h4>Clone Repository</h4>
+                    <p>Get the source code and explore the project structure</p>
+                </div>
+                
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h4>Configure Services</h4>
+                    <p>Set up environment variables and service configurations</p>
+                </div>
+                
+                <div class="step-card">
+                    <div class="step-number">4</div>
+                    <h4>Deploy to Cloud</h4>
+                    <p>Deploy your application to Google Cloud Run</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Resources Section -->
+        <section class="resources-section">
+            <h2>📚 Additional Resources</h2>
+            <div class="resources-grid">
+                <div class="resource-item">
+                    <h4>📖 GitHub Wiki</h4>
+                    <p>Comprehensive project documentation and guides</p>
+                    <a href="https://github.com/XDM-ZSBW/yourl.cloud/wiki" class="resource-link" target="_blank" rel="noopener noreferrer">
+                        View Wiki →
+                    </a>
+                </div>
+                
+                <div class="resource-item">
+                    <h4>📢 README.md</h4>
+                    <p>Project overview, setup instructions, and deployment news</p>
+                    <a href="https://github.com/XDM-ZSBW/yourl.cloud#readme" class="resource-link" target="_blank" rel="noopener noreferrer">
+                        View README →
+                    </a>
+                </div>
+                
+                <div class="resource-item">
+                    <h4>🔧 Issue Tracker</h4>
+                    <p>Report bugs, request features, and track development progress</p>
+                    <a href="https://github.com/XDM-ZSBW/yourl.cloud/issues" class="resource-link" target="_blank" rel="noopener noreferrer">
+                        View Issues →
+                    </a>
+                </div>
+                
+                <div class="resource-item">
+                    <h4>📋 Pull Requests</h4>
+                    <p>Contribute to the project and review code changes</p>
+                    <a href="https://github.com/XDM-ZSBW/yourl.cloud/pulls" class="resource-link" target="_blank" rel="noopener noreferrer">
+                        View PRs →
+                    </a>
+                </div>
+                
+                <div class="resource-item">
+                    <h4>🚀 Releases</h4>
+                    <p>Latest releases, changelog, and version information</p>
+                    <a href="https://github.com/XDM-ZSBW/yourl.cloud/releases" class="resource-link" target="_blank" rel="noopener noreferrer">
+                        View Releases →
+                    </a>
+                </div>
+                
+                <div class="resource-item">
+                    <h4>📊 Project Status</h4>
+                    <p>Real-time project status and deployment information</p>
+                    <a href="/status" class="resource-link">
+                        View Status →
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <div class="navigation">
+            <a href="/" class="nav-button">🏠 Home</a>
+            <a href="/monitoring" class="nav-button">📊 Monitoring</a>
+            <a href="/data" class="nav-button">📈 Data Analytics</a>
+            <a href="/status" class="nav-button">📋 Status</a>
+        </div>
+    </div>
+
+    <script>
+        // Modern knowledge hub functionality
+        (function() {
+            'use strict';
+
+            class KnowledgeHub {
+                constructor() {
+                    this.initializeHub();
+                    this.setupEventListeners();
+                }
+
+                initializeHub() {
+                    console.log('📚 Knowledge Hub initialized');
+                    this.searchIndex = this.createSearchIndex();
+                }
+
+                setupEventListeners() {
+                    // Search input event listener
+                    const searchInput = document.getElementById('searchInput');
+                    if (searchInput) {
+                        searchInput.addEventListener('keypress', (e) => {
+                            if (e.key === 'Enter') {
+                                this.performSearch();
+                            }
+                        });
+                    }
+                }
+
+                createSearchIndex() {
+                    // Mock search index - in production, this would be a real search engine
+                    return [
+                        {
+                            title: 'Quick Start Guide',
+                            content: 'Get started with Yourl.Cloud in minutes. Learn the basics of setup, configuration, and deployment.',
+                            category: 'getting-started',
+                            url: '#quick-start'
+                        },
+                        {
+                            title: 'API Authentication',
+                            content: 'Learn how to authenticate with the Yourl.Cloud API using marketing codes and access tokens.',
+                            category: 'api-docs',
+                            url: '#auth'
+                        },
+                        {
+                            title: 'Cloud Run Deployment',
+                            content: 'Step-by-step guide to deploy your application to Google Cloud Run with automatic scaling.',
+                            category: 'deployment',
+                            url: '#deployment'
+                        },
+                        {
+                            title: 'Troubleshooting Common Issues',
+                            content: 'Solutions for common problems including connection errors, authentication failures, and performance issues.',
+                            category: 'troubleshooting',
+                            url: '#troubleshooting'
+                        },
+                        {
+                            title: 'Performance Optimization',
+                            content: 'Advanced techniques to optimize your Yourl.Cloud application for better performance and scalability.',
+                            category: 'advanced',
+                            url: '#performance'
+                        },
+                        {
+                            title: 'Community Guidelines',
+                            content: 'How to contribute to the Yourl.Cloud project and participate in the community.',
+                            category: 'community',
+                            url: '#community'
+                        }
+                    ];
+                }
+
+                performSearch() {
+                    const searchInput = document.getElementById('searchInput');
+                    const searchResults = document.getElementById('searchResults');
+                    const searchResultsContent = document.getElementById('searchResultsContent');
+                    
+                    if (!searchInput || !searchResults || !searchResultsContent) return;
+
+                    const query = searchInput.value.trim().toLowerCase();
+                    
+                    if (!query) {
+                        searchResults.style.display = 'none';
+                        return;
+                    }
+
+                    // Perform search
+                    const results = this.searchIndex.filter(item => 
+                        item.title.toLowerCase().includes(query) ||
+                        item.content.toLowerCase().includes(query)
+                    );
+
+                    // Display results
+                    this.displaySearchResults(results, searchResultsContent);
+                    searchResults.style.display = 'block';
+
+                    // Scroll to results
+                    searchResults.scrollIntoView({ behavior: 'smooth' });
+                }
+
+                displaySearchResults(results, container) {
+                    if (results.length === 0) {
+                        container.innerHTML = `
+                            <div class="search-result-item">
+                                <h4>No results found</h4>
+                                <p>Try adjusting your search terms or browse the categories below.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    const resultsHtml = results.map(result => `
+                        <div class="search-result-item">
+                            <h4>${result.title}</h4>
+                            <p>${result.content}</p>
+                            <a href="${result.url}" class="resource-link">Learn more →</a>
+                        </div>
+                    `).join('');
+
+                    container.innerHTML = resultsHtml;
+                }
+
+                showCategory(category) {
+                    console.log(`Showing category: ${category}`);
+                    
+                    // In a real application, this would navigate to category-specific pages
+                    // For now, we'll show a notification
+                    this.showNotification(`Opening ${category.replace('-', ' ')} category...`, 'info');
+                    
+                    // Simulate navigation delay
+                    setTimeout(() => {
+                        this.showNotification(`Category ${category.replace('-', ' ')} loaded successfully!`, 'success');
+                    }, 1000);
+                }
+
+                showNotification(message, type = 'info') {
+                    // Create toast notification
+                    const toast = document.createElement('div');
+                    toast.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: var(--bg-tertiary);
+                        color: var(--text-primary);
+                        padding: 1rem 1.5rem;
+                        border-radius: 10px;
+                        box-shadow: var(--shadow);
+                        z-index: 1000;
+                        transform: translateX(100%);
+                        transition: var(--transition);
+                        border: 1px solid ${type === 'success' ? 'var(--success-color)' : type === 'error' ? 'var(--error-color)' : 'var(--warning-color)'};
+                    `;
+                    toast.textContent = message;
+                    
+                    document.body.appendChild(toast);
+                    
+                    // Animate in
+                    setTimeout(() => toast.style.transform = 'translateX(0)', 100);
+                    
+                    // Auto remove
+                    setTimeout(() => {
+                        toast.style.transform = 'translateX(100%)';
+                        setTimeout(() => toast.remove(), 300);
+                    }, 3000);
+                }
+            }
+
+            // Initialize knowledge hub
+            let knowledgeHub;
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    knowledgeHub = new KnowledgeHub();
+                });
+            } else {
+                knowledgeHub = new KnowledgeHub();
+            }
+
+            // Global functions
+            window.performSearch = function() {
+                if (knowledgeHub) {
+                    knowledgeHub.performSearch();
+                }
+            };
+
+            window.showCategory = function(category) {
+                if (knowledgeHub) {
+                    knowledgeHub.showCategory(category);
+                }
+            };
+
+            // Performance monitoring
+            if ('performance' in window) {
+                window.addEventListener('load', () => {
+                    setTimeout(() => {
+                        const perfData = performance.getEntriesByType('navigation')[0];
+                        if (perfData) {
+                            console.log('📚 Knowledge Hub Load Performance:', {
+                                'Load Time': `${Math.round(perfData.loadEventEnd - perfData.navigationStart)}ms`,
+                                'DOM Ready': `${Math.round(perfData.domContentLoadedEventEnd - perfData.domContentLoadedEventStart)}ms`
+                            });
+                        }
+                    }, 0);
+                });
+            }
+
+        })();
+    </script>
+</body>
+</html>
+

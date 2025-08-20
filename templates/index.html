@@ -4,7 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yourl.Cloud - AI-Friendly Service Hub</title>
+    <meta name="description" content="Yourl.Cloud - Professional AI services and cloud solutions">
+    <meta name="keywords" content="AI, cloud, services, Yourl.Cloud, technology">
+    
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Production-ready CSS with modern design system -->
     <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #ffd700;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.9);
+            --bg-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            --bg-secondary: rgba(255, 255, 255, 0.1);
+            --bg-tertiary: rgba(255, 255, 255, 0.15);
+            --border-radius: 20px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,14 +35,15 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--bg-primary);
             min-height: 100vh;
-            color: white;
+            color: var(--text-primary);
             line-height: 1.6;
+            overflow-x: hidden;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
         }
@@ -28,26 +51,35 @@
         .header {
             text-align: center;
             margin-bottom: 3rem;
+            animation: fadeInUp 0.8s ease-out;
         }
 
         .header h1 {
-            font-size: 2.5rem;
+            font-size: clamp(2rem, 5vw, 3.5rem);
             margin-bottom: 0.5rem;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, var(--accent-color), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .header p {
-            font-size: 1.2rem;
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
             opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
         .main-panel {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
             backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow);
             padding: 2rem;
             margin-bottom: 2rem;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .input-section {
@@ -56,23 +88,34 @@
 
         .input-section h2 {
             margin-bottom: 1rem;
-            color: #ffd700;
+            color: var(--accent-color);
+            font-size: 1.5rem;
+            text-align: center;
         }
 
         .input-group {
             display: flex;
             gap: 1rem;
             margin-bottom: 1rem;
+            flex-wrap: wrap;
         }
 
         .input-group input {
             flex: 1;
+            min-width: 250px;
             padding: 1rem;
             border: none;
             border-radius: 10px;
             background: rgba(255, 255, 255, 0.2);
-            color: white;
+            color: var(--text-primary);
             font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .input-group input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
         }
 
         .input-group input::placeholder {
@@ -80,29 +123,53 @@
         }
 
         .submit-btn {
-            background: rgba(255, 255, 255, 0.2);
+            background: var(--bg-tertiary);
             border: 2px solid rgba(255, 255, 255, 0.3);
-            color: white;
+            color: var(--text-primary);
             padding: 1rem 2rem;
             border-radius: 10px;
             cursor: pointer;
             font-size: 1.1rem;
-            transition: all 0.3s ease;
+            transition: var(--transition);
+            white-space: nowrap;
         }
 
         .submit-btn:hover {
             background: rgba(255, 255, 255, 0.3);
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
         }
 
         .marketing-code {
-            background: rgba(255, 255, 255, 0.15);
+            background: var(--bg-tertiary);
             border-radius: 15px;
             padding: 1.5rem;
             margin-bottom: 2rem;
             text-align: center;
-            border: 2px solid #ffd700;
+            border: 2px solid var(--accent-color);
             animation: pulse 2s infinite;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .marketing-code::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
         }
 
         @keyframes pulse {
@@ -112,30 +179,45 @@
         }
 
         .marketing-code h2 {
-            color: #ffd700;
+            color: var(--accent-color);
             margin-bottom: 1rem;
+            font-size: 1.3rem;
         }
 
         .code-display {
             font-family: 'Courier New', monospace;
-            font-size: 1.8rem;
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
             font-weight: bold;
-            color: #ffd700;
+            color: var(--accent-color);
             background: rgba(0, 0, 0, 0.3);
             padding: 1.5rem;
             border-radius: 12px;
             margin: 1rem 0;
             cursor: pointer;
             border: 2px solid rgba(255, 215, 0, 0.3);
-            transition: all 0.3s ease;
+            transition: var(--transition);
             text-align: center;
             letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
         }
 
         .code-display:hover {
             background: rgba(0, 0, 0, 0.4);
             border-color: rgba(255, 215, 0, 0.6);
             transform: scale(1.02);
+        }
+
+        .code-display:active {
+            transform: scale(0.98);
+        }
+
+        .copy-feedback {
+            display: none;
+            color: var(--accent-color);
+            font-weight: bold;
+            margin-top: 0.5rem;
+            animation: fadeIn 0.3s ease-in;
         }
 
         .code-hint {
@@ -151,305 +233,394 @@
 
         .affiliate-links h2 {
             margin-bottom: 1rem;
-            color: #ffd700;
+            color: var(--accent-color);
+            text-align: center;
+            font-size: 1.3rem;
         }
 
         .links-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 1rem;
         }
 
         .affiliate-link {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--bg-secondary);
             border-radius: 10px;
             padding: 1rem;
             text-decoration: none;
-            color: white;
-            transition: all 0.3s ease;
+            color: var(--text-primary);
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .affiliate-link:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: var(--bg-tertiary);
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .affiliate-link h3 {
             margin-bottom: 0.5rem;
-            color: #ffd700;
+            color: var(--accent-color);
         }
 
         .project-resources {
-            background: rgba(255, 255, 255, 0.15);
+            background: var(--bg-tertiary);
             border-radius: 15px;
             backdrop-filter: blur(10px);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow);
             padding: 1.5rem;
             margin-bottom: 2rem;
             border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out 0.4s both;
         }
 
         .project-resources h2 {
             margin-bottom: 1rem;
-            color: #ffd700;
+            color: var(--accent-color);
             text-align: center;
             font-size: 1.3rem;
         }
 
         .resources-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 1rem;
         }
 
         .resource-link {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 1.2rem;
-            text-decoration: none;
-            color: white;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
-            gap: 0.8rem;
+            gap: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 1rem;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .resource-link:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            background: var(--bg-tertiary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .resource-link .icon {
-            font-size: 1.5rem;
+            font-size: 2rem;
             flex-shrink: 0;
         }
 
         .resource-link .content h3 {
-            margin-bottom: 0.3rem;
-            color: #ffd700;
-            font-size: 1.1rem;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
         }
 
         .resource-link .content p {
+            opacity: 0.8;
             font-size: 0.9rem;
-            opacity: 0.9;
-            margin: 0;
         }
 
+        .visitor-info {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .visitor-info small {
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive Design */
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
             }
-
-            .header h1 {
-                font-size: 2rem;
-            }
-
+            
             .input-group {
                 flex-direction: column;
             }
-
+            
+            .input-group input {
+                min-width: auto;
+            }
+            
+            .links-grid,
             .resources-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .main-panel {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+            
+            .code-display {
+                font-size: 1.2rem;
+                padding: 1rem;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Loading States */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid var(--accent-color);
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: var(--transition);
+            border: 1px solid var(--accent-color);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-color: #4ade80;
+        }
+
+        .toast.error {
+            border-color: #f87171;
+        }
+
+        /* Easter Egg Styles */
+        .easter-egg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            z-index: 1000;
+            text-align: center;
+            max-width: 400px;
+            border: 3px solid var(--accent-color);
+            animation: easterEggAppear 0.5s ease-out;
+        }
+
+        .easter-egg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes easterEggAppear {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        /* Accessibility */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Focus indicators */
+        button:focus,
+        input:focus,
+        a:focus {
+            outline: 2px solid var(--accent-color);
+            outline-offset: 2px;
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            :root {
+                --bg-secondary: rgba(255, 255, 255, 0.2);
+                --bg-tertiary: rgba(255, 255, 255, 0.25);
+            }
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🔗 Yourl.Cloud</h1>
-            <p>AI-Friendly Service Hub - Secure and Fast</p>
-        </div>
+        <!-- Header Section -->
+        <header class="header">
+            <h1>Yourl.Cloud</h1>
+            <p>AI-Friendly Service Hub - Professional cloud solutions and AI services</p>
+        </header>
 
-        <!-- Marketing Code Section -->
-        <div class="marketing-code">
-            <h2>🎯 Today's Marketing Code</h2>
-            <div class="code-display" id="codeDisplay" onclick="copyCode()" title="Click to copy">
-                <span id="codeText">{{ marketing_code }}</span>
-                <div id="copyFeedback" style="display: none; color: #ffd700; font-size: 0.9rem; margin-top: 0.5rem;">
-                    ✅ Copied to clipboard!
-                </div>
-            </div>
-            <p class="code-hint">👆 Click to copy, then paste into the access box below to proceed to the next level!</p>
-            <p style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem; font-style: italic;">💡 <strong>Easter Egg:</strong> Try entering one of the demo codes (CLOUD123!, FUTURE456@, INNOVATE789#) for a surprise!</p>
-        </div>
-
-        <!-- Error Message Display -->
-        {% if auth_error %}
-        <div class="error-message" style="background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 10px; margin: 20px 0; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-            <strong>❌ {{ auth_error.message }}</strong><br>
-            <small>Current code: <code style="background: #fff3cd; padding: 2px 6px; border-radius: 3px; font-family: monospace;">{{ auth_error.current_code }}</code></small>
-        </div>
-        {% endif %}
-
-        <!-- Tutorial Display -->
-        {% if show_tutorial %}
-        <div class="tutorial-container" style="background: #d1ecf1; border: 1px solid #bee5eb; padding: 20px; border-radius: 15px; margin: 20px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-            <h3 style="color: #0c5460; text-align: center; margin-top: 0; font-size: 1.4rem;">🎯 How to Get Your Marketing Code</h3>
-            
-            <div class="tutorial-steps" style="display: flex; flex-direction: column; gap: 15px;">
-                <div class="step" style="display: flex; align-items: center; gap: 10px; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    <div class="step-number" style="background: #007bff; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem;">1</div>
-                    <div class="step-content">
-                        <strong style="color: #0c5460;">Copy the Current Code:</strong> 
-                        <div class="code-display-tutorial" style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 8px; margin: 8px 0; font-family: monospace; font-size: 16px; text-align: center; cursor: pointer; font-weight: bold; color: #856404;" onclick="copyToClipboard('{{ marketing_code }}')" title="Click to copy">
-                            {{ marketing_code }}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="step" style="display: flex; align-items: center; gap: 10px; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    <div class="step-number" style="background: #28a745; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem;">2</div>
-                    <div class="step-content">
-                        <strong style="color: #0c5460;">Paste into the Code Box:</strong> 
-                        <div class="paste-animation" style="text-align: center; margin: 8px 0;">
-                            <span class="paste-icon" style="font-size: 24px; animation: paste 2s infinite;">📋</span>
-                            <span class="arrow" style="font-size: 24px; animation: arrow 2s infinite;">➡️</span>
-                            <span class="input-box" style="font-size: 24px; animation: input 2s infinite;">📝</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="step" style="display: flex; align-items: center; gap: 10px; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    <div class="step-number" style="background: #ffc107; color: #212529; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem;">3</div>
-                    <div class="step-content">
-                        <strong style="color: #0c5460;">Click the Launch Button:</strong> 
-                        <div class="button-animation" style="text-align: center; margin: 8px 0;">
-                            <span class="button-icon" style="font-size: 24px; animation: button 2s infinite;">🚀</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="tutorial-note" style="text-align: center; margin-top: 20px; font-style: italic; color: #6c757d; background: rgba(255,255,255,0.7); padding: 15px; border-radius: 8px;">
-                💡 <strong>Pro Tip:</strong> The marketing code changes with each deployment, so always use the current one shown above!
-            </div>
-        </div>
-        
-        <style>
-            @keyframes paste {
-                0%, 100% { transform: scale(1); opacity: 1; }
-                50% { transform: scale(1.2); opacity: 0.8; }
-            }
-            @keyframes arrow {
-                0%, 100% { transform: translateX(0); opacity: 1; }
-                50% { transform: translateX(10px); opacity: 0.6; }
-            }
-            @keyframes input {
-                0%, 100% { transform: scale(1); opacity: 1; }
-                50% { transform: scale(1.1); opacity: 0.8; }
-            }
-            @keyframes button {
-                0%, 100% { transform: scale(1); opacity: 1; }
-                50% { transform: scale(1.3); opacity: 0.8; }
-            }
-            .code-display-tutorial:hover {
-                background: #ffeaa7 !important;
-                transform: scale(1.02);
-                transition: all 0.2s ease;
-            }
-        </style>
-        
-        <script>
-            function copyToClipboard(text) {
-                navigator.clipboard.writeText(text).then(function() {
-                    // Show success feedback
-                    const codeDisplay = document.querySelector('.code-display-tutorial');
-                    const originalText = codeDisplay.textContent;
-                    codeDisplay.textContent = '✅ Copied!';
-                    codeDisplay.style.background = '#d4edda';
-                    codeDisplay.style.color = '#155724';
-                    
-                    setTimeout(() => {
-                        codeDisplay.textContent = originalText;
-                        codeDisplay.style.background = '#fff3cd';
-                        codeDisplay.style.color = '#856404';
-                    }, 1500);
-                }).catch(function(err) {
-                    console.error('Could not copy text: ', err);
-                });
-            }
-        </script>
-        {% endif %}
-
-        <div class="main-panel">
+        <!-- Main Authentication Panel -->
+        <main class="main-panel">
             <div class="input-section">
-                <h2>🔐 Level Access</h2>
-                <form method="POST" action="/">
+                <h2>🔐 Access Your Services</h2>
+                <form id="authForm" method="POST" action="/api">
                     <div class="input-group">
-                        <label for="password">🎯 Marketing Code:</label>
-                        <input type="text" id="password" name="password" 
-                               placeholder="Paste the marketing code here (or try a demo code for a surprise!)"
-                               value=""
-                               required>
-                        <button type="submit" class="submit-btn">Proceed to Next Level</button>
+                        <input 
+                            type="password" 
+                            name="password" 
+                            placeholder="Enter your marketing code" 
+                            required
+                            aria-label="Marketing code"
+                            autocomplete="off"
+                        >
+                        <button type="submit" class="submit-btn">
+                            <span class="btn-text">🚀 Launch</span>
+                            <span class="btn-loading" style="display: none;">⏳ Loading...</span>
+                        </button>
                     </div>
                 </form>
-
-                <!-- Recovery Link -->
-                <div style="text-align: center; margin-top: 1rem;">
-                    <a href="/recover" style="color: #ffd700; text-decoration: none; font-size: 0.9rem; opacity: 1; font-weight: bold; padding: 0.5rem 1rem; background: rgba(255, 215, 0, 0.1); border-radius: 5px; border: 1px solid rgba(255, 215, 0, 0.3);">
-                        🔐 Forgot your code? Try our recovery system
-                    </a>
-                </div>
-
-                <!-- Visitor Tracking Section -->
-                {% if visitor_data %}
-                <div style="margin-top: 1rem; padding: 1rem; background: rgba(255, 255, 255, 0.1); border-radius: 10px; text-align: center;">
-                    <small style="opacity: 0.8;">
-                        🎯 <strong>Visit #{{ visitor_data.total_visits }}</strong>
-                        {% if visitor_data.is_new_visitor %}
-                        - First time here! 🎉
-                        {% else %}
-                        - Welcome back! 👋
-                        {% endif %}
-                    </small>
-                </div>
-                {% endif %}
             </div>
 
-            <div class="affiliate-links">
-                <h2>🌟 Featured Services</h2>
-                <div class="links-grid">
-                    <a href="https://github.com/XDM-ZSBW/yourl.cloud" class="affiliate-link" target="_blank">
-                        <h3>GitHub Repository</h3>
-                        <p>Source code and documentation</p>
-                    </a>
-                    <a href="https://cloud.google.com/run" class="affiliate-link" target="_blank">
-                        <h3>Google Cloud Run</h3>
-                        <p>Deploy and scale applications</p>
-                    </a>
-                    <a href="https://flask.palletsprojects.com/" class="affiliate-link" target="_blank"> 
-                        <h3>Flask Framework</h3>
-                        <p>Python web framework</p>
-                    </a>
-                    <a href="https://perplexity.ai" class="affiliate-link" target="_blank">
-                        <h3>Perplexity AI</h3>
-                        <p>AI-powered search and assistance</p>
-                    </a>
-                    <a href="https://cursor.sh" class="affiliate-link" target="_blank">
-                        <h3>Cursor IDE</h3>
-                        <p>AI-powered code editor</p>
-                    </a>
+            <!-- Marketing Code Display -->
+            <div class="marketing-code">
+                <h2>🎯 Your Marketing Code</h2>
+                <div class="code-display" id="codeText" onclick="copyCode()" role="button" tabindex="0" aria-label="Click to copy marketing code">
+                    {{ current_password or "Loading..." }}
                 </div>
+                <div class="copy-feedback" id="copyFeedback">✅ Copied to clipboard!</div>
+                <div class="code-hint">💡 Click the code above to copy it to your clipboard</div>
             </div>
-        </div>
 
-        <!-- Project Resources Section -->
-        <div class="project-resources">
+            <!-- Visitor Information -->
+            {% if visitor_data %}
+            <div class="visitor-info">
+                <small>
+                    🎯 <strong>Visit #{{ visitor_data.total_visits }}</strong>
+                    {% if visitor_data.is_new_visitor %}
+                    - First time here! 🎉
+                    {% else %}
+                    - Welcome back! 👋
+                    {% endif %}
+                </small>
+            </div>
+            {% endif %}
+        </main>
+
+        <!-- Featured Services -->
+        <section class="affiliate-links">
+            <h2>🌟 Featured Services</h2>
+            <div class="links-grid">
+                <a href="https://github.com/XDM-ZSBW/yourl.cloud" class="affiliate-link" target="_blank" rel="noopener noreferrer">
+                    <h3>GitHub Repository</h3>
+                    <p>Source code and documentation</p>
+                </a>
+                <a href="https://cloud.google.com/run" class="affiliate-link" target="_blank" rel="noopener noreferrer">
+                    <h3>Google Cloud Run</h3>
+                    <p>Deploy and scale applications</p>
+                </a>
+                <a href="https://flask.palletsprojects.com/" class="affiliate-link" target="_blank" rel="noopener noreferrer"> 
+                    <h3>Flask Framework</h3>
+                    <p>Python web framework</p>
+                </a>
+                <a href="https://perplexity.ai" class="affiliate-link" target="_blank" rel="noopener noreferrer">
+                    <h3>Perplexity AI</h3>
+                    <p>AI-powered search and assistance</p>
+                </a>
+                <a href="https://cursor.sh" class="affiliate-link" target="_blank" rel="noopener noreferrer">
+                    <h3>Cursor IDE</h3>
+                    <p>AI-powered code editor</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- Project Resources -->
+        <section class="project-resources">
             <h2>📚 Project Resources</h2>
             <div class="resources-grid">
-                <a href="https://github.com/XDM-ZSBW/yourl.cloud/wiki" class="resource-link" target="_blank">
+                <a href="https://github.com/XDM-ZSBW/yourl.cloud/wiki" class="resource-link" target="_blank" rel="noopener noreferrer">
                     <div class="icon">📄</div>
                     <div class="content">
                         <h3>Documentation (GitHub Wiki)</h3>
                         <p>Up-to-date project documentation and guides</p>
                     </div>
                 </a>
-                <a href="https://github.com/XDM-ZSBW/yourl.cloud#readme" class="resource-link" target="_blank">
+                <a href="https://github.com/XDM-ZSBW/yourl.cloud#readme" class="resource-link" target="_blank" rel="noopener noreferrer">
                     <div class="icon">📢</div>
                     <div class="content">
                         <h3>Deployment News (README.md)</h3>
@@ -457,171 +628,408 @@
                     </div>
                 </a>
             </div>
-        </div>
+        </section>
     </div>
 
+    <!-- Toast Notification Container -->
+    <div id="toastContainer"></div>
+
+    <!-- Production-ready JavaScript with modern ES6+ features -->
     <script>
-        function copyCode() {
-            const codeText = document.getElementById('codeText').textContent;
-            navigator.clipboard.writeText(codeText).then(() => {
-                const copyFeedback = document.getElementById('copyFeedback');
-                copyFeedback.style.display = 'block';
-                setTimeout(() => {
-                    copyFeedback.style.display = 'none';
-                }, 2000); // Hide after 2 seconds
-            }).catch(err => {
-                console.error('Failed to copy code: ', err);
-            });
-        }
+        // Modern JavaScript with error handling and production features
+        (function() {
+            'use strict';
 
-        // Easter Egg Detection
-        const demoCodes = ['CLOUD123!', 'FUTURE456@', 'INNOVATE789#'];
-        const passwordInput = document.querySelector('input[name="password"]');
-
-        if (passwordInput) {
-            passwordInput.addEventListener('input', function() {
-                const enteredCode = this.value.trim();
-                if (demoCodes.includes(enteredCode)) {
-                    // Trigger easter egg
-                    showEasterEgg(enteredCode);
-                }
-            });
-        }
-
-        function showEasterEgg(code) {
-            // Remove any existing easter egg
-            const existingEgg = document.getElementById('easter-egg');
-            if (existingEgg) {
-                existingEgg.remove();
-            }
-
-            // Create easter egg element
-            const easterEgg = document.createElement('div');
-            easterEgg.id = 'easter-egg';
-            easterEgg.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 2rem;
-                border-radius: 20px;
-                box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-                z-index: 1000;
-                text-align: center;
-                max-width: 400px;
-                border: 3px solid #ffd700;
-                animation: easterEggAppear 0.5s ease-out;
-            `;
-
-            const messages = {
-                'CLOUD123!': {
-                    title: '☁️ Cloud Easter Egg Found!',
-                    message: 'You discovered the CLOUD demo code! This is just a fun easter egg - not a real Yourl.Cloud code. Try the actual marketing code above! 🎯'
-                },
-                'FUTURE456@': {
-                    title: '🚀 Future Easter Egg Found!',
-                    message: 'You found the FUTURE demo code! This is just a fun easter egg - not a real Yourl.Cloud code. The real code is displayed above! 🎯'
-                },
-                'INNOVATE789#': {
-                    title: '💡 Innovation Easter Egg Found!',
-                    message: 'You discovered the INNOVATE demo code! This is just a fun easter egg - not a real Yourl.Cloud code. Look for the actual marketing code above! 🎯'
+            // Configuration
+            const CONFIG = {
+                COPY_FEEDBACK_DURATION: 2000,
+                EASTER_EGG_AUTO_CLOSE: 8000,
+                ANIMATION_DURATION: 300,
+                API_ENDPOINTS: {
+                    AUTH: '/api',
+                    HEALTH: '/health',
+                    STATUS: '/status'
                 }
             };
 
-            const eggData = messages[code] || {
-                title: '🎯 Easter Egg Found!',
-                message: 'You found a demo code easter egg! This is just for fun - try the real marketing code above! 🎯'
+            // Utility functions
+            const utils = {
+                // Safe DOM query selector
+                $(selector) {
+                    return document.querySelector(selector);
+                },
+
+                // Safe DOM query selector all
+                $$(selector) {
+                    return document.querySelectorAll(selector);
+                },
+
+                // Debounce function for performance
+                debounce(func, wait) {
+                    let timeout;
+                    return function executedFunction(...args) {
+                        const later = () => {
+                            clearTimeout(timeout);
+                            func(...args);
+                        };
+                        clearTimeout(timeout);
+                        timeout = setTimeout(later, wait);
+                    };
+                },
+
+                // Show toast notification
+                showToast(message, type = 'info') {
+                    const toast = document.createElement('div');
+                    toast.className = `toast ${type}`;
+                    toast.textContent = message;
+                    
+                    const container = utils.$('#toastContainer');
+                    container.appendChild(toast);
+                    
+                    // Trigger animation
+                    setTimeout(() => toast.classList.add('show'), 100);
+                    
+                    // Auto remove
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                        setTimeout(() => toast.remove(), 300);
+                    }, 3000);
+                },
+
+                // Copy text to clipboard with fallback
+                async copyToClipboard(text) {
+                    try {
+                        if (navigator.clipboard && window.isSecureContext) {
+                            await navigator.clipboard.writeText(text);
+                            return true;
+                        } else {
+                            // Fallback for older browsers
+                            const textArea = document.createElement('textarea');
+                            textArea.value = text;
+                            textArea.style.position = 'fixed';
+                            textArea.style.left = '-999999px';
+                            textArea.style.top = '-999999px';
+                            document.body.appendChild(textArea);
+                            textArea.focus();
+                            textArea.select();
+                            const result = document.execCommand('copy');
+                            textArea.remove();
+                            return result;
+                        }
+                    } catch (err) {
+                        console.error('Copy failed:', err);
+                        return false;
+                    }
+                }
             };
 
-            easterEgg.innerHTML = `
-                <h2 style="color: #ffd700; margin-bottom: 1rem; font-size: 1.5rem;">${eggData.title}</h2>
-                <p style="margin-bottom: 1.5rem; line-height: 1.6;">${eggData.message}</p>
-                <button onclick="closeEasterEgg()" style="
-                    background: rgba(255, 255, 255, 0.2);
-                    border: 2px solid rgba(255, 255, 255, 0.3);
-                    color: white;
-                    padding: 0.75rem 1.5rem;
-                    border-radius: 10px;
-                    cursor: pointer;
-                    font-size: 1rem;
-                    transition: all 0.3s ease;
-                " onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'">
-                    🎯 Got it!
-                </button>
-            `;
+            // Main application class
+            class YourlCloudApp {
+                constructor() {
+                    this.initializeElements();
+                    this.bindEvents();
+                    this.setupEasterEggs();
+                    this.initializeApp();
+                }
 
-            // Add CSS animation
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes easterEggAppear {
-                    from {
-                        opacity: 0;
-                        transform: translate(-50%, -50%) scale(0.8);
+                initializeElements() {
+                    this.elements = {
+                        authForm: utils.$('#authForm'),
+                        codeText: utils.$('#codeText'),
+                        copyFeedback: utils.$('#copyFeedback'),
+                        passwordInput: utils.$('input[name="password"]'),
+                        submitBtn: utils.$('.submit-btn'),
+                        btnText: utils.$('.btn-text'),
+                        btnLoading: utils.$('.btn-loading')
+                    };
+                }
+
+                bindEvents() {
+                    // Form submission
+                    if (this.elements.authForm) {
+                        this.elements.authForm.addEventListener('submit', this.handleFormSubmit.bind(this));
                     }
-                    to {
-                        opacity: 1;
-                        transform: translate(-50%, -50%) scale(1);
+
+                    // Copy code functionality
+                    if (this.elements.codeText) {
+                        this.elements.codeText.addEventListener('click', this.copyCode.bind(this));
+                        this.elements.codeText.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                this.copyCode();
+                            }
+                        });
+                    }
+
+                    // Password input monitoring for easter eggs
+                    if (this.elements.passwordInput) {
+                        this.elements.passwordInput.addEventListener('input', 
+                            utils.debounce(this.checkEasterEgg.bind(this), 300)
+                        );
                     }
                 }
-            `;
-            document.head.appendChild(style);
 
-            // Add overlay
-            const overlay = document.createElement('div');
-            overlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.7);
-                z-index: 999;
-                animation: fadeIn 0.3s ease-out;
-            `;
-            overlay.id = 'easter-egg-overlay';
-
-            // Add overlay animation
-            const overlayStyle = document.createElement('style');
-            overlayStyle.textContent = `
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
+                setupEasterEggs() {
+                    this.easterEggCodes = ['CLOUD123!', 'FUTURE456@', 'INNOVATE789#'];
                 }
-            `;
-            document.head.appendChild(overlayStyle);
 
-            document.body.appendChild(overlay);
-            document.body.appendChild(easterEgg);
+                initializeApp() {
+                    // Add loading animation to code display
+                    if (this.elements.codeText && this.elements.codeText.textContent === 'Loading...') {
+                        this.elements.codeText.classList.add('loading');
+                    }
 
-            // Auto-close after 8 seconds
-            setTimeout(() => {
-                closeEasterEgg();
-            }, 8000);
-        }
+                    // Remove loading state after content loads
+                    setTimeout(() => {
+                        if (this.elements.codeText) {
+                            this.elements.codeText.classList.remove('loading');
+                        }
+                    }, 1000);
 
-        function closeEasterEgg() {
-            const easterEgg = document.getElementById('easter-egg');
-            const overlay = document.getElementById('easter-egg-overlay');
+                    // Log app initialization
+                    console.log('🚀 Yourl.Cloud App initialized successfully');
+                }
 
-            if (easterEgg) {
-                easterEgg.style.animation = 'easterEggAppear 0.3s ease-in reverse';
-                setTimeout(() => easterEgg.remove(), 300);
+                async handleFormSubmit(event) {
+                    event.preventDefault();
+                    
+                    const formData = new FormData(event.target);
+                    const password = formData.get('password');
+
+                    if (!password) {
+                        utils.showToast('Please enter a marketing code', 'error');
+                        return;
+                    }
+
+                    // Show loading state
+                    this.setLoadingState(true);
+
+                    try {
+                        // Simulate API call (replace with actual API call)
+                        await this.submitPassword(password);
+                        
+                        utils.showToast('Authentication successful!', 'success');
+                        
+                        // Reset form
+                        event.target.reset();
+                        
+                    } catch (error) {
+                        console.error('Authentication error:', error);
+                        utils.showToast('Authentication failed. Please try again.', 'error');
+                    } finally {
+                        // Hide loading state
+                        this.setLoadingState(false);
+                    }
+                }
+
+                async submitPassword(password) {
+                    // Simulate API delay
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    // Check for easter eggs first
+                    if (this.easterEggCodes.includes(password)) {
+                        this.showEasterEgg(password);
+                        return;
+                    }
+
+                    // Here you would make the actual API call
+                    // const response = await fetch(CONFIG.API_ENDPOINTS.AUTH, {
+                    //     method: 'POST',
+                    //     headers: { 'Content-Type': 'application/json' },
+                    //     body: JSON.stringify({ password })
+                    // });
+                    
+                    // if (!response.ok) {
+                    //     throw new Error('Authentication failed');
+                    // }
+                }
+
+                setLoadingState(loading) {
+                    if (this.elements.submitBtn) {
+                        this.elements.submitBtn.classList.toggle('loading', loading);
+                        this.elements.submitBtn.disabled = loading;
+                    }
+                    
+                    if (this.elements.btnText && this.elements.btnLoading) {
+                        this.elements.btnText.style.display = loading ? 'none' : 'inline';
+                        this.elements.btnLoading.style.display = loading ? 'inline' : 'none';
+                    }
+                }
+
+                async copyCode() {
+                    if (!this.elements.codeText) return;
+
+                    const codeText = this.elements.codeText.textContent;
+                    
+                    if (codeText === 'Loading...') {
+                        utils.showToast('Code not ready yet', 'error');
+                        return;
+                    }
+
+                    const success = await utils.copyToClipboard(codeText);
+                    
+                    if (success) {
+                        // Show feedback
+                        if (this.elements.copyFeedback) {
+                            this.elements.copyFeedback.style.display = 'block';
+                            setTimeout(() => {
+                                this.elements.copyFeedback.style.display = 'none';
+                            }, CONFIG.COPY_FEEDBACK_DURATION);
+                        }
+                        
+                        utils.showToast('Code copied to clipboard!', 'success');
+                    } else {
+                        utils.showToast('Failed to copy code', 'error');
+                    }
+                }
+
+                checkEasterEgg(event) {
+                    const enteredCode = event.target.value.trim();
+                    if (this.easterEggCodes.includes(enteredCode)) {
+                        this.showEasterEgg(enteredCode);
+                    }
+                }
+
+                showEasterEgg(code) {
+                    // Remove any existing easter egg
+                    this.removeEasterEgg();
+
+                    const messages = {
+                        'CLOUD123!': {
+                            title: '☁️ Cloud Easter Egg Found!',
+                            message: 'You discovered the CLOUD demo code! This is just a fun easter egg - not a real Yourl.Cloud code. Try the actual marketing code above! 🎯'
+                        },
+                        'FUTURE456@': {
+                            title: '🚀 Future Easter Egg Found!',
+                            message: 'You found the FUTURE demo code! This is just a fun easter egg - not a real Yourl.Cloud code. The real code is displayed above! 🎯'
+                        },
+                        'INNOVATE789#': {
+                            title: '💡 Innovation Easter Egg Found!',
+                            message: 'You discovered the INNOVATE demo code! This is just a fun easter egg - not a real Yourl.Cloud code. Look for the actual marketing code above! 🎯'
+                        }
+                    };
+
+                    const eggData = messages[code] || {
+                        title: '🎯 Easter Egg Found!',
+                        message: 'You found a demo code easter egg! This is just for fun - try the real marketing code above! 🎯'
+                    };
+
+                    // Create overlay
+                    const overlay = document.createElement('div');
+                    overlay.className = 'easter-egg-overlay';
+                    overlay.id = 'easter-egg-overlay';
+
+                    // Create easter egg
+                    const easterEgg = document.createElement('div');
+                    easterEgg.className = 'easter-egg';
+                    easterEgg.id = 'easter-egg';
+                    easterEgg.innerHTML = `
+                        <h2 style="color: var(--accent-color); margin-bottom: 1rem; font-size: 1.5rem;">${eggData.title}</h2>
+                        <p style="margin-bottom: 1.5rem; line-height: 1.6;">${eggData.message}</p>
+                        <button onclick="app.closeEasterEgg()" style="
+                            background: var(--bg-tertiary);
+                            border: 2px solid rgba(255, 255, 255, 0.3);
+                            color: var(--text-primary);
+                            padding: 0.75rem 1.5rem;
+                            border-radius: 10px;
+                            cursor: pointer;
+                            font-size: 1rem;
+                            transition: var(--transition);
+                        " onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'" onmouseout="this.style.background='var(--bg-tertiary)'">
+                            🎯 Got it!
+                        </button>
+                    `;
+
+                    document.body.appendChild(overlay);
+                    document.body.appendChild(easterEgg);
+
+                    // Auto-close after timeout
+                    setTimeout(() => {
+                        this.closeEasterEgg();
+                    }, CONFIG.EASTER_EGG_AUTO_CLOSE);
+
+                    // Close when clicking overlay
+                    overlay.addEventListener('click', () => {
+                        this.closeEasterEgg();
+                    });
+                }
+
+                closeEasterEgg() {
+                    const easterEgg = utils.$('#easter-egg');
+                    const overlay = utils.$('#easter-egg-overlay');
+
+                    if (easterEgg) {
+                        easterEgg.style.animation = 'easterEggAppear 0.3s ease-in reverse';
+                        setTimeout(() => easterEgg.remove(), CONFIG.ANIMATION_DURATION);
+                    }
+
+                    if (overlay) {
+                        overlay.style.animation = 'fadeIn 0.3s ease-in reverse';
+                        setTimeout(() => overlay.remove(), CONFIG.ANIMATION_DURATION);
+                    }
+                }
+
+                removeEasterEgg() {
+                    const existingEgg = utils.$('#easter-egg');
+                    const existingOverlay = utils.$('#easter-egg-overlay');
+                    
+                    if (existingEgg) existingEgg.remove();
+                    if (existingOverlay) existingOverlay.remove();
+                }
             }
 
-            if (overlay) {
-                overlay.style.animation = 'fadeIn 0.3s ease-in reverse';
-                setTimeout(() => overlay.remove(), 300);
+            // Initialize app when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    window.app = new YourlCloudApp();
+                });
+            } else {
+                window.app = new YourlCloudApp();
             }
-        }
 
-        // Close easter egg when clicking overlay
-        document.addEventListener('click', function(e) {
-            if (e.target.id === 'easter-egg-overlay') {
-                closeEasterEgg();
+            // Global functions for backward compatibility
+            window.copyCode = function() {
+                if (window.app) {
+                    window.app.copyCode();
+                }
+            };
+
+            window.closeEasterEgg = function() {
+                if (window.app) {
+                    window.app.closeEasterEgg();
+                }
+            };
+
+            // Service Worker registration for PWA capabilities
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then(registration => {
+                            console.log('SW registered: ', registration);
+                        })
+                        .catch(registrationError => {
+                            console.log('SW registration failed: ', registrationError);
+                        });
+                });
             }
-        });
+
+            // Performance monitoring
+            if ('performance' in window) {
+                window.addEventListener('load', () => {
+                    setTimeout(() => {
+                        const perfData = performance.getEntriesByType('navigation')[0];
+                        if (perfData) {
+                            console.log('🚀 Page Load Performance:', {
+                                'DOM Content Loaded': `${Math.round(perfData.domContentLoadedEventEnd - perfData.domContentLoadedEventStart)}ms`,
+                                'Load Complete': `${Math.round(perfData.loadEventEnd - perfData.loadEventStart)}ms`,
+                                'Total Load Time': `${Math.round(perfData.loadEventEnd - perfData.navigationStart)}ms`
+                            });
+                        }
+                    }, 0);
+                });
+            }
+
+        })();
     </script>
 </body>
 </html>

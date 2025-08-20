@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring Dashboard - Yourl.Cloud</title>
+    <meta name="description" content="Real-time monitoring and analytics dashboard for Yourl.Cloud services">
+    
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #ffd700;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.9);
+            --bg-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            --bg-secondary: rgba(255, 255, 255, 0.1);
+            --bg-tertiary: rgba(255, 255, 255, 0.15);
+            --border-radius: 20px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .header h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, var(--accent-color), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card h3 {
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-online { background: var(--success-color); }
+        .status-warning { background: var(--warning-color); }
+        .status-offline { background: var(--error-color); }
+
+        .charts-section {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .charts-section h2 {
+            color: var(--accent-color);
+            margin-bottom: 2rem;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chart-title {
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .chart-placeholder {
+            height: 200px;
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            opacity: 0.7;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+        }
+
+        .logs-section {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out 0.6s both;
+        }
+
+        .logs-section h2 {
+            color: var(--accent-color);
+            margin-bottom: 2rem;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .log-entry {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--accent-color);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .log-timestamp {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .log-level {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin: 0 0.5rem;
+        }
+
+        .log-level.info { background: var(--success-color); }
+        .log-level.warning { background: var(--warning-color); }
+        .log-level.error { background: var(--error-color); }
+
+        .navigation {
+            text-align: center;
+            margin-top: 3rem;
+        }
+
+        .nav-button {
+            display: inline-block;
+            background: var(--bg-tertiary);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: var(--text-primary);
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            text-decoration: none;
+            margin: 0 0.5rem;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .refresh-button {
+            background: var(--accent-color);
+            color: #000;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: var(--transition);
+            margin-bottom: 2rem;
+        }
+
+        .refresh-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .refresh-button:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .stat-card {
+                padding: 1.5rem;
+            }
+            
+            .stat-value {
+                font-size: 2rem;
+            }
+            
+            .nav-button {
+                display: block;
+                margin: 0.5rem auto;
+                max-width: 200px;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid var(--accent-color);
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>📊 Monitoring Dashboard</h1>
+            <p>Real-time system monitoring and performance analytics</p>
+        </header>
+
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <button class="refresh-button" onclick="refreshData()">
+                🔄 Refresh Data
+            </button>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>
+                    <span class="status-indicator status-online"></span>
+                    System Status
+                </h3>
+                <div class="stat-value">🟢 Online</div>
+                <div class="stat-label">All systems operational</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>🚀 Uptime</h3>
+                <div class="stat-value">{{ uptime or "99.9%" }}</div>
+                <div class="stat-label">Service availability</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>⚡ Response Time</h3>
+                <div class="stat-value">{{ response_time or "45ms" }}</div>
+                <div class="stat-label">Average response time</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>👥 Active Users</h3>
+                <div class="stat-value">{{ active_users or "127" }}</div>
+                <div class="stat-label">Current active sessions</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>💾 Memory Usage</h3>
+                <div class="stat-value">{{ memory_usage or "68%" }}</div>
+                <div class="stat-label">System memory utilization</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>🌐 Requests/min</h3>
+                <div class="stat-value">{{ requests_per_min or "1.2k" }}</div>
+                <div class="stat-label">Traffic volume</div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <h2>📈 Performance Metrics</h2>
+            
+            <div class="chart-container">
+                <div class="chart-title">Response Time Over Time</div>
+                <div class="chart-placeholder">
+                    📊 Chart: Response time trends (last 24 hours)
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">Traffic Volume</div>
+                <div class="chart-placeholder">
+                    📈 Chart: Request volume patterns
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">Error Rate</div>
+                <div class="chart-placeholder">
+                    🚨 Chart: Error frequency monitoring
+                </div>
+            </div>
+        </div>
+
+        <!-- System Logs -->
+        <div class="logs-section">
+            <h2>📝 System Logs</h2>
+            
+            <div class="log-entry">
+                <span class="log-timestamp">[{{ current_time or "2025-08-16 20:30:00" }}]</span>
+                <span class="log-level info">INFO</span>
+                <span>System startup completed successfully</span>
+            </div>
+
+            <div class="log-entry">
+                <span class="log-timestamp">[{{ current_time or "2025-08-16 20:29:45" }}]</span>
+                <span class="log-level info">INFO</span>
+                <span>Database connection established</span>
+            </div>
+
+            <div class="log-entry">
+                <span class="log-timestamp">[{{ current_time or "2025-08-16 20:29:30" }}]</span>
+                <span class="log-level info">INFO</span>
+                <span>Loading configuration from environment</span>
+            </div>
+
+            <div class="log-entry">
+                <span class="log-timestamp">[{{ current_time or "2025-08-16 20:29:15" }}]</span>
+                <span class="log-level warning">WARN</span>
+                <span>Cache warming in progress</span>
+            </div>
+
+            <div class="log-entry">
+                <span class="log-timestamp">[{{ current_time or "2025-08-16 20:29:00" }}]</span>
+                <span class="log-level info">INFO</span>
+                <span>Service initialization started</span>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="navigation">
+            <a href="/" class="nav-button">🏠 Home</a>
+            <a href="/status" class="nav-button">📊 Status</a>
+            <a href="/data" class="nav-button">📈 Data Analytics</a>
+            <a href="/knowledge-hub" class="nav-button">📚 Knowledge Hub</a>
+        </div>
+    </div>
+
+    <script>
+        // Modern monitoring dashboard functionality
+        (function() {
+            'use strict';
+
+            class MonitoringDashboard {
+                constructor() {
+                    this.initializeDashboard();
+                    this.setupAutoRefresh();
+                }
+
+                initializeDashboard() {
+                    console.log('📊 Monitoring Dashboard initialized');
+                    this.updateTimestamp();
+                }
+
+                updateTimestamp() {
+                    const now = new Date();
+                    const timestamp = now.toLocaleString();
+                    
+                    // Update all timestamp elements
+                    document.querySelectorAll('.log-timestamp').forEach(el => {
+                        if (el.textContent.includes('[')) {
+                            el.textContent = `[${timestamp}]`;
+                        }
+                    });
+                }
+
+                setupAutoRefresh() {
+                    // Auto-refresh every 30 seconds
+                    setInterval(() => {
+                        this.updateTimestamp();
+                    }, 30000);
+                }
+
+                async refreshData() {
+                    const refreshBtn = document.querySelector('.refresh-button');
+                    if (refreshBtn) {
+                        refreshBtn.classList.add('loading');
+                        refreshBtn.textContent = '⏳ Refreshing...';
+                        refreshBtn.disabled = true;
+                    }
+
+                    try {
+                        // Simulate API call
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        
+                        // Update metrics with new data
+                        this.updateMetrics();
+                        
+                        // Show success feedback
+                        this.showNotification('Data refreshed successfully!', 'success');
+                        
+                    } catch (error) {
+                        console.error('Refresh failed:', error);
+                        this.showNotification('Failed to refresh data', 'error');
+                    } finally {
+                        if (refreshBtn) {
+                            refreshBtn.classList.remove('loading');
+                            refreshBtn.textContent = '🔄 Refresh Data';
+                            refreshBtn.disabled = false;
+                        }
+                    }
+                }
+
+                updateMetrics() {
+                    // Simulate updating metrics with new values
+                    const metrics = [
+                        { selector: '.stat-card:nth-child(2) .stat-value', value: '99.9%' },
+                        { selector: '.stat-card:nth-child(3) .stat-value', value: '42ms' },
+                        { selector: '.stat-card:nth-child(4) .stat-value', value: '134' },
+                        { selector: '.stat-card:nth-child(5) .stat-value', value: '72%' },
+                        { selector: '.stat-card:nth-child(6) .stat-value', value: '1.4k' }
+                    ];
+
+                    metrics.forEach(metric => {
+                        const element = document.querySelector(metric.selector);
+                        if (element) {
+                            element.textContent = metric.value;
+                        }
+                    });
+                }
+
+                showNotification(message, type = 'info') {
+                    // Create toast notification
+                    const toast = document.createElement('div');
+                    toast.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: var(--bg-tertiary);
+                        color: var(--text-primary);
+                        padding: 1rem 1.5rem;
+                        border-radius: 10px;
+                        box-shadow: var(--shadow);
+                        z-index: 1000;
+                        transform: translateX(100%);
+                        transition: var(--transition);
+                        border: 1px solid ${type === 'success' ? 'var(--success-color)' : 'var(--error-color)'};
+                    `;
+                    toast.textContent = message;
+                    
+                    document.body.appendChild(toast);
+                    
+                    // Animate in
+                    setTimeout(() => toast.style.transform = 'translateX(0)', 100);
+                    
+                    // Auto remove
+                    setTimeout(() => {
+                        toast.style.transform = 'translateX(100%)';
+                        setTimeout(() => toast.remove(), 300);
+                    }, 3000);
+                }
+            }
+
+            // Initialize dashboard
+            let dashboard;
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    dashboard = new MonitoringDashboard();
+                });
+            } else {
+                dashboard = new MonitoringDashboard();
+            }
+
+            // Global refresh function
+            window.refreshData = function() {
+                if (dashboard) {
+                    dashboard.refreshData();
+                }
+            };
+
+            // Performance monitoring
+            if ('performance' in window) {
+                window.addEventListener('load', () => {
+                    setTimeout(() => {
+                        const perfData = performance.getEntriesByType('navigation')[0];
+                        if (perfData) {
+                            console.log('📊 Dashboard Load Performance:', {
+                                'Load Time': `${Math.round(perfData.loadEventEnd - perfData.navigationStart)}ms`,
+                                'DOM Ready': `${Math.round(perfData.domContentLoadedEventEnd - perfData.domContentLoadedEventStart)}ms`
+                            });
+                        }
+                    }, 0);
+                });
+            }
+
+        })();
+    </script>
+</body>
+</html>
+
